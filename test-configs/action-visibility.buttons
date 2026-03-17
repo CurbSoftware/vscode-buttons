@@ -1,0 +1,185 @@
+version = 1
+title = "Action Button Visibility"
+description = "Each group shows a different subset of the 5 action buttons"
+layout = "grid"
+
+[display]
+show_command = true
+show_labels = true
+show_icons = true
+
+[macros]
+echo = "echo"
+
+# ── All 5 actions visible (default) ──
+[groups.all-actions]
+name = "All 5 Actions"
+description = "Run, New Terminal, Copy to Terminal, Copy to New Terminal, Copy to Clipboard"
+icon = "list-flat"
+color = "#16A34A"
+
+[[groups.all-actions.buttons]]
+id = "all-1"
+label = "Full Actions"
+command = "{{echo}} 'all 5 actions visible'"
+icon = "play"
+
+# ── Run only ──
+[groups.run-only]
+name = "Run Only"
+description = "Only the Run button is visible"
+icon = "play"
+color = "#2563EB"
+
+[groups.run-only.display]
+show_run = true
+show_new_terminal = false
+show_copy_to_terminal = false
+show_copy_to_new_terminal = false
+show_copy_to_clipboard = false
+
+[[groups.run-only.buttons]]
+id = "run-only-1"
+label = "Only Run"
+command = "{{echo}} 'run only'"
+icon = "play"
+
+[[groups.run-only.buttons]]
+id = "run-only-2"
+label = "Also Run Only"
+command = "{{echo}} 'also run only'"
+icon = "debug-start"
+
+# ── Run + Copy to Clipboard (classic 2-action) ──
+[groups.run-and-copy]
+name = "Run + Copy (Classic)"
+description = "Just Run and Copy to Clipboard — like a simplified setup"
+icon = "copy"
+color = "#9333EA"
+
+[groups.run-and-copy.display]
+show_run = true
+show_new_terminal = false
+show_copy_to_terminal = false
+show_copy_to_new_terminal = false
+show_copy_to_clipboard = true
+
+[[groups.run-and-copy.buttons]]
+id = "rc-1"
+label = "Simple Action"
+command = "{{echo}} 'run or copy'"
+icon = "play"
+
+[[groups.run-and-copy.buttons]]
+id = "rc-2"
+label = "Another Simple"
+command = "{{echo}} 'another'"
+icon = "package"
+
+# ── Terminal operations only (Run + New Terminal) ──
+[groups.terminal-only]
+name = "Terminal Actions Only"
+description = "Run + New Terminal only — no clipboard or copy-to-terminal"
+icon = "terminal"
+color = "#DC2626"
+
+[groups.terminal-only.display]
+show_run = true
+show_new_terminal = true
+show_copy_to_terminal = false
+show_copy_to_new_terminal = false
+show_copy_to_clipboard = false
+
+[[groups.terminal-only.buttons]]
+id = "term-1"
+label = "Dev Server"
+command = "{{echo}} 'dev server'"
+icon = "play"
+
+[[groups.terminal-only.buttons]]
+id = "term-2"
+label = "Build"
+command = "{{echo}} 'building'"
+icon = "package"
+
+# ── Copy operations only (no Run) ──
+[groups.copy-only]
+name = "Copy Actions Only"
+description = "Copy to Terminal, Copy to New Terminal, Copy to Clipboard — no Run or New Terminal"
+icon = "clippy"
+color = "#D97706"
+
+[groups.copy-only.display]
+show_run = false
+show_new_terminal = false
+show_copy_to_terminal = true
+show_copy_to_new_terminal = true
+show_copy_to_clipboard = true
+
+[[groups.copy-only.buttons]]
+id = "copy-1"
+label = "Paste to Terminal"
+command = "{{echo}} 'pastes without running'"
+icon = "terminal"
+
+[[groups.copy-only.buttons]]
+id = "copy-2"
+label = "Clipboard"
+command = "{{echo}} 'copies to clipboard'"
+icon = "copy"
+
+# ── No actions at all ──
+[groups.no-actions]
+name = "No Actions (display only)"
+description = "All 5 action buttons disabled — buttons are display-only"
+icon = "eye"
+color = "#64748B"
+
+[groups.no-actions.display]
+show_run = false
+show_new_terminal = false
+show_copy_to_terminal = false
+show_copy_to_new_terminal = false
+show_copy_to_clipboard = false
+
+[[groups.no-actions.buttons]]
+id = "no-act-1"
+label = "Read-Only Button"
+command = "{{echo}} 'no actions'"
+icon = "info"
+description = "This button has no action buttons — purely informational"
+
+[[groups.no-actions.buttons]]
+id = "no-act-2"
+label = "Also Read-Only"
+command = "{{echo}} 'also no actions'"
+icon = "book"
+
+# ── Colored action subsets ──
+[groups.colored-subset]
+name = "Colored Subset"
+description = "3 actions visible with custom colors each"
+icon = "paintcan"
+color = "#EC4899"
+
+[groups.colored-subset.display]
+show_run = true
+show_new_terminal = true
+show_copy_to_terminal = false
+show_copy_to_new_terminal = false
+show_copy_to_clipboard = true
+run_color = "#22C55E"
+new_terminal_color = "#3B82F6"
+copy_to_clipboard_color = "#EF4444"
+
+[[groups.colored-subset.buttons]]
+id = "cs-1"
+label = "Green Run, Blue New, Red Copy"
+command = "{{echo}} 'colored subset'"
+icon = "play"
+
+[[groups.colored-subset.buttons]]
+id = "cs-2"
+label = "Same Colors"
+command = "{{echo}} 'same colors'"
+icon = "zap"

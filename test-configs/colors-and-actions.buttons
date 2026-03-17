@@ -1,0 +1,158 @@
+version = 1
+title = "Colors & Action Button Styles"
+description = "Tests custom colors on action buttons, groups, and per-group display overrides"
+layout = "grid"
+
+# Document-level: green Run, blue New Terminal, all 5 actions visible
+[display]
+show_command = true
+show_labels = true
+show_icons = true
+run_color = "#16A34A"
+new_terminal_color = "#2563EB"
+copy_to_terminal_color = "#D97706"
+copy_to_new_terminal_color = "#9333EA"
+copy_to_clipboard_color = "#64748B"
+button_color = "#6366F1"
+group_bg_color = "#1E1B2E"
+
+[macros]
+echo = "echo"
+
+# ── Group 1: Inherits all document-level colors ──
+[groups.inherit-colors]
+name = "Inherited Colors"
+description = "Uses document-level action colors (green Run, blue New Terminal, etc.)"
+icon = "paintcan"
+color = "#6366F1"
+
+[[groups.inherit-colors.buttons]]
+id = "color-1"
+label = "Button with All Colors"
+command = "{{echo}} 'all action colors inherited'"
+icon = "play"
+description = "All 5 action buttons should have custom colors"
+
+[[groups.inherit-colors.buttons]]
+id = "color-2"
+label = "Another Button"
+command = "{{echo}} 'same colors'"
+icon = "package"
+
+# ── Group 2: Override action colors at group level ──
+[groups.override-colors]
+name = "Overridden Colors"
+description = "Group-level display overrides the document colors"
+icon = "symbol-color"
+color = "#EC4899"
+
+[groups.override-colors.display]
+run_color = "#EC4899"
+new_terminal_color = "#F59E0B"
+copy_to_terminal_color = "#10B981"
+copy_to_new_terminal_color = "#8B5CF6"
+copy_to_clipboard_color = "#EF4444"
+button_color = "#EC4899"
+group_bg_color = "#2D1B24"
+
+[[groups.override-colors.buttons]]
+id = "override-1"
+label = "Pink Run Button"
+command = "{{echo}} 'group-level colors'"
+icon = "play"
+description = "Run should be pink, New Terminal amber"
+
+[[groups.override-colors.buttons]]
+id = "override-2"
+label = "All Custom"
+command = "{{echo}} 'all custom'"
+icon = "zap"
+
+# ── Group 3: No custom colors (theme defaults) ──
+[groups.no-colors]
+name = "No Custom Colors"
+description = "Group-level display with no action colors — should use theme defaults"
+icon = "circle-slash"
+
+[groups.no-colors.display]
+run_color = ""
+new_terminal_color = ""
+button_color = ""
+group_bg_color = ""
+
+[[groups.no-colors.buttons]]
+id = "default-1"
+label = "Default Theme Colors"
+command = "{{echo}} 'theme defaults'"
+icon = "play"
+
+[[groups.no-colors.buttons]]
+id = "default-2"
+label = "Also Default"
+command = "{{echo}} 'also default'"
+icon = "package"
+
+# ── Group 4: Per-button colors (button.color field) ──
+[groups.button-colors]
+name = "Per-Button Colors"
+description = "Each button has its own color field"
+icon = "heart"
+
+[[groups.button-colors.buttons]]
+id = "red"
+label = "Red Button"
+command = "{{echo}} 'red'"
+icon = "flame"
+color = "#EF4444"
+
+[[groups.button-colors.buttons]]
+id = "green"
+label = "Green Button"
+command = "{{echo}} 'green'"
+icon = "check"
+color = "#22C55E"
+
+[[groups.button-colors.buttons]]
+id = "blue"
+label = "Blue Button"
+command = "{{echo}} 'blue'"
+icon = "info"
+color = "#3B82F6"
+
+[[groups.button-colors.buttons]]
+id = "amber"
+label = "Amber Button"
+command = "{{echo}} 'amber'"
+icon = "warning"
+color = "#F59E0B"
+
+[[groups.button-colors.buttons]]
+id = "purple"
+label = "Purple Button"
+command = "{{echo}} 'purple'"
+icon = "sparkle"
+color = "#8B5CF6"
+
+# ── Group 5: Dark background with light action colors ──
+[groups.dark-bg]
+name = "Dark Background"
+description = "Dark group background with high-contrast action colors"
+icon = "eye"
+
+[groups.dark-bg.display]
+group_bg_color = "#0F172A"
+run_color = "#22D3EE"
+new_terminal_color = "#A78BFA"
+copy_to_clipboard_color = "#FB923C"
+
+[[groups.dark-bg.buttons]]
+id = "dark-1"
+label = "Cyan Run"
+command = "{{echo}} 'cyan run'"
+icon = "play"
+
+[[groups.dark-bg.buttons]]
+id = "dark-2"
+label = "Purple New Term"
+command = "{{echo}} 'purple new term'"
+icon = "terminal"

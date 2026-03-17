@@ -171,11 +171,18 @@
       }
     }
     /* ── Copy as Markdown Button ─────────────────────── */
+    .h1-copy-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .h1-copy-wrapper h1 {
+      margin: 0;
+      flex: 1;
+    }
     .copy-md-btn {
-      position: absolute;
-      top: 0;
-      right: 0;
-      z-index: 10;
+      flex-shrink: 0;
+      margin-left: 16px;
       padding: 4px 12px;
       font-size: 12px;
       font-family: inherit;
@@ -184,6 +191,7 @@
       border-radius: 4px;
       background: #ffffff;
       color: #52525b;
+      white-space: nowrap;
       transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
     .copy-md-btn:hover {
@@ -276,8 +284,16 @@
         });
 
         var content = document.querySelector('article.markdown-section');
-        if (content) {
-          content.style.position = 'relative';
+        var h1 = content && content.querySelector('h1');
+        if (h1 && !h1.parentElement.classList.contains('h1-copy-wrapper')) {
+          var wrapper = document.createElement('div');
+          wrapper.className = 'h1-copy-wrapper';
+          h1.parentElement.insertBefore(wrapper, h1);
+          wrapper.appendChild(h1);
+          wrapper.appendChild(btn);
+        } else if (h1 && h1.parentElement.classList.contains('h1-copy-wrapper')) {
+          h1.parentElement.appendChild(btn);
+        } else if (content) {
           content.insertBefore(btn, content.firstChild);
         }
       });
