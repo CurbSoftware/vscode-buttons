@@ -177,26 +177,9 @@ export interface ResolvedButtonsGroup extends ResolvedGroupDisplay {
   buttons: ResolvedButtonsButton[];
 }
 
-export interface ResolvedButtonsConfig {
+export interface ResolvedButtonsConfig extends ResolvedGroupDisplay {
   title: string;
   description?: string;
-  layout: LayoutMode;
-  showCommandPreview: boolean;
-  showLabels: boolean;
-  showIcons: boolean;
-  compact: boolean;
-  buttonColor?: string;
-  groupBgColor?: string;
-  showRun: boolean;
-  showNewTerminal: boolean;
-  showCopyToTerminal: boolean;
-  showCopyToNewTerminal: boolean;
-  showCopyToClipboard: boolean;
-  runColor?: string;
-  newTerminalColor?: string;
-  copyToTerminalColor?: string;
-  copyToNewTerminalColor?: string;
-  copyToClipboardColor?: string;
   groups: ResolvedButtonsGroup[];
 }
 
@@ -207,31 +190,10 @@ export interface LoadedButtonsState {
   diagnostics: ButtonsDiagnostic[];
 }
 
-export interface MergedDisplaySettings {
-  showCommandPreview: boolean;
-  showLabels: boolean;
-  showIcons: boolean;
-  compact: boolean;
-  buttonColor?: string;
-  groupBgColor?: string;
-  layout: LayoutMode;
-  showRun: boolean;
-  showNewTerminal: boolean;
-  showCopyToTerminal: boolean;
-  showCopyToNewTerminal: boolean;
-  showCopyToClipboard: boolean;
-  runColor?: string;
-  newTerminalColor?: string;
-  copyToTerminalColor?: string;
-  copyToNewTerminalColor?: string;
-  copyToClipboardColor?: string;
-}
-
 export interface CombinedButtonsState {
   user: LoadedButtonsState;
   project: LoadedButtonsState;
   activeSource: ButtonsSource;
-  mergedDisplay: MergedDisplaySettings;
 }
 
 export interface PanelActionMessage {

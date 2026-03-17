@@ -26,6 +26,7 @@ Projects usually keep important commands scattered across `package.json`, Docker
 - **Variables and macros** — simple string substitution with cycle detection
 - **Danger detection** — automatic flagging and confirmation for destructive commands
 - **Activity Bar icon** — sidebar panel for quick access
+- **Toolbar icon** — quick-access button in the editor title bar
 - **Compact mode** — dense layout option for large configs
 
 ## Quick Start

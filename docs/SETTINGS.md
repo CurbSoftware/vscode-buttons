@@ -12,6 +12,7 @@ Configure Buttons via VS Code settings (`Ctrl+,` / `Cmd+,`). These serve as fall
 | `buttons.watchConfigChanges` | `boolean` | `true` | Watch `.buttons` files for changes and auto-refresh the panel. Changes are debounced by 300ms. |
 | `buttons.confirmDangerousCommands` | `boolean` | `true` | Show a confirmation dialog before running buttons marked as `danger = true` or `confirm = true`. |
 | `buttons.autoOpen` | `string` | `"firstTime"` | Control sidebar auto-open behavior. Options: `never`, `firstTime` (once per workspace), `always`. |
+| `buttons.showToolbarIcon` | `boolean` | `true` | Show the Buttons icon in the editor toolbar (top right). |
 
 ### Settings vs `.buttons` Display
 
@@ -38,6 +39,8 @@ All commands are available via the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+
 | `buttons.createExampleButtons` | Buttons: Create Example .buttons | Generate an example `.buttons` file at the workspace root. |
 | `buttons.runButton` | Buttons: Run Button | Run a button in the current terminal. Shows a quick-pick if no button is specified. |
 | `buttons.runButtonInNewTerminal` | Buttons: Run Button In New Terminal | Run a button in a new terminal. Shows a quick-pick if no button is specified. |
+| `buttons.copyToTerminal` | Buttons: Copy to Terminal | Copy a button's resolved command to the current terminal without executing. |
+| `buttons.copyToNewTerminal` | Buttons: Copy to New Terminal | Copy a button's resolved command to a new terminal without executing. |
 | `buttons.copyButtonCommand` | Buttons: Copy Button Command | Copy a button's resolved command to the clipboard. |
 | `buttons.openButtonUrl` | Buttons: Open Button URL | Open a URL via the system browser. |
 | `buttons.openButtonPort` | Buttons: Open Button Port | Open `http://localhost:PORT` via the system browser. |
@@ -50,6 +53,10 @@ The extension activates in two scenarios:
 2. **`onStartupFinished`** — on every VS Code startup, to detect the user `~/.buttons` file
 
 If neither file exists, the extension stays dormant (no status bar item, no sidebar auto-open).
+
+## Toolbar Icon
+
+When `buttons.showToolbarIcon` is `true` (default), a Buttons icon appears in the editor title bar (top right). Clicking it opens the Buttons panel. Disable this via the setting if you prefer to use only the Activity Bar sidebar or Command Palette.
 
 ## File Watching
 

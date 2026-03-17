@@ -6,7 +6,6 @@ import {
   ButtonsGenerateConfig,
   ButtonsGroupConfig,
   LayoutMode,
-  MergedDisplaySettings,
   ResolvedButtonsButton,
   ResolvedButtonsConfig,
   ResolvedButtonsGroup,
@@ -498,67 +497,6 @@ export function resolveGroupDisplay(
   if (groupDisplay.action_size !== undefined) result.actionSize = groupDisplay.action_size;
   if (groupDisplay.action_border_radius !== undefined) result.actionBorderRadius = groupDisplay.action_border_radius;
   return result;
-}
-
-export function mergeDisplaySettings(
-  user: ResolvedButtonsConfig | undefined,
-  project: ResolvedButtonsConfig | undefined,
-  fallbacks: { showCommandPreview: boolean; layout: LayoutMode },
-): MergedDisplaySettings {
-  const base: MergedDisplaySettings = {
-    showCommandPreview: fallbacks.showCommandPreview,
-    showLabels: true,
-    showIcons: true,
-    compact: false,
-    layout: fallbacks.layout,
-    showRun: true,
-    showNewTerminal: true,
-    showCopyToTerminal: true,
-    showCopyToNewTerminal: true,
-    showCopyToClipboard: true,
-  };
-
-  if (user) {
-    base.showCommandPreview = user.showCommandPreview;
-    base.showLabels = user.showLabels;
-    base.showIcons = user.showIcons;
-    base.compact = user.compact;
-    base.layout = user.layout;
-    base.buttonColor = user.buttonColor;
-    base.groupBgColor = user.groupBgColor;
-    base.showRun = user.showRun;
-    base.showNewTerminal = user.showNewTerminal;
-    base.showCopyToTerminal = user.showCopyToTerminal;
-    base.showCopyToNewTerminal = user.showCopyToNewTerminal;
-    base.showCopyToClipboard = user.showCopyToClipboard;
-    base.runColor = user.runColor;
-    base.newTerminalColor = user.newTerminalColor;
-    base.copyToTerminalColor = user.copyToTerminalColor;
-    base.copyToNewTerminalColor = user.copyToNewTerminalColor;
-    base.copyToClipboardColor = user.copyToClipboardColor;
-  }
-
-  if (project) {
-    base.showCommandPreview = project.showCommandPreview;
-    base.showLabels = project.showLabels;
-    base.showIcons = project.showIcons;
-    base.compact = project.compact;
-    base.layout = project.layout;
-    base.showRun = project.showRun;
-    base.showNewTerminal = project.showNewTerminal;
-    base.showCopyToTerminal = project.showCopyToTerminal;
-    base.showCopyToNewTerminal = project.showCopyToNewTerminal;
-    base.showCopyToClipboard = project.showCopyToClipboard;
-    if (project.buttonColor !== undefined) base.buttonColor = project.buttonColor;
-    if (project.groupBgColor !== undefined) base.groupBgColor = project.groupBgColor;
-    if (project.runColor !== undefined) base.runColor = project.runColor;
-    if (project.newTerminalColor !== undefined) base.newTerminalColor = project.newTerminalColor;
-    if (project.copyToTerminalColor !== undefined) base.copyToTerminalColor = project.copyToTerminalColor;
-    if (project.copyToNewTerminalColor !== undefined) base.copyToNewTerminalColor = project.copyToNewTerminalColor;
-    if (project.copyToClipboardColor !== undefined) base.copyToClipboardColor = project.copyToClipboardColor;
-  }
-
-  return base;
 }
 
 export function mergeDocuments(root: ButtonsDocument, included: ButtonsDocument, sourcePath: string, diagnostics: ButtonsDiagnostic[]): void {

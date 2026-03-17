@@ -14,11 +14,10 @@ import {
   validateColor,
   validateCodicon,
   validatePorts,
-  mergeDisplaySettings,
   resolveGroupDisplay,
   TemplateContext,
 } from "../config/configHelpers";
-import { ButtonsDiagnostic, ButtonsDocument, ResolvedButtonsConfig, ResolvedGroupDisplay } from "../models/types";
+import { ButtonsDiagnostic, ButtonsDocument, ResolvedGroupDisplay } from "../models/types";
 
 // ── cartesian ──────────────────────────────────────────────
 
@@ -546,103 +545,6 @@ describe("resolveDocument display fields", () => {
   });
 });
 
-// ── mergeDisplaySettings ──────────────────────────────────
-
-describe("mergeDisplaySettings", () => {
-  const fallbacks = { showCommandPreview: true, layout: "grid" as const };
-
-  function makeResolved(overrides: Partial<ResolvedButtonsConfig>): ResolvedButtonsConfig {
-    return {
-      title: "Test",
-      layout: "grid",
-      showCommandPreview: true,
-      showLabels: true,
-      showIcons: true,
-      compact: false,
-      showRun: true,
-      showNewTerminal: true,
-      showCopyToTerminal: true,
-      showCopyToNewTerminal: true,
-      showCopyToClipboard: true,
-      groups: [],
-      ...overrides,
-    };
-  }
-
-  it("returns fallbacks when both are undefined", () => {
-    const result = mergeDisplaySettings(undefined, undefined, fallbacks);
-    assert.strictEqual(result.showCommandPreview, true);
-    assert.strictEqual(result.layout, "grid");
-    assert.strictEqual(result.showLabels, true);
-    assert.strictEqual(result.showIcons, true);
-    assert.strictEqual(result.compact, false);
-    assert.strictEqual(result.buttonColor, undefined);
-    assert.strictEqual(result.groupBgColor, undefined);
-  });
-
-  it("uses user settings when project is undefined", () => {
-    const user = makeResolved({ showLabels: false, buttonColor: "#AAA" });
-    const result = mergeDisplaySettings(user, undefined, fallbacks);
-    assert.strictEqual(result.showLabels, false);
-    assert.strictEqual(result.buttonColor, "#AAA");
-  });
-
-  it("project overrides user settings", () => {
-    const user = makeResolved({ showLabels: false, buttonColor: "#AAA", layout: "rows" });
-    const project = makeResolved({ showLabels: true, buttonColor: "#BBB", layout: "table" });
-    const result = mergeDisplaySettings(user, project, fallbacks);
-    assert.strictEqual(result.showLabels, true);
-    assert.strictEqual(result.buttonColor, "#BBB");
-    assert.strictEqual(result.layout, "table");
-  });
-
-  it("project undefined buttonColor falls through from user", () => {
-    const user = makeResolved({ buttonColor: "#AAA" });
-    const project = makeResolved({ buttonColor: undefined });
-    const result = mergeDisplaySettings(user, project, fallbacks);
-    assert.strictEqual(result.buttonColor, "#AAA");
-  });
-
-  it("uses project settings when user is undefined", () => {
-    const project = makeResolved({ compact: true, groupBgColor: "#CCC" });
-    const result = mergeDisplaySettings(undefined, project, fallbacks);
-    assert.strictEqual(result.compact, true);
-    assert.strictEqual(result.groupBgColor, "#CCC");
-  });
-
-  it("merges action button visibility — project overrides user", () => {
-    const user = makeResolved({ showRun: false, showCopyToClipboard: false });
-    const project = makeResolved({ showRun: true, showCopyToClipboard: true });
-    const result = mergeDisplaySettings(user, project, fallbacks);
-    assert.strictEqual(result.showRun, true);
-    assert.strictEqual(result.showCopyToClipboard, true);
-  });
-
-  it("user action visibility used when no project", () => {
-    const user = makeResolved({ showRun: false, showCopyToClipboard: false });
-    const result = mergeDisplaySettings(user, undefined, fallbacks);
-    assert.strictEqual(result.showRun, false);
-    assert.strictEqual(result.showCopyToClipboard, false);
-  });
-
-  it("merges action button colors with fallthrough", () => {
-    const user = makeResolved({ runColor: "#AA0000", copyToClipboardColor: "#00AA00" });
-    const project = makeResolved({ runColor: "#BB0000" });
-    const result = mergeDisplaySettings(user, project, fallbacks);
-    assert.strictEqual(result.runColor, "#BB0000");
-    assert.strictEqual(result.copyToClipboardColor, "#00AA00");
-  });
-
-  it("defaults action buttons to visible", () => {
-    const result = mergeDisplaySettings(undefined, undefined, fallbacks);
-    assert.strictEqual(result.showRun, true);
-    assert.strictEqual(result.showNewTerminal, true);
-    assert.strictEqual(result.showCopyToTerminal, true);
-    assert.strictEqual(result.showCopyToNewTerminal, true);
-    assert.strictEqual(result.showCopyToClipboard, true);
-  });
-});
-
 // ── resolveGroupDisplay ───────────────────────────────────
 
 describe("resolveGroupDisplay", () => {
@@ -699,6 +601,42 @@ describe("resolveGroupDisplay", () => {
     const result = resolveGroupDisplay(base, { button_color: "#CCC" }, undefined);
     assert.strictEqual(result.buttonColor, "#CCC");
     assert.strictEqual(result.groupBgColor, "#BBB"); // unchanged
+  });
+
+  it("overrides custom labels from group display", () => {
+    const result = resolveGroupDisplay(baseDisplay, {
+      run_label: "Execute",
+      copy_to_clipboard_label: "Clipboard",
+    }, undefined);
+    assert.strictEqual(result.runLabel, "Execute");
+    assert.strictEqual(result.copyToClipboardLabel, "Clipboard");
+    assert.strictEqual(result.newTerminalLabel, "New Terminal"); // unchanged
+  });
+
+  it("overrides action icons from group display", () => {
+    const result = resolveGroupDisplay(baseDisplay, {
+      run_icon: "play",
+      copy_to_clipboard_icon: "copy",
+    }, undefined);
+    assert.strictEqual(result.runIcon, "play");
+    assert.strictEqual(result.copyToClipboardIcon, "copy");
+    assert.strictEqual(result.newTerminalIcon, undefined); // unchanged
+  });
+
+  it("overrides sizes from group display", () => {
+    const result = resolveGroupDisplay(baseDisplay, {
+      label_size: "18px",
+      action_size: "14px",
+      action_border_radius: "999px",
+    }, undefined);
+    assert.strictEqual(result.labelSize, "18px");
+    assert.strictEqual(result.actionSize, "14px");
+    assert.strictEqual(result.actionBorderRadius, "999px");
+  });
+
+  it("overrides command_click_to_copy from group display", () => {
+    const result = resolveGroupDisplay(baseDisplay, { command_click_to_copy: true }, undefined);
+    assert.strictEqual(result.commandClickToCopy, true);
   });
 });
 
@@ -800,5 +738,61 @@ describe("validateDocument action button colors", () => {
       },
     }));
     assert.ok(diagnostics.some((d) => d.severity === "warning" && d.message.includes("color")));
+  });
+
+  it("validates action button icon codicons", () => {
+    const diagnostics = validateDocument(minimalDoc({
+      display: { run_icon: "INVALID!" },
+    }));
+    assert.ok(diagnostics.some((d) => d.severity === "warning" && d.message.includes("codicon")));
+  });
+
+  it("accepts valid action button icons", () => {
+    const diagnostics = validateDocument(minimalDoc({
+      display: { run_icon: "play", copy_to_clipboard_icon: "copy" },
+    }));
+    const iconWarnings = diagnostics.filter((d) => d.message.includes("codicon"));
+    assert.strictEqual(iconWarnings.length, 0);
+  });
+});
+
+// ── resolveDocument custom labels and sizes ────────────────
+
+describe("resolveDocument custom labels and sizes", () => {
+  it("defaults action labels to standard text", () => {
+    const doc: ButtonsDocument = {
+      version: 1,
+      groups: { main: { buttons: [{ id: "test", command: "echo" }] } },
+    };
+    const result = resolveDocument(doc, true, "grid", "current", []);
+    assert.strictEqual(result.runLabel, "Run");
+    assert.strictEqual(result.newTerminalLabel, "New Terminal");
+    assert.strictEqual(result.copyToTerminalLabel, "Copy to Terminal");
+    assert.strictEqual(result.copyToNewTerminalLabel, "Copy to New Terminal");
+    assert.strictEqual(result.copyToClipboardLabel, "Copy");
+    assert.strictEqual(result.commandClickToCopy, false);
+  });
+
+  it("passes custom labels to groups", () => {
+    const doc: ButtonsDocument = {
+      version: 1,
+      display: { run_label: "Execute", copy_to_clipboard_label: "Clipboard" },
+      groups: { main: { buttons: [{ id: "test", command: "echo" }] } },
+    };
+    const result = resolveDocument(doc, true, "grid", "current", []);
+    assert.strictEqual(result.groups[0].runLabel, "Execute");
+    assert.strictEqual(result.groups[0].copyToClipboardLabel, "Clipboard");
+  });
+
+  it("passes sizes and click-to-copy to groups", () => {
+    const doc: ButtonsDocument = {
+      version: 1,
+      display: { label_size: "16px", action_size: "14px", command_click_to_copy: true },
+      groups: { main: { buttons: [{ id: "test", command: "echo" }] } },
+    };
+    const result = resolveDocument(doc, true, "grid", "current", []);
+    assert.strictEqual(result.groups[0].labelSize, "16px");
+    assert.strictEqual(result.groups[0].actionSize, "14px");
+    assert.strictEqual(result.groups[0].commandClickToCopy, true);
   });
 });

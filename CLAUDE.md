@@ -26,6 +26,7 @@ The extension activates when a workspace contains a `.buttons` file (`workspaceC
 .buttons (TOML file)
   → config/findButtonsFile.ts      finds the file in workspace root
   → config/loadButtonsConfig.ts    reads file via vscode.workspace.fs, parses TOML
+  → config/includesHelper.ts       resolves file includes, merges into document
   → config/configHelpers.ts        validates, resolves templates/macros/generation (all pure functions)
   → models/types.ts                ButtonsDocument → ResolvedButtonsConfig (with diagnostics)
   → extension.ts                   caches as LoadedButtonsState, passes to panel
@@ -38,9 +39,10 @@ The extension activates when a workspace contains a `.buttons` file (`workspaceC
 - **extension.ts** — Registers 9 commands, manages global `currentState: LoadedButtonsState`, sets up debounced file watcher for `.buttons` changes, wires panel callbacks
 - **config/configHelpers.ts** — All pure functions: TOML validation, macro expansion (with cycle detection), cartesian product button generation (with 1000-button explosion guard), danger detection, defaults cascade, template application, slug/title utilities
 - **config/loadButtonsConfig.ts** — Thin wrapper: reads `.buttons` file via vscode API, parses TOML via `@iarna/toml`, delegates to configHelpers for validation and resolution
-- **panel/ButtonsPanel.ts** — Webview with inline HTML/CSS/JS (no frontend framework). Communicates with extension host via `PanelActionMessage` discriminated union. Uses VSCode theme CSS variables for styling
-- **execution/actions.ts** — Terminal creation/reuse (named "Buttons"), `sendText()` for command execution, `vscode.env.openExternal()` for URLs/ports, all with try/catch error handling
-- **models/types.ts** — All interfaces. Key hierarchy: `ButtonsDocument` (raw TOML) → `ResolvedButtonsConfig` (processed) wrapped in `LoadedButtonsState` (with file path and diagnostics)
+- **config/includesHelper.ts** — Resolves file includes referenced in `.buttons` files, merging included content into the document
+- **panel/ButtonsPanel.ts** — Webview with inline HTML/CSS/JS (no frontend framework). Communicates with extension host via `PanelActionMessage` discriminated union. Uses VSCode theme CSS variables for styling. Renders 5 action buttons per button (Run, New Terminal, Copy to Terminal, Copy to New Terminal, Copy to Clipboard) with custom labels, icons, and sizes. Supports click-to-copy on command preview and per-group display settings via group-level `[display]` blocks. Toolbar icon appears in the editor title bar
+- **execution/actions.ts** — Terminal creation/reuse (named "Buttons"), `sendText()` for command execution, copy-to-terminal (current and new), `vscode.env.openExternal()` for URLs/ports, all with try/catch error handling
+- **models/types.ts** — All interfaces. Key hierarchy: `ButtonsDocument` (raw TOML) → `ResolvedButtonsConfig` (processed, extends `ResolvedGroupDisplay`) wrapped in `LoadedButtonsState` (with file path and diagnostics). `MergedDisplaySettings` was removed as dead code; `loadButtonsState` deprecated function was removed
 
 ### Config resolution pipeline (configHelpers.ts)
 

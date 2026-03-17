@@ -56,7 +56,8 @@
     "commands": [
       {
         "command": "buttons.openPanel",
-        "title": "Buttons: Open Panel"
+        "title": "Buttons: Open Panel",
+        "icon": "$(list-selection)"
       },
       {
         "command": "buttons.reloadConfig",
@@ -151,8 +152,22 @@
           ],
           "default": "firstTime",
           "description": "Controls whether the Buttons sidebar opens automatically when a .buttons file exists."
+        },
+        "buttons.showToolbarIcon": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the Buttons icon in the editor toolbar (top right)."
         }
       }
+    },
+    "menus": {
+      "editor/title": [
+        {
+          "command": "buttons.openPanel",
+          "group": "navigation",
+          "when": "config.buttons.showToolbarIcon"
+        }
+      ]
     }
   },
   "scripts": {

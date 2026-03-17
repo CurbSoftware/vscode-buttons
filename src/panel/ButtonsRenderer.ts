@@ -1,4 +1,4 @@
-import { CombinedButtonsState, LoadedButtonsState, MergedDisplaySettings, ResolvedButtonsGroup } from "../models/types";
+import { CombinedButtonsState, LoadedButtonsState, ResolvedButtonsGroup } from "../models/types";
 
 export interface RenderOptions {
   sidebar: boolean;
@@ -76,10 +76,48 @@ export function renderHtml(state: CombinedButtonsState, codiconUri: string, opti
     .header {
       display: flex;
       justify-content: space-between;
-      gap: ${options.sidebar ? "10px" : "16px"};
+      gap: 16px;
       align-items: start;
       border-bottom: 1px solid var(--border);
-      padding-bottom: ${options.sidebar ? "10px" : "16px"};
+      padding-bottom: 16px;
+    }
+
+    .header-compact {
+      display: grid;
+      gap: 6px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+    }
+
+    .header-actions-inline {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .btn-sm {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--panel);
+      color: inherit;
+      cursor: pointer;
+      padding: 3px 8px;
+      font: inherit;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-sm:hover { border-color: var(--accent); }
+    .btn-sm.primary {
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+      border-color: transparent;
+    }
+    .btn-sm.primary:hover {
+      background: var(--vscode-button-hoverBackground);
     }
 
     .header-copy {
@@ -99,7 +137,7 @@ export function renderHtml(state: CombinedButtonsState, codiconUri: string, opti
 
     .actions {
       display: flex;
-      gap: ${options.sidebar ? "6px" : "10px"};
+      gap: 10px;
       flex-wrap: wrap;
       justify-content: flex-end;
     }
@@ -566,6 +604,25 @@ function renderApp(state: CombinedButtonsState, options: RenderOptions): string 
   const hasProjectConfig = state.project.resolved !== undefined;
   const showTabs = hasUserConfig && hasProjectConfig;
 
+  if (options.sidebar) {
+    return `
+      <div class="shell">
+        <header class="header-compact">
+          <h1 class="title">${title}</h1>
+          ${description}
+          <div class="header-actions-inline">
+            <button class="btn-sm primary" data-action="open-panel"><span class="codicon codicon-link-external"></span> Panel</button>
+            <button class="btn-sm" data-action="reload"><span class="codicon codicon-refresh"></span> Reload</button>
+            <button class="btn-sm" data-action="open-file"><span class="codicon codicon-file"></span> Config</button>
+          </div>
+        </header>
+        ${showTabs ? renderSourceTabs(state.activeSource) : ""}
+        ${renderDiagnostics(activeState)}
+        ${renderGroups(activeState, options)}
+      </div>
+    `;
+  }
+
   return `
     <div class="shell">
       <header class="header">
@@ -575,7 +632,6 @@ function renderApp(state: CombinedButtonsState, options: RenderOptions): string 
           <div class="path">${filePath}</div>
         </div>
         <div class="actions">
-          ${options.sidebar ? '<button class="primary" data-action="open-panel">Open Panel</button>' : ""}
           <button data-action="reload">Reload</button>
           <button data-action="open-file">Open .buttons</button>
         </div>

@@ -1,4 +1,3 @@
-import * as path from "path";
 import * as TOML from "@iarna/toml";
 import * as vscode from "vscode";
 import {
@@ -10,7 +9,7 @@ import {
   TerminalMode,
 } from "../models/types";
 import { getButtonsFileUri, getUserButtonsFileUri } from "./findButtonsFile";
-import { mergeDisplaySettings, mergeDocuments, resolveDocument, validateDocument } from "./configHelpers";
+import { mergeDocuments, resolveDocument, validateDocument } from "./configHelpers";
 
 const EMPTY_STATE: LoadedButtonsState = {
   filePath: undefined,
@@ -149,19 +148,5 @@ export async function loadCombinedButtonsState(
     user,
     project,
     activeSource,
-    mergedDisplay: mergeDisplaySettings(user.resolved, project.resolved, {
-      showCommandPreview: showCommandPreviewFallback,
-      layout: defaultLayout,
-    }),
   };
-}
-
-/** @deprecated Use loadCombinedButtonsState instead. Kept for backward compatibility. */
-export async function loadButtonsState(
-  showCommandPreviewFallback: boolean,
-  defaultLayout: LayoutMode,
-  defaultTerminal: TerminalMode,
-): Promise<LoadedButtonsState> {
-  const fileUri = getButtonsFileUri();
-  return loadSingleButtonsState(fileUri, showCommandPreviewFallback, defaultLayout, defaultTerminal);
 }
