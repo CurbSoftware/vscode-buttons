@@ -527,3 +527,49 @@ export function mergeDisplaySettings(
 
   return base;
 }
+
+export function mergeDocuments(root: ButtonsDocument, included: ButtonsDocument, sourcePath: string, diagnostics: ButtonsDiagnostic[]): void {
+  // Merge groups: included groups are added; root groups win on ID collision
+  if (included.groups) {
+    if (!root.groups) {
+      root.groups = {};
+    }
+    for (const [groupId, groupConfig] of Object.entries(included.groups)) {
+      if (groupId in root.groups) {
+        diagnostics.push({
+          message: `Included file '${sourcePath}' defines group '${groupId}' which already exists. Skipping duplicate.`,
+          severity: "warning",
+        });
+      } else {
+        root.groups[groupId] = groupConfig;
+      }
+    }
+  }
+
+  // Merge variables: root values win on collision
+  if (included.variables) {
+    if (!root.variables) {
+      root.variables = {};
+    }
+    for (const [key, value] of Object.entries(included.variables)) {
+      if (!(key in root.variables)) {
+        root.variables[key] = value;
+      }
+    }
+  }
+
+  // Merge macros: root values win on collision
+  if (included.macros) {
+    if (!root.macros) {
+      root.macros = {};
+    }
+    for (const [key, value] of Object.entries(included.macros)) {
+      if (!(key in root.macros)) {
+        root.macros[key] = value;
+      }
+    }
+  }
+
+  // Included file's top-level settings (title, description, layout, terminal, display, defaults) are ignored.
+  // Only groups, variables, and macros are merged.
+}

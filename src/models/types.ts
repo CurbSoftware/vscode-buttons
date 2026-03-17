@@ -90,6 +90,7 @@ export interface ButtonsDocument {
   defaults?: ButtonsDefaults;
   variables?: Record<string, string>;
   macros?: Record<string, string>;
+  includes?: string[];
   groups?: Record<string, ButtonsGroupConfig>;
 }
 
