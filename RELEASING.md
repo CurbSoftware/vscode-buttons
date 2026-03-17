@@ -141,3 +141,4 @@ Follow [semver](https://semver.org/):
 | **patch** (0.1.1) | Bug fixes only |
 | **minor** (0.2.0) | New features, backward compatible |
 | **major** (1.0.0) | Breaking changes to `.buttons` format |
+
