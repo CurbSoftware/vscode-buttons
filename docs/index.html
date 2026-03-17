@@ -170,6 +170,47 @@
         --zoomimage-overlay-background: rgba(24, 24, 27, 0.92);
       }
     }
+    /* ── Copy as Markdown Button ─────────────────────── */
+    .copy-md-btn {
+      position: absolute;
+      top: 0;
+      right: 0;
+      z-index: 10;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      border: 1px solid #d4d4d8;
+      border-radius: 4px;
+      background: #ffffff;
+      color: #52525b;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .copy-md-btn:hover {
+      border-color: #b45309;
+      color: #b45309;
+    }
+    .copy-md-btn.copied {
+      background: #b45309;
+      color: #ffffff;
+      border-color: #b45309;
+    }
+    @media (prefers-color-scheme: dark) {
+      .copy-md-btn {
+        background: #27272a;
+        color: #a1a1aa;
+        border-color: #3f3f46;
+      }
+      .copy-md-btn:hover {
+        border-color: #d4a017;
+        color: #d4a017;
+      }
+      .copy-md-btn.copied {
+        background: #d4a017;
+        color: #18181b;
+        border-color: #d4a017;
+      }
+    }
   </style>
 </head>
 <body>
@@ -201,6 +242,47 @@
   <!-- Plugins -->
   <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.js"></script>
   <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/plugins/zoom-image.min.js"></script>
+
+  <!-- Copy as Markdown plugin -->
+  <script>
+    window.$docsify.plugins = (window.$docsify.plugins || []).concat(function(hook) {
+      hook.doneEach(function() {
+        var old = document.querySelector('.copy-md-btn');
+        if (old) old.remove();
+
+        var btn = document.createElement('button');
+        btn.className = 'copy-md-btn';
+        btn.textContent = 'Copy as Markdown';
+        btn.title = 'Copy page source as Markdown';
+
+        btn.addEventListener('click', function() {
+          var path = window.location.hash.replace('#/', '/') || '/README.md';
+          if (path === '/') path = '/README.md';
+          if (!path.endsWith('.md')) path += '.md';
+
+          fetch(path)
+            .then(function(r) { return r.text(); })
+            .then(function(md) {
+              return navigator.clipboard.writeText(md);
+            })
+            .then(function() {
+              btn.textContent = 'Copied!';
+              btn.classList.add('copied');
+              setTimeout(function() {
+                btn.textContent = 'Copy as Markdown';
+                btn.classList.remove('copied');
+              }, 1500);
+            });
+        });
+
+        var content = document.querySelector('article.markdown-section');
+        if (content) {
+          content.style.position = 'relative';
+          content.insertBefore(btn, content.firstChild);
+        }
+      });
+    });
+  </script>
 
   <!-- Syntax highlighting -->
   <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-toml.min.js"></script>
