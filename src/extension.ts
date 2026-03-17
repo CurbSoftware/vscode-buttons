@@ -89,9 +89,17 @@ export function activate(context: vscode.ExtensionContext): void {
 
   if (vscode.workspace.getConfiguration("buttons").get<boolean>("watchConfigChanges", true)) {
     const watcher = vscode.workspace.createFileSystemWatcher("**/.buttons");
-    const refreshPanel = async (): Promise<void> => {
-      await refreshState(true);
-      await panel.refresh();
+    let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+    const refreshPanel = (): void => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      debounceTimer = setTimeout(() => {
+        void (async () => {
+          await refreshState(true);
+          await panel.refresh();
+        })();
+      }, 300);
     };
 
     watcher.onDidChange(refreshPanel, undefined, context.subscriptions);

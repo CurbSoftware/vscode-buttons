@@ -8,7 +8,6 @@ Buttons uses a single TOML file named `.buttons` at the root of the workspace.
 - `title`
 - `description`
 - `layout`
-- `shell`
 - `terminal`
 - `display`
 - `defaults`
@@ -38,7 +37,6 @@ version = 1
 title = "Example Project"
 description = "Shared commands for local development"
 layout = "grid"
-shell = "auto"
 terminal = "current"
 
 [display]
@@ -223,6 +221,7 @@ command = "{{docker_logs}} {{service}}"
 - no nested groups
 - no platform-specific command branches
 - no arbitrary scripting or conditionals
+- no shell selection (planned for a future version)
 - no personal per-user config file
 
 ## Related Pages

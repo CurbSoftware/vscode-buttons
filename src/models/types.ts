@@ -1,6 +1,5 @@
 export type LayoutMode = "grid" | "rows";
 export type TerminalMode = "current" | "new";
-export type ShellMode = "auto" | "bash" | "sh" | "zsh" | "pwsh" | "cmd";
 
 export interface ButtonsDisplayConfig {
   show_command?: boolean;
@@ -72,7 +71,6 @@ export interface ButtonsDocument {
   title?: string;
   description?: string;
   layout?: LayoutMode;
-  shell?: ShellMode;
   terminal?: TerminalMode;
   display?: ButtonsDisplayConfig;
   defaults?: ButtonsDefaults;

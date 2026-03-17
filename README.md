@@ -98,4 +98,4 @@ This project currently uses TypeScript plus the VS Code extension API. The local
 
 ## License
 
-The repository is currently marked as `UNLICENSED` in [package.json](package.json).
+MIT. See [LICENSE](LICENSE).

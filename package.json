@@ -2,9 +2,26 @@
   "name": "buttons-vscode",
   "displayName": "Buttons",
   "description": "Run shared project commands from a repo-root .buttons TOML file.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "publisher": "buttons-dev",
-  "license": "UNLICENSED",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CurbSoftware/vscode-buttons.git"
+  },
+  "bugs": {
+    "url": "https://github.com/CurbSoftware/vscode-buttons/issues"
+  },
+  "homepage": "https://github.com/CurbSoftware/vscode-buttons#readme",
+  "keywords": [
+    "buttons",
+    "toml",
+    "commands",
+    "task-runner",
+    "shortcuts",
+    "workflow",
+    "automation"
+  ],
   "engines": {
     "vscode": "^1.97.0"
   },
@@ -89,11 +106,6 @@
           "type": "boolean",
           "default": true,
           "description": "Prompt before running commands marked as dangerous or matched by danger heuristics."
-        },
-        "buttons.debugLogging": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable verbose log output in the Buttons extension output channel."
         }
       }
     }
@@ -102,6 +114,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -w -p ./",
     "lint": "tsc -p ./ --noEmit",
+    "test": "npm run compile && node --test dist/test/**/*.test.js",
     "package": "vsce package",
     "vscode:prepublish": "npm run compile"
   },

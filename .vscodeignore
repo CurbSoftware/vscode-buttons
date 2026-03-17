@@ -1,6 +1,13 @@
 .vscode/**
 .git/**
-plans.md
+.github/**
 src/**
+dist/test/**
+docs/**
+examples/**
+*.md
+!README.md
+!CHANGELOG.md
 tsconfig.json
-node_modules/**/.bin/**
+.gitignore
+.vscodeignore

@@ -40,16 +40,28 @@ export async function copyButtonCommand(resolved: ResolvedButtonsConfig | undefi
     return;
   }
 
-  await vscode.env.clipboard.writeText(button.command);
-  void vscode.window.showInformationMessage(`Copied '${button.label}' command.`);
+  try {
+    await vscode.env.clipboard.writeText(button.command);
+    void vscode.window.showInformationMessage(`Copied '${button.label}' command.`);
+  } catch {
+    void vscode.window.showErrorMessage("Failed to copy command to clipboard.");
+  }
 }
 
 export async function openButtonUrl(url: string): Promise<void> {
-  await vscode.env.openExternal(vscode.Uri.parse(url));
+  try {
+    await vscode.env.openExternal(vscode.Uri.parse(url));
+  } catch {
+    void vscode.window.showErrorMessage(`Failed to open URL: ${url}`);
+  }
 }
 
 export async function openButtonPort(port: number): Promise<void> {
-  await vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${port}`));
+  try {
+    await vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${port}`));
+  } catch {
+    void vscode.window.showErrorMessage(`Failed to open port ${port}.`);
+  }
 }
 
 function findButton(resolved: ResolvedButtonsConfig | undefined, groupId: string, buttonId: string): ResolvedButtonsButton | undefined {
