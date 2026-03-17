@@ -1,0 +1,29 @@
+version = 1
+title = "Shared Package"
+
+[macros]
+shared = "pnpm --filter @mono/shared"
+
+[groups.shared]
+name = "Shared Library"
+description = "Common utilities and types"
+icon = "extensions"
+color = "#9D4EDD"
+
+[[groups.shared.buttons]]
+id = "shared-build"
+label = "Build"
+command = "{{shared}} build"
+icon = "package"
+
+[[groups.shared.buttons]]
+id = "shared-test"
+label = "Test"
+command = "{{shared}} test"
+icon = "beaker"
+
+[[groups.shared.buttons]]
+id = "shared-lint"
+label = "Lint"
+command = "{{shared}} lint"
+icon = "verified"

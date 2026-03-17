@@ -100,6 +100,7 @@ icon = "link-external"
 | `defaults` | `table` | — | Default behavior settings. See below. |
 | `variables` | `table` | — | Key-value pairs for `{{variable}}` substitution. |
 | `macros` | `table` | — | Key-value pairs for `{{macro}}` expansion (recursive). |
+| `includes` | `string[]` | — | Relative paths to other `.buttons` files to include. See [Includes](#includes). |
 | `groups` | `table` | *(required)* | Named groups of buttons. At least one group required. |
 
 ---
@@ -417,6 +418,48 @@ Templates use `{{token}}` syntax. Recognized tokens:
 | `{{macroName}}` | `[macros]` | Expanded macro value. |
 
 Unknown tokens resolve to an empty string. Whitespace inside braces is trimmed: `{{ base }}` works the same as `{{base}}`.
+
+---
+
+## Includes
+
+Split button definitions across multiple files using `includes`. This is especially useful for monorepos where each package maintains its own `.buttons` file.
+
+```toml
+version = 1
+title = "Monorepo"
+includes = [
+  "packages/api/.buttons",
+  "packages/web/.buttons",
+  "packages/shared/.buttons",
+]
+
+[groups.root]
+name = "Root"
+buttons = [{ id = "install", command = "pnpm install" }]
+```
+
+### Path Resolution
+
+Paths are **relative to the file containing the include**. Included files are full `.buttons` files (same format, `version = 1` required).
+
+### Merge Rules
+
+- **Groups**: Included groups are appended after root groups. If group IDs collide, the root file wins (first-seen wins; a warning is emitted for duplicates).
+- **Variables and macros**: Root values take precedence on collision; included values fill gaps.
+- **Top-level settings**: `title`, `description`, `layout`, `terminal`, `display`, and `defaults` from included files are **ignored** — only their groups, variables, and macros are imported.
+
+### Nested Includes
+
+Included files can themselves have `includes` — paths resolve relative to their own location. **Circular includes** are detected and produce an error diagnostic.
+
+### File Watching
+
+All `.buttons` files in the workspace are watched for changes. When any included file changes, the panel refreshes automatically.
+
+### Example
+
+See [examples/monorepo-includes/](https://github.com/CurbSoftware/vscode-buttons/blob/main/examples/monorepo-includes/) for a complete monorepo setup with per-package includes.
 
 ---
 

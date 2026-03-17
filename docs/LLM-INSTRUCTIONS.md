@@ -58,6 +58,11 @@ port = "3000"
 npm_run = "npm run"
 dev = "{{npm_run}} dev"
 
+includes = [                   # optional: include other .buttons files
+  "packages/api/.buttons",
+  "packages/web/.buttons",
+]
+
 [groups.GROUP_ID]              # one or more named groups
 name = "Group Name"
 icon = "rocket"
@@ -97,6 +102,7 @@ icon = "link-external"
 | `defaults` | `table` | No | — | Behavior defaults (see 3.3). |
 | `variables` | `table` | No | — | `{{key}}` substitution values. |
 | `macros` | `table` | No | — | `{{key}}` recursive expansion values. |
+| `includes` | `string[]` | No | — | Relative paths to other `.buttons` files to include (see section 5a). |
 | `groups` | `table` | **Yes** | — | Named button groups. Must have at least one. |
 
 ### 3.2 Display Fields (`[display]`)
@@ -285,6 +291,36 @@ This produces 4 buttons:
 - `{{arg1}}` is the first params array, `{{arg2}}` is the second, etc.
 - Generated buttons can have shared defaults via the `defaults` field
 - Generated and static buttons can coexist in the same group
+
+---
+
+## 5a. Includes
+
+Split button definitions across multiple files using `includes`. Useful for monorepos.
+
+```toml
+version = 1
+title = "Monorepo"
+includes = [
+  "packages/api/.buttons",
+  "packages/web/.buttons",
+]
+
+[groups.root]
+buttons = [{ id = "install", command = "pnpm install" }]
+```
+
+**Rules:**
+- Paths are **relative to the file containing the include**
+- Included files are standard `.buttons` files (same format, `version = 1` required)
+- **Groups merge**: included groups append after root groups; root wins on ID collision
+- **Variables and macros merge**: root values win on collision; included values fill gaps
+- **Top-level settings ignored**: included file's `title`, `layout`, `display`, `defaults` are discarded
+- **Nested includes supported**: included files can themselves have `includes` (relative to their own path)
+- **Circular includes detected**: if file A includes B which includes A, an error is emitted
+- All `.buttons` files in the workspace are watched — changes to included files trigger auto-refresh
+
+When generating `.buttons` files for monorepos, prefer `includes` over putting everything in one large root file. Each package should define its own groups, macros, and variables.
 
 ---
 
@@ -1024,5 +1060,6 @@ Max gen:    1000 buttons per generate block
 Danger:     auto-detected for rm, drop, prune, reset, delete, deploy
 Cascade:    document [defaults] → group → button (behavior)
 Display:    VS Code settings → user [display] → project [display] → group [display]
+Includes:   relative paths to other .buttons files; groups/vars/macros merge, root wins
 Merging:    project display settings override user display settings
 ```

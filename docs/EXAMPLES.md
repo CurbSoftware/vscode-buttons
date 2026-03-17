@@ -38,6 +38,7 @@ The `examples/` directory contains 29 ready-to-use `.buttons` files. Copy any fi
 | Example | Description | Key Features |
 |---------|-------------|--------------|
 | [monorepo](https://github.com/CurbSoftware/vscode-buttons/blob/main/examples/monorepo/.buttons) | Turborepo/pnpm workspaces | 2D cartesian generation (4 packages × 3 scripts) |
+| [monorepo-includes](https://github.com/CurbSoftware/vscode-buttons/blob/main/examples/monorepo-includes/.buttons) | Monorepo with file includes | `includes` to per-package `.buttons` files |
 | [fullstack-nextjs](https://github.com/CurbSoftware/vscode-buttons/blob/main/examples/fullstack-nextjs/.buttons) | Next.js + Prisma + Tailwind | Prisma Studio, Playwright E2E, bundle analyzer |
 
 ## Layout & Feature Showcases

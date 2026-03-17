@@ -113,6 +113,25 @@ group_bg_color = "#1E2333" # background color for groups
 - Git helpers
 - Database migrations
 
+## Includes (Monorepos)
+
+For monorepos and large projects, split button definitions across multiple files:
+
+```toml
+version = 1
+title = "Monorepo"
+includes = [
+  "packages/api/.buttons",
+  "packages/web/.buttons",
+]
+
+[groups.root]
+name = "Root"
+buttons = [{ id = "install", command = "pnpm install" }]
+```
+
+Each included file is a standard `.buttons` file. Their groups, variables, and macros are merged into the root. See [Includes](BUTTONS-FILE.md#includes) for details.
+
 ## Commands
 
 Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and type "Buttons" to see all available commands:
