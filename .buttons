@@ -1,45 +1,75 @@
-Please help me plan my VS Code extension, especially the configuration file.
- It is called Buttons.  It's a vs-code extension.  Write a full plan and all phases and steps.  Buttons is a vs code extension that has a new editor tab that opens, the user can also create a file called .buttons in project root with commands/scripts.  Each command like pnpm run dev, as an example, will have a button to copy to clipboard, to run in current terminal or a new terminal.  I can create a .buttons file with things like the example .buttons file. Buttons file's should use TOML syntax and allow creating multiple buttons.  Please ask any clarification questions if required.
+version = 1
+title = "Buttons Extension Workspace"
+description = "Real commands for working on the Buttons VS Code extension"
+layout = "grid"
+terminal = "current"
 
-# This is a Buttons TOML document
+[display]
+show_command = true
+show_labels = true
+show_icons = true
+compact = false
 
-title = "Buttons Example File"
-layout = grid # Grids or rows
-
-[pnpm] # Button Group Name
-enabled = true # Whether to show group in editor buttons extension tab
-name = "PNPM Commands"
-base = "pnpm"
-
-
-
-[pnpm.params] # Button Group Name
-base = "pnpm"
-delimiter = "&&"
-params = [ ["run"], ["dev","build","test"] ]
-new_terminal = [ true, #F54927],  ] true # 
-existing_terminal = true # 
-copy_to_clipboard = true # 
-show_command = true # show the command string
-show_labels = false # show command in button
-show_icons = true # show 
-show_
-ports = [ 8000, 8001, 8002 ]
-
-# That will result in a Group
-
-[database]
+[defaults]
 enabled = true
+copy_to_clipboard = true
+run_in_current_terminal = true
+run_in_new_terminal = false
+confirm = false
+danger = false
+reveal_terminal = true
 
-data = [ ["delta", "phi"], [3.14] ]
-temp_targets = { cpu = 79.5, case = 72.0 }
+[macros]
+npm_run = "npm run"
 
-[servers]
+[groups.workspace]
+name = "Workspace"
+description = "Install and inspect the project"
+icon = "rocket"
 
-[servers.alpha]
-ip = "10.0.0.1"
-role = "frontend"
+[[groups.workspace.buttons]]
+id = "install"
+label = "Install Dependencies"
+command = "npm install"
+icon = "package"
 
-[servers.beta]
-ip = "10.0.0.2"
-role = "backend"
+[[groups.workspace.buttons]]
+id = "typescript-version"
+label = "TypeScript Version"
+command = "./node_modules/.bin/tsc --version"
+icon = "symbol-number"
+
+[groups.quality]
+name = "Quality"
+description = "Compile and type-check the extension"
+icon = "checklist"
+
+[[groups.quality.buttons]]
+id = "compile"
+label = "Compile"
+command = "{{npm_run}} compile"
+icon = "play"
+
+[[groups.quality.buttons]]
+id = "lint"
+label = "Type Check"
+command = "{{npm_run}} lint"
+icon = "verified"
+
+[groups.development]
+name = "Development"
+description = "Long-running local workflows"
+icon = "tools"
+
+[[groups.development.buttons]]
+id = "watch"
+label = "Watch TypeScript"
+command = "{{npm_run}} watch"
+icon = "sync"
+run_in_new_terminal = true
+
+[[groups.development.buttons]]
+id = "compile-and-lint"
+label = "Compile && Lint"
+command = "npm run compile && npm run lint"
+icon = "run-all"

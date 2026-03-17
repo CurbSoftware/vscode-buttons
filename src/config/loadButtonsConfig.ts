@@ -156,6 +156,9 @@ function resolveDocument(
     description: document.description,
     layout: document.layout ?? defaultLayout,
     showCommandPreview: document.display?.show_command ?? showCommandPreviewFallback,
+    showLabels: document.display?.show_labels ?? true,
+    showIcons: document.display?.show_icons ?? true,
+    compact: document.display?.compact ?? false,
     groups,
   };
 }

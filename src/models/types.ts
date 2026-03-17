@@ -121,6 +121,9 @@ export interface ResolvedButtonsConfig {
   description?: string;
   layout: LayoutMode;
   showCommandPreview: boolean;
+  showLabels: boolean;
+  showIcons: boolean;
+  compact: boolean;
   groups: ResolvedButtonsGroup[];
 }
 

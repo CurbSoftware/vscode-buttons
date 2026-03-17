@@ -106,7 +106,8 @@
     "vscode:prepublish": "npm run compile"
   },
   "dependencies": {
-    "@iarna/toml": "^2.2.5"
+    "@iarna/toml": "^2.2.5",
+    "@vscode/codicons": "^0.0.36"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",

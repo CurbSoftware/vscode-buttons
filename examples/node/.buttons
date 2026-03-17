@@ -1,0 +1,83 @@
+version = 1
+title = "Node Project Commands"
+description = "Common Node, npm, and pnpm workflows"
+layout = "grid"
+terminal = "current"
+
+[display]
+show_command = true
+show_labels = true
+show_icons = true
+compact = false
+
+[defaults]
+enabled = true
+copy_to_clipboard = true
+run_in_current_terminal = true
+run_in_new_terminal = false
+confirm = false
+danger = false
+reveal_terminal = true
+
+[macros]
+npm_run = "npm run"
+pnpm_run = "pnpm run"
+
+[groups.setup]
+name = "Setup"
+description = "Install and inspect the workspace"
+icon = "package"
+
+[[groups.setup.buttons]]
+id = "npm-install"
+label = "npm install"
+command = "npm install"
+icon = "cloud-download"
+
+[[groups.setup.buttons]]
+id = "pnpm-install"
+label = "pnpm install"
+command = "pnpm install"
+icon = "cloud-download"
+
+[groups.scripts]
+name = "Scripts"
+description = "Run common package scripts"
+icon = "play"
+ports = [3000, 5173]
+
+[[groups.scripts.buttons]]
+id = "dev"
+label = "Dev"
+command = "{{npm_run}} dev"
+icon = "debug-start"
+run_in_new_terminal = true
+open_ports = [3000, 5173]
+
+[[groups.scripts.buttons]]
+id = "build"
+label = "Build"
+command = "{{npm_run}} build"
+icon = "package"
+
+[[groups.scripts.buttons]]
+id = "test"
+label = "Test"
+command = "{{npm_run}} test"
+icon = "beaker"
+
+[groups.scripts.generate]
+mode = "cartesian"
+template = "{{pnpm_run}} {{arg1}}"
+label_template = "pnpm {{arg1}}"
+params = [["lint", "typecheck", "format"]]
+
+[[groups.scripts.links]]
+label = "Local App"
+url = "http://localhost:3000"
+icon = "link-external"
+
+[[groups.scripts.links]]
+label = "Vite App"
+url = "http://localhost:5173"
+icon = "link-external"

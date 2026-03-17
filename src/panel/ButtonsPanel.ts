@@ -43,12 +43,17 @@ export class ButtonsPanel {
   }
 
   private renderHtml(state: LoadedButtonsState): string {
+    const codiconUri = this.panel
+      ? this.panel.webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "node_modules", "@vscode", "codicons", "dist", "codicon.css"))
+      : "";
+
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Buttons</title>
+  <link href="${codiconUri}" rel="stylesheet" />
   <style>
     :root {
       color-scheme: light dark;
@@ -212,12 +217,29 @@ export class ButtonsPanel {
       background: color-mix(in srgb, var(--vscode-editor-background) 86%, var(--panel));
     }
 
+    .button-card.compact {
+      gap: 10px;
+      padding: 10px;
+    }
+
     .button-title {
       display: flex;
       justify-content: space-between;
       gap: 10px;
       align-items: center;
       font-weight: 600;
+    }
+
+    .button-label {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      min-height: 20px;
+    }
+
+    .button-label.icon-only {
+      min-width: 20px;
+      justify-content: center;
     }
 
     .command {
@@ -247,6 +269,7 @@ export class ButtonsPanel {
   <div id="app">${this.renderApp(state)}</div>
   <script>
     const vscode = acquireVsCodeApi();
+    const postMessage = (message) => vscode.postMessage(message);
     document.addEventListener('click', (event) => {
       const target = event.target.closest('button');
       if (!target) {
@@ -333,7 +356,7 @@ export class ButtonsPanel {
         const linkBadges = group.links
           .map(
             (link) =>
-              `<button class="badge" data-url="${this.escapeHtml(link.url)}">${this.renderCodicon(link.icon)} ${this.escapeHtml(link.label)}</button>`,
+              `<button class="badge" data-url="${this.escapeHtml(link.url)}">${this.renderCodicon(link.icon, resolved.showIcons)}${this.escapeText(link.label)}</button>`,
           )
           .join("");
         const buttons = group.buttons
@@ -347,11 +370,13 @@ export class ButtonsPanel {
             const portActions = button.open_ports
               .map((port) => `<button data-action="open-port" data-port="${port}">Open :${port}</button>`)
               .join("");
+            const label = this.renderButtonLabel(button.label, button.icon, resolved.showLabels, resolved.showIcons);
+            const cardClassName = resolved.compact ? "button-card compact" : "button-card";
 
             return `
-              <article class="button-card">
+              <article class="${cardClassName}">
                 <div class="button-title">
-                  <span>${this.renderCodicon(button.icon)} ${this.escapeHtml(button.label)}</span>
+                  ${label}
                   ${danger}
                 </div>
                 ${description}
@@ -372,7 +397,7 @@ export class ButtonsPanel {
           <section class="group">
             <div class="group-head">
               <div>
-                <div class="group-title">${this.renderCodicon(group.icon)} <span>${this.escapeHtml(group.name)}</span></div>
+                <div class="group-title">${this.renderCodicon(group.icon, resolved.showIcons)}<span>${this.escapeHtml(group.name)}</span></div>
                 ${groupDescription}
               </div>
               <div class="badge-row">
@@ -389,8 +414,31 @@ export class ButtonsPanel {
       .join("")}</div>`;
   }
 
-  private renderCodicon(icon: string | undefined): string {
-    return icon ? `<span class="codicon codicon-${this.escapeHtml(icon)}"></span>` : "";
+  private renderButtonLabel(label: string, icon: string | undefined, showLabels: boolean, showIcons: boolean): string {
+    const safeLabel = this.escapeHtml(label);
+    const iconMarkup = this.renderCodicon(icon, showIcons);
+
+    if (!showLabels && showIcons && iconMarkup) {
+      return `<span class="button-label icon-only" title="${safeLabel}">${iconMarkup}</span>`;
+    }
+
+    if (!showLabels && !showIcons) {
+      return `<span class="button-label">${safeLabel}</span>`;
+    }
+
+    return `<span class="button-label">${iconMarkup}${showLabels ? safeLabel : ""}</span>`;
+  }
+
+  private renderCodicon(icon: string | undefined, showIcons = true): string {
+    if (!showIcons || !icon) {
+      return "";
+    }
+
+    return `<span class="codicon codicon-${this.escapeHtml(icon)}"></span>`;
+  }
+
+  private escapeText(value: string): string {
+    return value ? ` ${this.escapeHtml(value)}` : "";
   }
 
   private escapeHtml(value: string): string {

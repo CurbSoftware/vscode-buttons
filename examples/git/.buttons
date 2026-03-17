@@ -1,0 +1,87 @@
+version = 1
+title = "Git Workflow Commands"
+description = "Common Git actions with warnings for destructive operations"
+layout = "grid"
+terminal = "current"
+
+[display]
+show_command = true
+show_labels = true
+show_icons = true
+compact = false
+
+[defaults]
+enabled = true
+copy_to_clipboard = true
+run_in_current_terminal = true
+run_in_new_terminal = false
+confirm = false
+danger = false
+reveal_terminal = true
+
+[groups.inspect]
+name = "Inspect"
+description = "Look at repository state"
+icon = "source-control"
+
+[[groups.inspect.buttons]]
+id = "status"
+label = "Status"
+command = "git status"
+icon = "diff"
+
+[[groups.inspect.buttons]]
+id = "diff"
+label = "Diff"
+command = "git diff"
+icon = "compare-changes"
+
+[[groups.inspect.buttons]]
+id = "log"
+label = "Recent Log"
+command = "git --no-pager log --oneline --decorate -10"
+icon = "history"
+
+[groups.sync]
+name = "Sync"
+description = "Fetch and update local branches"
+icon = "repo-fetch"
+
+[[groups.sync.buttons]]
+id = "fetch"
+label = "Fetch"
+command = "git fetch --all --prune"
+icon = "cloud-download"
+
+[[groups.sync.buttons]]
+id = "pull"
+label = "Pull"
+command = "git pull --ff-only"
+icon = "repo-pull"
+
+[groups.branches]
+name = "Branches"
+description = "Create and clean branches"
+icon = "git-branch"
+
+[[groups.branches.buttons]]
+id = "new-branch"
+label = "Create Feature Branch"
+command = "git checkout -b feature/my-change"
+icon = "git-branch-create"
+
+[[groups.branches.buttons]]
+id = "reset-hard"
+label = "Reset Hard"
+command = "git reset --hard HEAD"
+icon = "warning"
+danger = true
+confirm = true
+
+[[groups.branches.buttons]]
+id = "clean"
+label = "Clean Untracked"
+command = "git clean -fd"
+icon = "trash"
+danger = true
+confirm = true

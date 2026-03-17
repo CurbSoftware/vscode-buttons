@@ -1,74 +1,48 @@
 # Buttons
 
-[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/YOUR_PUBLISHER.buttons)](https://marketplace.visualstudio.com/)
-[![Visual Studio Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/YOUR_PUBLISHER.buttons)](https://marketplace.visualstudio.com/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+Buttons is a VS Code extension that turns a repo-root `.buttons` TOML file into a visual command panel inside the editor. Teams can define common workflows once and expose them as clickable actions to run in the current terminal, run in a new terminal, copy to the clipboard, or open related URLs and local ports.
 
-**Buttons** adds a visual command workspace to VS Code.
+## What It Solves
 
-Define project commands in a `.buttons` file at your project root, then open them in a dedicated Buttons view with one-click actions to run, copy, and organize the commands your project uses every day.
+Projects usually keep important commands scattered across `package.json`, Docker docs, onboarding guides, shell history, and README snippets. Buttons gives those commands one shared surface inside VS Code so developers can discover and run them without hunting.
 
-## What Buttons does
+## Current Capabilities
 
-Buttons gives your project a repo-local command surface for recurring workflows such as:
+- Parse a single `.buttons` file from the workspace root
+- Render groups and buttons in an editor-area webview panel
+- Run commands in the current terminal
+- Run commands in a new terminal
+- Copy resolved commands to the clipboard
+- Open related URLs and localhost ports
+- Support static buttons and cartesian-generated buttons
+- Support simple variables and reusable macros
+- Prompt before running dangerous commands
 
-- development servers
-- build and test commands
-- Docker workflows
-- database operations
-- monorepo utilities
-- onboarding commands
+## Quick Start
 
-Instead of relying on shell history, README files, and scattered notes, your team gets a structured command catalog directly inside the editor.
+1. Install the extension or run it locally in an Extension Development Host.
+2. Create a `.buttons` file at the root of your project.
+3. Run `Buttons: Open Panel` from the Command Palette.
+4. Click `Run`, `New Terminal`, or `Copy` on any button.
 
-## Features
+The extension only loads the root `.buttons` file in v1. Sample files under `examples/` are meant to be copied into the root when you want to try them.
 
-- Visual Buttons editor tab in VS Code
-- `.buttons` configuration file using TOML
-- Run in current terminal
-- Run in new terminal
-- Copy to clipboard
-- Grouped commands by workflow
-- Generated buttons from command patterns
-- Optional links, URLs, and local port shortcuts
-- Team-friendly, version-controlled configuration
+## Documentation
 
-## Screenshots
+- [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)
+- [docs/BUTTONS-FILE.md](docs/BUTTONS-FILE.md)
+- [docs/EXAMPLES.md](docs/EXAMPLES.md)
+- [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+- [CONTRIBUTING.md](CONTRIBUTING.md)
 
-> Replace these with actual screenshots before publishing.
+## Example Root Config
 
-### Buttons view
-
-![Buttons view](./docs/images/buttons-view.png)
-
-### Grouped commands
-
-![Grouped commands](./docs/images/buttons-groups.png)
-
-### Running commands
-
-![Running commands](./docs/images/buttons-run.png)
-
-## Installation
-
-Install **Buttons** from the Visual Studio Code Marketplace.
-
-Or search for `Buttons` in the Extensions view inside VS Code.
-
-## Quick start
-
-1. Install the extension.
-2. Create a `.buttons` file in your project root.
-3. Add one or more command groups.
-4. Open the Buttons view or open the `.buttons` file with Buttons.
-5. Click a button to run or copy a command.
-
-## Example `.buttons`
+This repository includes a working root config in [.buttons](.buttons) that targets the actual commands available in this project.
 
 ```toml
 version = 1
-title = "Project Commands"
-description = "Shared commands for local development"
+title = "Buttons Extension Workspace"
+description = "Real commands for working on the Buttons VS Code extension"
 layout = "grid"
 terminal = "current"
 
@@ -76,6 +50,7 @@ terminal = "current"
 show_command = true
 show_labels = true
 show_icons = true
+compact = false
 
 [defaults]
 enabled = true
@@ -83,138 +58,44 @@ copy_to_clipboard = true
 run_in_current_terminal = true
 run_in_new_terminal = false
 confirm = false
+danger = false
+reveal_terminal = true
 
-[groups.pnpm]
-name = "PNPM"
-enabled = true
-base = "pnpm"
-icon = "package"
-color = "#F54927"
-ports = [3000]
+[groups.workspace]
+name = "Workspace"
+description = "Install and inspect the project"
+icon = "rocket"
 
-[[groups.pnpm.buttons]]
-id = "dev"
-label = "Dev"
-command = "pnpm run dev"
-icon = "play"
-open_ports = [3000]
-
-[[groups.pnpm.buttons]]
-id = "build"
-label = "Build"
-command = "pnpm run build"
+[[groups.workspace.buttons]]
+id = "install"
+label = "Install Dependencies"
+command = "npm install"
 icon = "package"
 
-[groups.docker]
-name = "Docker"
-enabled = true
-icon = "server"
-
-[[groups.docker.buttons]]
-id = "up"
-label = "Compose Up"
-command = "docker compose up -d"
+[[groups.workspace.buttons]]
+id = "typescript-version"
+label = "TypeScript Version"
+command = "./node_modules/.bin/tsc --version"
+icon = "symbol-number"
 ```
 
-## Why use Buttons?
+## Example Packs
 
-Most projects already have important commands, but they are usually spread across multiple places:
+Reusable sample `.buttons` files live under `examples/`:
 
-- `package.json`
-- `Makefile`
-- documentation
-- onboarding notes
-- internal wiki pages
-- terminal history
+- [examples/node/.buttons](examples/node/.buttons)
+- [examples/docker/.buttons](examples/docker/.buttons)
+- [examples/python/.buttons](examples/python/.buttons)
+- [examples/git/.buttons](examples/git/.buttons)
 
-Buttons gives those commands a dedicated interface inside the project itself.
+## Development Notes
 
-That makes it especially useful for:
+This project currently uses TypeScript plus the VS Code extension API. The local workflow is:
 
-- teams sharing common workflows
-- developers working across multiple services
-- monorepo environments
-- projects with repetitive operational commands
-- faster onboarding for new contributors
-
-## Configuration model
-
-Buttons uses a `.buttons` TOML file stored at the project root.
-
-The configuration is designed around three levels:
-
-1. document-level settings
-2. group-level settings
-3. button-level definitions or generated button rules
-
-This keeps the file readable while allowing shared defaults and clean organization.
-
-## Command actions
-
-A button can support actions such as:
-
-- run in current terminal
-- run in new terminal
-- copy to clipboard
-- open related local ports
-- open related URLs
-
-## Typical groups
-
-Common group patterns include:
-
-- `pnpm`
-- `npm`
-- `docker`
-- `database`
-- `tests`
-- `devops`
-- `scripts`
-
-## Schema and docs
-
-See the documentation pages for:
-
-- TOML schema
-- syntax reference
-- examples
-- generation patterns
-- validation rules
-
-Suggested docs location:
-
-- [`docs/buttons-file.md`](./docs/buttons-file.md)
-
-## Roadmap ideas
-
-Planned or possible future enhancements may include:
-
-- multi-root workspace support
-- variables such as `${workspaceFolder}`
-- danger confirmation styling
-- favorites and pinned buttons
-- search and filtering
-- workspace-local personal overrides
-- richer templates
-
-## Development
-
-Suggested project structure:
-
-```text
-src/
-  extension.ts
-  commands/
-  config/
-  execution/
-  editor/
-  models/
-  utils/
-docs/
-  buttons-file.md
-  images/
-```
+1. `npm install`
+2. `npm run compile`
+3. Start the `Run Buttons Extension` launch configuration in VS Code
 
 ## License
 
-MIT
+The repository is currently marked as `UNLICENSED` in [package.json](package.json).
