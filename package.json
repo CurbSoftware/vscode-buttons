@@ -23,6 +23,7 @@
     "automation"
   ],
   "engines": {
+    "node": ">=24",
     "vscode": "^1.97.0"
   },
   "categories": [
