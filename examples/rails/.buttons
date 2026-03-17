@@ -1,0 +1,188 @@
+version = 1
+title = "Ruby on Rails"
+description = "Rails development, testing, and database workflows"
+layout = "grid"
+terminal = "current"
+
+[display]
+show_command = true
+show_labels = true
+show_icons = true
+button_color = "#CC0000"
+
+[macros]
+rails = "bin/rails"
+rake = "bin/rake"
+bundle = "bundle"
+
+[variables]
+port = "3000"
+
+[groups.server]
+name = "Server"
+icon = "play"
+color = "#CC0000"
+ports = [3000]
+
+[[groups.server.buttons]]
+id = "server"
+label = "Rails Server"
+command = "{{rails}} server -p {{port}}"
+icon = "debug-start"
+run_in_new_terminal = true
+open_ports = [3000]
+
+[[groups.server.buttons]]
+id = "console"
+label = "Console"
+command = "{{rails}} console"
+icon = "terminal"
+run_in_new_terminal = true
+
+[[groups.server.buttons]]
+id = "routes"
+label = "Routes"
+command = "{{rails}} routes"
+icon = "list-flat"
+
+[[groups.server.buttons]]
+id = "sidekiq"
+label = "Sidekiq"
+command = "{{bundle}} exec sidekiq"
+icon = "gear"
+run_in_new_terminal = true
+
+[[groups.server.links]]
+label = "App"
+url = "http://localhost:3000"
+icon = "globe"
+
+[groups.database]
+name = "Database"
+icon = "database"
+color = "#336791"
+
+[[groups.database.buttons]]
+id = "db-create"
+label = "Create"
+command = "{{rails}} db:create"
+icon = "add"
+
+[[groups.database.buttons]]
+id = "db-migrate"
+label = "Migrate"
+command = "{{rails}} db:migrate"
+icon = "arrow-swap"
+
+[[groups.database.buttons]]
+id = "db-rollback"
+label = "Rollback"
+command = "{{rails}} db:rollback"
+icon = "discard"
+confirm = true
+
+[[groups.database.buttons]]
+id = "db-seed"
+label = "Seed"
+command = "{{rails}} db:seed"
+icon = "sparkle"
+
+[[groups.database.buttons]]
+id = "db-reset"
+label = "Reset"
+command = "{{rails}} db:reset"
+icon = "trash"
+danger = true
+confirm = true
+
+[[groups.database.buttons]]
+id = "db-status"
+label = "Status"
+command = "{{rails}} db:migrate:status"
+icon = "info"
+
+[groups.generate]
+name = "Generators"
+description = "Rails scaffold and generators"
+icon = "wand"
+color = "#48B57A"
+
+[groups.generate.generate]
+mode = "cartesian"
+template = "{{rails}} generate {{arg1}}"
+label_template = "Generate {{arg1}}"
+params = [["model", "controller", "migration", "scaffold", "mailer", "job", "channel"]]
+
+[groups.test]
+name = "Testing"
+icon = "beaker"
+
+[[groups.test.buttons]]
+id = "test-all"
+label = "Test All"
+command = "{{rails}} test"
+icon = "beaker"
+
+[[groups.test.buttons]]
+id = "test-system"
+label = "System Tests"
+command = "{{rails}} test:system"
+icon = "browser"
+
+[[groups.test.buttons]]
+id = "rspec"
+label = "RSpec"
+command = "{{bundle}} exec rspec"
+icon = "beaker"
+
+[[groups.test.buttons]]
+id = "rubocop"
+label = "RuboCop"
+command = "{{bundle}} exec rubocop"
+icon = "shield"
+
+[[groups.test.buttons]]
+id = "rubocop-fix"
+label = "RuboCop Fix"
+command = "{{bundle}} exec rubocop -a"
+icon = "wand"
+
+[groups.deps]
+name = "Dependencies"
+icon = "extensions"
+
+[[groups.deps.buttons]]
+id = "install"
+label = "Bundle Install"
+command = "{{bundle}} install"
+icon = "cloud-download"
+
+[[groups.deps.buttons]]
+id = "update"
+label = "Bundle Update"
+command = "{{bundle}} update"
+icon = "sync"
+
+[[groups.deps.buttons]]
+id = "outdated"
+label = "Outdated"
+command = "{{bundle}} outdated"
+icon = "arrow-up"
+
+[groups.assets]
+name = "Assets"
+icon = "file-media"
+color = "#FF9800"
+
+[[groups.assets.buttons]]
+id = "precompile"
+label = "Precompile"
+command = "{{rails}} assets:precompile"
+icon = "package"
+
+[[groups.assets.buttons]]
+id = "clobber"
+label = "Clobber"
+command = "{{rails}} assets:clobber"
+icon = "trash"
+confirm = true

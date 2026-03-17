@@ -1,0 +1,141 @@
+version = 1
+title = "Server Commands"
+description = "Compact table layout — one button per row, dense and scannable"
+layout = "table"
+terminal = "current"
+
+[display]
+show_command = true
+show_labels = true
+show_icons = true
+compact = true
+
+[defaults]
+reveal_terminal = true
+copy_to_clipboard = true
+
+[groups.services]
+name = "Services"
+description = "Manage background services"
+icon = "server"
+color = "#48B57A"
+
+[[groups.services.buttons]]
+id = "nginx-start"
+label = "Start Nginx"
+command = "sudo systemctl start nginx"
+icon = "play"
+
+[[groups.services.buttons]]
+id = "nginx-stop"
+label = "Stop Nginx"
+command = "sudo systemctl stop nginx"
+icon = "stop"
+
+[[groups.services.buttons]]
+id = "nginx-restart"
+label = "Restart Nginx"
+command = "sudo systemctl restart nginx"
+icon = "refresh"
+
+[[groups.services.buttons]]
+id = "nginx-status"
+label = "Status Nginx"
+command = "sudo systemctl status nginx"
+icon = "info"
+
+[[groups.services.buttons]]
+id = "nginx-logs"
+label = "Nginx Logs"
+command = "sudo journalctl -u nginx -f"
+icon = "output"
+run_in_new_terminal = true
+
+[[groups.services.buttons]]
+id = "postgres-start"
+label = "Start Postgres"
+command = "sudo systemctl start postgresql"
+icon = "play"
+
+[[groups.services.buttons]]
+id = "postgres-stop"
+label = "Stop Postgres"
+command = "sudo systemctl stop postgresql"
+icon = "stop"
+
+[[groups.services.buttons]]
+id = "postgres-status"
+label = "Status Postgres"
+command = "sudo systemctl status postgresql"
+icon = "info"
+
+[[groups.services.buttons]]
+id = "redis-start"
+label = "Start Redis"
+command = "sudo systemctl start redis"
+icon = "play"
+
+[[groups.services.buttons]]
+id = "redis-stop"
+label = "Stop Redis"
+command = "sudo systemctl stop redis"
+icon = "stop"
+
+[[groups.services.buttons]]
+id = "redis-status"
+label = "Status Redis"
+command = "sudo systemctl status redis"
+icon = "info"
+
+[groups.monitoring]
+name = "Monitoring"
+icon = "pulse"
+color = "#FF6B35"
+
+[[groups.monitoring.buttons]]
+id = "htop"
+label = "htop"
+command = "htop"
+icon = "dashboard"
+run_in_new_terminal = true
+
+[[groups.monitoring.buttons]]
+id = "disk"
+label = "Disk Usage"
+command = "df -h"
+icon = "pie-chart"
+
+[[groups.monitoring.buttons]]
+id = "memory"
+label = "Memory"
+command = "free -h"
+icon = "graph"
+
+[[groups.monitoring.buttons]]
+id = "processes"
+label = "Top Processes"
+command = "ps aux --sort=-%mem | head -20"
+icon = "list-ordered"
+
+[[groups.monitoring.buttons]]
+id = "ports"
+label = "Listening Ports"
+command = "ss -tulpn"
+icon = "plug"
+
+[[groups.monitoring.buttons]]
+id = "uptime"
+label = "Uptime"
+command = "uptime"
+icon = "clock"
+
+[groups.network]
+name = "Network"
+icon = "globe"
+color = "#6B8AFF"
+
+[groups.network.generate]
+mode = "cartesian"
+template = "{{arg1}}"
+label_template = "{{arg1}}"
+params = [["ip addr show", "ip route show", "cat /etc/resolv.conf", "ss -s", "curl -s ifconfig.me"]]

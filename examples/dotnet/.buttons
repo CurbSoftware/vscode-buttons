@@ -1,0 +1,165 @@
+version = 1
+title = ".NET Project"
+description = "ASP.NET Core development and testing"
+layout = "grid"
+terminal = "current"
+
+[display]
+show_command = true
+show_labels = true
+show_icons = true
+button_color = "#512BD4"
+
+[macros]
+dotnet = "dotnet"
+
+[variables]
+project = "src/MyApp"
+test_project = "tests/MyApp.Tests"
+port = "5000"
+
+[groups.build]
+name = "Build & Run"
+icon = "rocket"
+color = "#512BD4"
+ports = [5000]
+
+[[groups.build.buttons]]
+id = "build"
+label = "Build"
+command = "{{dotnet}} build"
+icon = "tools"
+
+[[groups.build.buttons]]
+id = "run"
+label = "Run"
+command = "{{dotnet}} run --project {{project}}"
+icon = "debug-start"
+run_in_new_terminal = true
+open_ports = [5000]
+
+[[groups.build.buttons]]
+id = "watch"
+label = "Watch"
+command = "{{dotnet}} watch run --project {{project}}"
+icon = "eye"
+run_in_new_terminal = true
+open_ports = [5000]
+
+[[groups.build.buttons]]
+id = "publish"
+label = "Publish"
+command = "{{dotnet}} publish -c Release"
+icon = "cloud-upload"
+
+[[groups.build.buttons]]
+id = "clean"
+label = "Clean"
+command = "{{dotnet}} clean"
+icon = "trash"
+
+[[groups.build.buttons]]
+id = "restore"
+label = "Restore"
+command = "{{dotnet}} restore"
+icon = "cloud-download"
+
+[[groups.build.links]]
+label = "App"
+url = "https://localhost:5001"
+icon = "globe"
+
+[[groups.build.links]]
+label = "Swagger"
+url = "https://localhost:5001/swagger"
+icon = "book"
+
+[groups.test]
+name = "Testing"
+icon = "beaker"
+color = "#48B57A"
+
+[[groups.test.buttons]]
+id = "test"
+label = "Test"
+command = "{{dotnet}} test"
+icon = "beaker"
+
+[[groups.test.buttons]]
+id = "test-verbose"
+label = "Test (Verbose)"
+command = "{{dotnet}} test -v detailed"
+icon = "output"
+
+[[groups.test.buttons]]
+id = "test-project"
+label = "Test Project"
+command = "{{dotnet}} test {{test_project}}"
+icon = "beaker"
+
+[[groups.test.buttons]]
+id = "coverage"
+label = "Coverage"
+command = "{{dotnet}} test --collect:\"XPlat Code Coverage\""
+icon = "graph"
+
+[groups.ef]
+name = "Entity Framework"
+description = "Database migrations with EF Core"
+icon = "database"
+color = "#336791"
+
+[[groups.ef.buttons]]
+id = "ef-add"
+label = "Add Migration"
+command = "{{dotnet}} ef migrations add NewMigration --project {{project}}"
+icon = "add"
+
+[[groups.ef.buttons]]
+id = "ef-update"
+label = "Update Database"
+command = "{{dotnet}} ef database update --project {{project}}"
+icon = "arrow-swap"
+
+[[groups.ef.buttons]]
+id = "ef-list"
+label = "List Migrations"
+command = "{{dotnet}} ef migrations list --project {{project}}"
+icon = "list-flat"
+
+[[groups.ef.buttons]]
+id = "ef-rollback"
+label = "Rollback"
+command = "{{dotnet}} ef database update PreviousMigration --project {{project}}"
+icon = "discard"
+confirm = true
+
+[[groups.ef.buttons]]
+id = "ef-drop"
+label = "Drop Database"
+command = "{{dotnet}} ef database drop --project {{project}}"
+icon = "trash"
+danger = true
+confirm = true
+
+[groups.tools]
+name = "Tools"
+icon = "extensions"
+
+[[groups.tools.buttons]]
+id = "format"
+label = "Format"
+command = "{{dotnet}} format"
+icon = "symbol-color"
+
+[[groups.tools.buttons]]
+id = "outdated"
+label = "Outdated Packages"
+command = "{{dotnet}} list package --outdated"
+icon = "arrow-up"
+
+[[groups.tools.buttons]]
+id = "user-secrets"
+label = "User Secrets"
+command = "{{dotnet}} user-secrets list --project {{project}}"
+icon = "lock"

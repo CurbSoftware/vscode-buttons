@@ -1,0 +1,247 @@
+version = 1
+title = "Data Science"
+description = "Jupyter, conda, and ML experiment workflows"
+layout = "grid"
+terminal = "current"
+
+[display]
+show_command = true
+show_labels = true
+show_icons = true
+button_color = "#F37626"
+
+[defaults]
+reveal_terminal = true
+copy_to_clipboard = true
+
+[macros]
+python = "python"
+conda = "conda"
+pip = "pip"
+jupyter = "jupyter"
+
+[variables]
+env_name = "ml-env"
+notebook_port = "8888"
+mlflow_port = "5000"
+tensorboard_port = "6006"
+
+[groups.environment]
+name = "Environment"
+description = "Conda and pip environment management"
+icon = "package"
+color = "#44A833"
+
+[[groups.environment.buttons]]
+id = "conda-create"
+label = "Create Env"
+command = "{{conda}} create -n {{env_name}} python=3.11 -y"
+icon = "add"
+
+[[groups.environment.buttons]]
+id = "conda-activate"
+label = "Activate"
+command = "{{conda}} activate {{env_name}}"
+icon = "plug"
+
+[[groups.environment.buttons]]
+id = "pip-install"
+label = "Install Requirements"
+command = "{{pip}} install -r requirements.txt"
+icon = "cloud-download"
+
+[[groups.environment.buttons]]
+id = "pip-freeze"
+label = "Freeze"
+command = "{{pip}} freeze > requirements.txt"
+icon = "save"
+
+[[groups.environment.buttons]]
+id = "conda-list"
+label = "List Packages"
+command = "{{conda}} list -n {{env_name}}"
+icon = "list-flat"
+
+[[groups.environment.buttons]]
+id = "conda-remove"
+label = "Remove Env"
+command = "{{conda}} env remove -n {{env_name}}"
+icon = "trash"
+danger = true
+confirm = true
+
+[groups.jupyter]
+name = "Jupyter"
+description = "Notebook server and lab"
+icon = "notebook"
+color = "#F37626"
+ports = [8888]
+
+[[groups.jupyter.buttons]]
+id = "lab"
+label = "JupyterLab"
+command = "{{jupyter}} lab --port={{notebook_port}}"
+icon = "browser"
+run_in_new_terminal = true
+open_ports = [8888]
+
+[[groups.jupyter.buttons]]
+id = "notebook"
+label = "Notebook"
+command = "{{jupyter}} notebook --port={{notebook_port}}"
+icon = "notebook"
+run_in_new_terminal = true
+open_ports = [8888]
+
+[[groups.jupyter.buttons]]
+id = "nbconvert"
+label = "Convert to HTML"
+command = "{{jupyter}} nbconvert --to html notebooks/*.ipynb"
+icon = "file-code"
+
+[[groups.jupyter.buttons]]
+id = "nbconvert-pdf"
+label = "Convert to PDF"
+command = "{{jupyter}} nbconvert --to pdf notebooks/*.ipynb"
+icon = "file-pdf"
+
+[[groups.jupyter.buttons]]
+id = "clean-outputs"
+label = "Clear Outputs"
+command = "{{jupyter}} nbconvert --clear-output --inplace notebooks/*.ipynb"
+icon = "trash"
+
+[[groups.jupyter.links]]
+label = "JupyterLab"
+url = "http://localhost:8888"
+icon = "link-external"
+
+[groups.training]
+name = "Model Training"
+description = "Train, evaluate, and export models"
+icon = "zap"
+color = "#EE4C2C"
+
+[[groups.training.buttons]]
+id = "train"
+label = "Train"
+command = "{{python}} train.py"
+icon = "play"
+run_in_new_terminal = true
+
+[[groups.training.buttons]]
+id = "train-gpu"
+label = "Train (GPU)"
+command = "CUDA_VISIBLE_DEVICES=0 {{python}} train.py --device cuda"
+icon = "zap"
+run_in_new_terminal = true
+
+[[groups.training.buttons]]
+id = "evaluate"
+label = "Evaluate"
+command = "{{python}} evaluate.py"
+icon = "graph"
+
+[[groups.training.buttons]]
+id = "export-onnx"
+label = "Export ONNX"
+command = "{{python}} export.py --format onnx"
+icon = "package"
+
+[[groups.training.buttons]]
+id = "hyperopt"
+label = "Hyperparameter Search"
+command = "{{python}} hyperopt.py"
+icon = "search"
+run_in_new_terminal = true
+
+[groups.experiment]
+name = "Experiment Tracking"
+description = "MLflow and TensorBoard"
+icon = "graph"
+color = "#0194E2"
+ports = [5000, 6006]
+
+[[groups.experiment.buttons]]
+id = "mlflow-ui"
+label = "MLflow UI"
+command = "mlflow ui --port {{mlflow_port}}"
+icon = "dashboard"
+run_in_new_terminal = true
+open_ports = [5000]
+
+[[groups.experiment.buttons]]
+id = "tensorboard"
+label = "TensorBoard"
+command = "tensorboard --logdir=runs --port={{tensorboard_port}}"
+icon = "graph"
+run_in_new_terminal = true
+open_ports = [6006]
+
+[[groups.experiment.buttons]]
+id = "wandb-sync"
+label = "W&B Sync"
+command = "wandb sync"
+icon = "cloud-upload"
+
+[[groups.experiment.links]]
+label = "MLflow"
+url = "http://localhost:5000"
+icon = "link-external"
+
+[[groups.experiment.links]]
+label = "TensorBoard"
+url = "http://localhost:6006"
+icon = "link-external"
+
+[groups.data]
+name = "Data Pipeline"
+description = "Data processing and validation"
+icon = "database"
+color = "#336791"
+
+[[groups.data.buttons]]
+id = "download"
+label = "Download Data"
+command = "{{python}} scripts/download_data.py"
+icon = "cloud-download"
+
+[[groups.data.buttons]]
+id = "preprocess"
+label = "Preprocess"
+command = "{{python}} scripts/preprocess.py"
+icon = "gear"
+
+[[groups.data.buttons]]
+id = "validate"
+label = "Validate Data"
+command = "{{python}} scripts/validate_data.py"
+icon = "verified"
+
+[[groups.data.buttons]]
+id = "dvc-pull"
+label = "DVC Pull"
+command = "dvc pull"
+icon = "cloud-download"
+
+[[groups.data.buttons]]
+id = "dvc-push"
+label = "DVC Push"
+command = "dvc push"
+icon = "cloud-upload"
+
+[[groups.data.buttons]]
+id = "dvc-repro"
+label = "DVC Reproduce"
+command = "dvc repro"
+icon = "refresh"
+
+[groups.quality]
+name = "Code Quality"
+icon = "checklist"
+
+[groups.quality.generate]
+mode = "cartesian"
+template = "{{arg1}}"
+label_template = "{{arg1}}"
+params = [["ruff check .", "ruff check --fix .", "black .", "mypy .", "isort .", "pytest --cov"]]

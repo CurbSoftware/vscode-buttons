@@ -1,0 +1,201 @@
+version = 1
+title = "Monorepo"
+description = "Turborepo/pnpm workspace commands for multi-package projects"
+layout = "grid"
+terminal = "current"
+
+[display]
+show_command = true
+show_labels = true
+show_icons = true
+
+[defaults]
+reveal_terminal = true
+copy_to_clipboard = true
+
+[macros]
+turbo = "pnpm turbo"
+pnpm = "pnpm"
+
+[variables]
+api_port = "4000"
+web_port = "3000"
+docs_port = "3001"
+storybook_port = "6006"
+
+[groups.workspace]
+name = "Workspace"
+description = "Root-level package management"
+icon = "folder-library"
+color = "#FF4785"
+
+[[groups.workspace.buttons]]
+id = "install"
+label = "Install All"
+command = "{{pnpm}} install"
+icon = "cloud-download"
+
+[[groups.workspace.buttons]]
+id = "clean"
+label = "Clean"
+command = "{{turbo}} clean"
+icon = "trash"
+confirm = true
+
+[[groups.workspace.buttons]]
+id = "build-all"
+label = "Build All"
+command = "{{turbo}} build"
+icon = "package"
+
+[[groups.workspace.buttons]]
+id = "test-all"
+label = "Test All"
+command = "{{turbo}} test"
+icon = "beaker"
+
+[[groups.workspace.buttons]]
+id = "lint-all"
+label = "Lint All"
+command = "{{turbo}} lint"
+icon = "verified"
+
+[[groups.workspace.buttons]]
+id = "typecheck-all"
+label = "Typecheck All"
+command = "{{turbo}} typecheck"
+icon = "symbol-type-parameter"
+
+[groups.web]
+name = "Web App"
+description = "Next.js frontend"
+icon = "globe"
+color = "#0070F3"
+ports = [3000]
+
+[[groups.web.buttons]]
+id = "web-dev"
+label = "Dev"
+command = "{{pnpm}} --filter @mono/web dev"
+icon = "play"
+run_in_new_terminal = true
+open_ports = [3000]
+
+[[groups.web.buttons]]
+id = "web-build"
+label = "Build"
+command = "{{pnpm}} --filter @mono/web build"
+icon = "package"
+
+[[groups.web.buttons]]
+id = "web-test"
+label = "Test"
+command = "{{pnpm}} --filter @mono/web test"
+icon = "beaker"
+
+[[groups.web.links]]
+label = "Web App"
+url = "http://localhost:3000"
+icon = "link-external"
+
+[groups.api]
+name = "API Server"
+description = "Express/Fastify backend"
+icon = "server"
+color = "#48B57A"
+ports = [4000]
+
+[[groups.api.buttons]]
+id = "api-dev"
+label = "Dev"
+command = "{{pnpm}} --filter @mono/api dev"
+icon = "play"
+run_in_new_terminal = true
+open_ports = [4000]
+
+[[groups.api.buttons]]
+id = "api-build"
+label = "Build"
+command = "{{pnpm}} --filter @mono/api build"
+icon = "package"
+
+[[groups.api.buttons]]
+id = "api-test"
+label = "Test"
+command = "{{pnpm}} --filter @mono/api test"
+icon = "beaker"
+
+[[groups.api.buttons]]
+id = "api-migrate"
+label = "Migrate DB"
+command = "{{pnpm}} --filter @mono/api db:migrate"
+icon = "database"
+confirm = true
+
+[[groups.api.links]]
+label = "API Docs"
+url = "http://localhost:4000/docs"
+icon = "link-external"
+
+[groups.docs]
+name = "Documentation"
+description = "Docusaurus or VitePress docs site"
+icon = "book"
+color = "#25C2A0"
+ports = [3001]
+
+[[groups.docs.buttons]]
+id = "docs-dev"
+label = "Dev"
+command = "{{pnpm}} --filter @mono/docs dev"
+icon = "play"
+run_in_new_terminal = true
+open_ports = [3001]
+
+[[groups.docs.buttons]]
+id = "docs-build"
+label = "Build"
+command = "{{pnpm}} --filter @mono/docs build"
+icon = "package"
+
+[[groups.docs.links]]
+label = "Docs"
+url = "http://localhost:3001"
+icon = "link-external"
+
+[groups.storybook]
+name = "Storybook"
+description = "Component library stories"
+icon = "symbol-color"
+color = "#FF4785"
+ports = [6006]
+
+[[groups.storybook.buttons]]
+id = "storybook-dev"
+label = "Storybook"
+command = "{{pnpm}} --filter @mono/ui storybook"
+icon = "play"
+run_in_new_terminal = true
+open_ports = [6006]
+
+[[groups.storybook.buttons]]
+id = "storybook-build"
+label = "Build Storybook"
+command = "{{pnpm}} --filter @mono/ui build-storybook"
+icon = "package"
+
+[[groups.storybook.links]]
+label = "Storybook"
+url = "http://localhost:6006"
+icon = "link-external"
+
+[groups.packages]
+name = "Package Scripts"
+description = "Generated per-package commands"
+icon = "extensions"
+
+[groups.packages.generate]
+mode = "cartesian"
+template = "{{pnpm}} --filter @mono/{{arg1}} {{arg2}}"
+label_template = "{{arg1}}: {{arg2}}"
+params = [["web", "api", "ui", "shared"], ["build", "test", "lint"]]

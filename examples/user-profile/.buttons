@@ -1,0 +1,187 @@
+version = 1
+title = "My Buttons"
+description = "Personal developer commands — available across all projects"
+layout = "flow"
+terminal = "current"
+
+[display]
+show_command = false
+show_labels = true
+show_icons = true
+compact = true
+
+[defaults]
+reveal_terminal = true
+copy_to_clipboard = true
+
+[groups.git-shortcuts]
+name = "Git Shortcuts"
+description = "Frequent git operations"
+icon = "git-branch"
+color = "#F05033"
+
+[[groups.git-shortcuts.buttons]]
+id = "gs"
+label = "Status"
+command = "git status -sb"
+icon = "diff"
+
+[[groups.git-shortcuts.buttons]]
+id = "glog"
+label = "Log Graph"
+command = "git log --oneline --graph --decorate -20"
+icon = "git-branch"
+
+[[groups.git-shortcuts.buttons]]
+id = "gd"
+label = "Diff"
+command = "git diff"
+icon = "compare-changes"
+
+[[groups.git-shortcuts.buttons]]
+id = "gds"
+label = "Diff Staged"
+command = "git diff --staged"
+icon = "compare-changes"
+
+[[groups.git-shortcuts.buttons]]
+id = "ga"
+label = "Add All"
+command = "git add -A"
+icon = "add"
+
+[[groups.git-shortcuts.buttons]]
+id = "gp"
+label = "Push"
+command = "git push"
+icon = "cloud-upload"
+
+[[groups.git-shortcuts.buttons]]
+id = "gpl"
+label = "Pull"
+command = "git pull --rebase"
+icon = "cloud-download"
+
+[[groups.git-shortcuts.buttons]]
+id = "gf"
+label = "Fetch"
+command = "git fetch --all --prune"
+icon = "sync"
+
+[[groups.git-shortcuts.buttons]]
+id = "gundo"
+label = "Undo Commit"
+command = "git reset --soft HEAD~1"
+icon = "discard"
+confirm = true
+
+[[groups.git-shortcuts.buttons]]
+id = "gclean"
+label = "Clean"
+command = "git clean -fd"
+icon = "trash"
+danger = true
+confirm = true
+
+[groups.system]
+name = "System"
+description = "Common system commands"
+icon = "terminal"
+color = "#6B8AFF"
+
+[[groups.system.buttons]]
+id = "ip"
+label = "My IP"
+command = "curl -s ifconfig.me && echo"
+icon = "globe"
+
+[[groups.system.buttons]]
+id = "ports"
+label = "Listening Ports"
+command = "lsof -i -P -n | grep LISTEN"
+icon = "plug"
+
+[[groups.system.buttons]]
+id = "disk"
+label = "Disk Usage"
+command = "df -h /"
+icon = "pie-chart"
+
+[[groups.system.buttons]]
+id = "mem"
+label = "Memory"
+command = "free -h"
+icon = "graph"
+
+[[groups.system.buttons]]
+id = "top-cpu"
+label = "Top CPU"
+command = "ps aux --sort=-%cpu | head -10"
+icon = "dashboard"
+
+[[groups.system.buttons]]
+id = "path"
+label = "PATH"
+command = "echo $PATH | tr ':' '\\n'"
+icon = "list-flat"
+
+[groups.docker-quick]
+name = "Docker Quick"
+icon = "server"
+color = "#2496ED"
+
+[[groups.docker-quick.buttons]]
+id = "dps"
+label = "Containers"
+command = "docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'"
+icon = "list-flat"
+
+[[groups.docker-quick.buttons]]
+id = "dimages"
+label = "Images"
+command = "docker images --format 'table {{.Repository}}\\t{{.Tag}}\\t{{.Size}}'"
+icon = "folder"
+
+[[groups.docker-quick.buttons]]
+id = "dprune"
+label = "Prune"
+command = "docker system prune -f"
+icon = "trash"
+danger = true
+confirm = true
+
+[[groups.docker-quick.buttons]]
+id = "dstop-all"
+label = "Stop All"
+command = "docker stop $(docker ps -q) 2>/dev/null; echo 'All stopped'"
+icon = "stop"
+confirm = true
+
+[groups.ssh-tunnels]
+name = "SSH Tunnels"
+description = "Quick access to remote machines"
+icon = "remote"
+color = "#FF9800"
+
+[[groups.ssh-tunnels.buttons]]
+id = "tunnel-db"
+label = "DB Tunnel"
+command = "ssh -L 5433:localhost:5432 devserver"
+icon = "plug"
+run_in_new_terminal = true
+description = "Forward remote Postgres to local port 5433"
+
+[[groups.ssh-tunnels.buttons]]
+id = "tunnel-redis"
+label = "Redis Tunnel"
+command = "ssh -L 6380:localhost:6379 devserver"
+icon = "plug"
+run_in_new_terminal = true
+description = "Forward remote Redis to local port 6380"
+
+[[groups.ssh-tunnels.buttons]]
+id = "dev-ssh"
+label = "Dev Server"
+command = "ssh devserver"
+icon = "terminal"
+run_in_new_terminal = true

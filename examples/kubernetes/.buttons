@@ -1,0 +1,204 @@
+version = 1
+title = "Kubernetes Operations"
+description = "kubectl and Helm workflows for cluster management"
+layout = "grid"
+terminal = "current"
+
+[display]
+show_command = true
+show_labels = true
+show_icons = true
+group_bg_color = "#1A1D2E"
+
+[defaults]
+reveal_terminal = true
+copy_to_clipboard = true
+
+[variables]
+namespace = "default"
+release = "my-app"
+chart = "./charts/my-app"
+context = "production"
+
+[macros]
+k = "kubectl"
+kn = "kubectl -n {{namespace}}"
+helm = "helm"
+
+[groups.context]
+name = "Cluster Context"
+description = "Switch and inspect cluster contexts"
+icon = "server"
+color = "#326CE5"
+
+[[groups.context.buttons]]
+id = "current-context"
+label = "Current Context"
+command = "{{k}} config current-context"
+icon = "info"
+
+[[groups.context.buttons]]
+id = "get-contexts"
+label = "List Contexts"
+command = "{{k}} config get-contexts"
+icon = "list-flat"
+
+[[groups.context.buttons]]
+id = "use-context"
+label = "Use Production"
+command = "{{k}} config use-context {{context}}"
+icon = "plug"
+confirm = true
+
+[groups.inspect]
+name = "Inspect Resources"
+description = "View cluster state and resources"
+icon = "eye"
+color = "#48B57A"
+
+[groups.inspect.generate]
+mode = "cartesian"
+template = "{{kn}} get {{arg1}}"
+label_template = "Get {{arg1}}"
+params = [["pods", "services", "deployments", "ingresses", "configmaps", "secrets", "jobs", "cronjobs"]]
+
+[groups.inspect-wide]
+name = "Inspect (Wide)"
+description = "Detailed resource views"
+icon = "table"
+
+[groups.inspect-wide.generate]
+mode = "cartesian"
+template = "{{kn}} get {{arg1}} -o wide"
+label_template = "{{arg1}} (wide)"
+params = [["pods", "nodes", "services", "deployments"]]
+
+[groups.logs]
+name = "Logs & Debug"
+description = "Tail logs and debug pods"
+icon = "output"
+color = "#FF9800"
+
+[[groups.logs.buttons]]
+id = "logs-follow"
+label = "Follow Logs"
+command = "{{kn}} logs -f deployment/{{release}} --tail=100"
+icon = "output"
+run_in_new_terminal = true
+
+[[groups.logs.buttons]]
+id = "logs-previous"
+label = "Previous Logs"
+command = "{{kn}} logs deployment/{{release}} --previous"
+icon = "history"
+
+[[groups.logs.buttons]]
+id = "exec-shell"
+label = "Exec Shell"
+command = "{{kn}} exec -it deployment/{{release}} -- /bin/sh"
+icon = "terminal"
+run_in_new_terminal = true
+
+[[groups.logs.buttons]]
+id = "port-forward"
+label = "Port Forward"
+command = "{{kn}} port-forward svc/{{release}} 8080:80"
+icon = "plug"
+run_in_new_terminal = true
+open_ports = [8080]
+
+[[groups.logs.buttons]]
+id = "describe-pod"
+label = "Describe Pod"
+command = "{{kn}} describe pod -l app={{release}}"
+icon = "info"
+
+[[groups.logs.buttons]]
+id = "events"
+label = "Events"
+command = "{{kn}} get events --sort-by='.lastTimestamp'"
+icon = "bell"
+
+[groups.helm]
+name = "Helm"
+description = "Chart management and releases"
+icon = "package"
+color = "#0F1689"
+
+[[groups.helm.buttons]]
+id = "helm-install"
+label = "Install"
+command = "{{helm}} install {{release}} {{chart}} -n {{namespace}}"
+icon = "cloud-upload"
+confirm = true
+
+[[groups.helm.buttons]]
+id = "helm-upgrade"
+label = "Upgrade"
+command = "{{helm}} upgrade {{release}} {{chart}} -n {{namespace}}"
+icon = "sync"
+confirm = true
+
+[[groups.helm.buttons]]
+id = "helm-status"
+label = "Status"
+command = "{{helm}} status {{release}} -n {{namespace}}"
+icon = "info"
+
+[[groups.helm.buttons]]
+id = "helm-history"
+label = "History"
+command = "{{helm}} history {{release}} -n {{namespace}}"
+icon = "history"
+
+[[groups.helm.buttons]]
+id = "helm-rollback"
+label = "Rollback"
+command = "{{helm}} rollback {{release}} -n {{namespace}}"
+icon = "discard"
+danger = true
+confirm = true
+
+[[groups.helm.buttons]]
+id = "helm-uninstall"
+label = "Uninstall"
+command = "{{helm}} uninstall {{release}} -n {{namespace}}"
+icon = "trash"
+danger = true
+confirm = true
+
+[[groups.helm.buttons]]
+id = "helm-list"
+label = "List Releases"
+command = "{{helm}} list -n {{namespace}}"
+icon = "list-flat"
+
+[groups.danger]
+name = "Danger Zone"
+description = "Destructive operations — confirm required"
+icon = "warning"
+color = "#FF4444"
+
+[[groups.danger.buttons]]
+id = "delete-pods"
+label = "Delete All Pods"
+command = "{{kn}} delete pods --all"
+icon = "trash"
+danger = true
+confirm = true
+
+[[groups.danger.buttons]]
+id = "delete-namespace"
+label = "Delete Namespace"
+command = "{{k}} delete namespace {{namespace}}"
+icon = "flame"
+danger = true
+confirm = true
+
+[[groups.danger.buttons]]
+id = "drain-node"
+label = "Drain Node"
+command = "{{k}} drain NODE_NAME --ignore-daemonsets --delete-emptydir-data"
+icon = "warning"
+danger = true
+confirm = true

@@ -1,0 +1,133 @@
+version = 1
+title = "Android (Gradle)"
+description = "Android development with Gradle wrapper"
+layout = "grid"
+
+[display]
+show_command = true
+show_labels = true
+show_icons = true
+button_color = "#3DDC84"
+
+[macros]
+gradle = "./gradlew"
+adb = "adb"
+
+[groups.build]
+name = "Build"
+icon = "tools"
+color = "#3DDC84"
+
+[[groups.build.buttons]]
+id = "assemble-debug"
+label = "Debug APK"
+command = "{{gradle}} assembleDebug"
+icon = "tools"
+
+[[groups.build.buttons]]
+id = "assemble-release"
+label = "Release APK"
+command = "{{gradle}} assembleRelease"
+icon = "package"
+
+[[groups.build.buttons]]
+id = "bundle-release"
+label = "Release Bundle"
+command = "{{gradle}} bundleRelease"
+icon = "package"
+
+[[groups.build.buttons]]
+id = "clean"
+label = "Clean"
+command = "{{gradle}} clean"
+icon = "trash"
+
+[[groups.build.buttons]]
+id = "lint"
+label = "Lint"
+command = "{{gradle}} lint"
+icon = "verified"
+
+[groups.install]
+name = "Install & Run"
+icon = "play"
+
+[[groups.install.buttons]]
+id = "install-debug"
+label = "Install Debug"
+command = "{{gradle}} installDebug"
+icon = "cloud-download"
+
+[[groups.install.buttons]]
+id = "run-app"
+label = "Run App"
+command = "{{adb}} shell am start -n com.example.app/.MainActivity"
+icon = "play"
+
+[[groups.install.buttons]]
+id = "uninstall"
+label = "Uninstall"
+command = "{{adb}} uninstall com.example.app"
+icon = "trash"
+confirm = true
+
+[groups.test]
+name = "Testing"
+icon = "beaker"
+color = "#48B57A"
+
+[[groups.test.buttons]]
+id = "unit-test"
+label = "Unit Tests"
+command = "{{gradle}} testDebugUnitTest"
+icon = "beaker"
+
+[[groups.test.buttons]]
+id = "instrumented"
+label = "Instrumented"
+command = "{{gradle}} connectedDebugAndroidTest"
+icon = "device-mobile"
+
+[[groups.test.buttons]]
+id = "coverage"
+label = "Coverage"
+command = "{{gradle}} jacocoTestReport"
+icon = "graph"
+
+[groups.adb]
+name = "ADB"
+description = "Android Debug Bridge commands"
+icon = "device-mobile"
+color = "#FF9800"
+
+[[groups.adb.buttons]]
+id = "devices"
+label = "Devices"
+command = "{{adb}} devices"
+icon = "list-flat"
+
+[[groups.adb.buttons]]
+id = "logcat"
+label = "Logcat"
+command = "{{adb}} logcat -v time"
+icon = "output"
+run_in_new_terminal = true
+
+[[groups.adb.buttons]]
+id = "screenshot"
+label = "Screenshot"
+command = "{{adb}} exec-out screencap -p > screenshot_$(date +%s).png"
+icon = "file-media"
+
+[[groups.adb.buttons]]
+id = "reverse"
+label = "Reverse Port 8081"
+command = "{{adb}} reverse tcp:8081 tcp:8081"
+icon = "plug"
+
+[[groups.adb.buttons]]
+id = "clear-data"
+label = "Clear App Data"
+command = "{{adb}} shell pm clear com.example.app"
+icon = "trash"
+confirm = true

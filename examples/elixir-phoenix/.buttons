@@ -1,0 +1,188 @@
+version = 1
+title = "Elixir + Phoenix"
+description = "Phoenix web framework and Mix build tool"
+layout = "grid"
+terminal = "current"
+
+[display]
+show_command = true
+show_labels = true
+show_icons = true
+button_color = "#6E4A7E"
+
+[macros]
+mix = "mix"
+iex = "iex -S mix"
+
+[variables]
+port = "4000"
+
+[groups.server]
+name = "Phoenix Server"
+icon = "play"
+color = "#FD4F00"
+ports = [4000]
+
+[[groups.server.buttons]]
+id = "server"
+label = "Start Server"
+command = "{{mix}} phx.server"
+icon = "debug-start"
+run_in_new_terminal = true
+open_ports = [4000]
+
+[[groups.server.buttons]]
+id = "iex-server"
+label = "IEx + Server"
+command = "{{iex}} phx.server"
+icon = "terminal"
+run_in_new_terminal = true
+open_ports = [4000]
+
+[[groups.server.buttons]]
+id = "iex"
+label = "IEx Console"
+command = "{{iex}}"
+icon = "terminal"
+run_in_new_terminal = true
+
+[[groups.server.buttons]]
+id = "routes"
+label = "Routes"
+command = "{{mix}} phx.routes"
+icon = "list-flat"
+
+[[groups.server.links]]
+label = "App"
+url = "http://localhost:4000"
+icon = "globe"
+
+[[groups.server.links]]
+label = "LiveDashboard"
+url = "http://localhost:4000/dashboard"
+icon = "dashboard"
+
+[groups.database]
+name = "Database"
+icon = "database"
+color = "#336791"
+
+[[groups.database.buttons]]
+id = "create"
+label = "Create"
+command = "{{mix}} ecto.create"
+icon = "add"
+
+[[groups.database.buttons]]
+id = "migrate"
+label = "Migrate"
+command = "{{mix}} ecto.migrate"
+icon = "arrow-swap"
+
+[[groups.database.buttons]]
+id = "rollback"
+label = "Rollback"
+command = "{{mix}} ecto.rollback"
+icon = "discard"
+confirm = true
+
+[[groups.database.buttons]]
+id = "seed"
+label = "Seed"
+command = "{{mix}} run priv/repo/seeds.exs"
+icon = "sparkle"
+
+[[groups.database.buttons]]
+id = "reset"
+label = "Reset"
+command = "{{mix}} ecto.reset"
+icon = "trash"
+danger = true
+confirm = true
+
+[[groups.database.buttons]]
+id = "gen-migration"
+label = "Gen Migration"
+command = "{{mix}} ecto.gen.migration change_name"
+icon = "wand"
+
+[groups.test]
+name = "Testing"
+icon = "beaker"
+color = "#48B57A"
+
+[[groups.test.buttons]]
+id = "test"
+label = "Test"
+command = "{{mix}} test"
+icon = "beaker"
+
+[[groups.test.buttons]]
+id = "test-watch"
+label = "Test (Watch)"
+command = "{{mix}} test.watch"
+icon = "eye"
+run_in_new_terminal = true
+
+[[groups.test.buttons]]
+id = "test-cover"
+label = "Coverage"
+command = "{{mix}} test --cover"
+icon = "graph"
+
+[[groups.test.buttons]]
+id = "credo"
+label = "Credo"
+command = "{{mix}} credo"
+icon = "shield"
+
+[[groups.test.buttons]]
+id = "dialyzer"
+label = "Dialyzer"
+command = "{{mix}} dialyzer"
+icon = "verified"
+
+[[groups.test.buttons]]
+id = "format-check"
+label = "Format Check"
+command = "{{mix}} format --check-formatted"
+icon = "symbol-color"
+
+[groups.deps]
+name = "Dependencies"
+icon = "extensions"
+
+[[groups.deps.buttons]]
+id = "deps-get"
+label = "Get"
+command = "{{mix}} deps.get"
+icon = "cloud-download"
+
+[[groups.deps.buttons]]
+id = "deps-compile"
+label = "Compile"
+command = "{{mix}} deps.compile"
+icon = "tools"
+
+[[groups.deps.buttons]]
+id = "deps-update"
+label = "Update All"
+command = "{{mix}} deps.update --all"
+icon = "sync"
+
+[[groups.deps.buttons]]
+id = "deps-tree"
+label = "Dep Tree"
+command = "{{mix}} deps.tree"
+icon = "list-tree"
+
+[groups.generators]
+name = "Generators"
+icon = "wand"
+color = "#6E4A7E"
+
+[groups.generators.generate]
+mode = "cartesian"
+template = "{{mix}} phx.gen.{{arg1}}"
+label_template = "Gen {{arg1}}"
+params = [["html", "json", "live", "context", "schema", "auth", "notifier"]]

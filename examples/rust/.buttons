@@ -1,0 +1,144 @@
+version = 1
+title = "Rust Project"
+description = "Cargo workflows for Rust development"
+layout = "grid"
+terminal = "current"
+
+[display]
+show_command = true
+show_labels = true
+show_icons = true
+compact = false
+button_color = "#DEA584"
+
+[defaults]
+reveal_terminal = true
+copy_to_clipboard = true
+
+[macros]
+cargo = "cargo"
+
+[groups.build]
+name = "Build & Run"
+description = "Compile and execute the project"
+icon = "rocket"
+color = "#DEA584"
+
+[[groups.build.buttons]]
+id = "build-debug"
+label = "Build (Debug)"
+command = "{{cargo}} build"
+icon = "tools"
+
+[[groups.build.buttons]]
+id = "build-release"
+label = "Build (Release)"
+command = "{{cargo}} build --release"
+icon = "package"
+
+[[groups.build.buttons]]
+id = "run"
+label = "Run"
+command = "{{cargo}} run"
+icon = "play"
+run_in_new_terminal = true
+
+[[groups.build.buttons]]
+id = "run-release"
+label = "Run (Release)"
+command = "{{cargo}} run --release"
+icon = "debug-start"
+run_in_new_terminal = true
+
+[groups.test]
+name = "Testing"
+description = "Run tests and benchmarks"
+icon = "beaker"
+color = "#48B57A"
+
+[[groups.test.buttons]]
+id = "test-all"
+label = "Test All"
+command = "{{cargo}} test"
+icon = "beaker"
+
+[[groups.test.buttons]]
+id = "test-verbose"
+label = "Test (Verbose)"
+command = "{{cargo}} test -- --nocapture"
+icon = "output"
+
+[[groups.test.buttons]]
+id = "bench"
+label = "Benchmarks"
+command = "{{cargo}} bench"
+icon = "graph"
+
+[groups.quality]
+name = "Quality"
+description = "Lint, format, and audit"
+icon = "shield"
+color = "#6B8AFF"
+
+[[groups.quality.buttons]]
+id = "clippy"
+label = "Clippy"
+command = "{{cargo}} clippy -- -D warnings"
+icon = "warning"
+
+[[groups.quality.buttons]]
+id = "fmt"
+label = "Format"
+command = "{{cargo}} fmt"
+icon = "symbol-color"
+
+[[groups.quality.buttons]]
+id = "fmt-check"
+label = "Format Check"
+command = "{{cargo}} fmt -- --check"
+icon = "verified"
+
+[[groups.quality.buttons]]
+id = "audit"
+label = "Audit"
+command = "{{cargo}} audit"
+icon = "lock"
+
+[groups.docs]
+name = "Documentation"
+icon = "book"
+
+[[groups.docs.buttons]]
+id = "doc"
+label = "Build Docs"
+command = "{{cargo}} doc --no-deps"
+icon = "book"
+
+[[groups.docs.buttons]]
+id = "doc-open"
+label = "Open Docs"
+command = "{{cargo}} doc --no-deps --open"
+icon = "link-external"
+
+[groups.manage]
+name = "Dependency Management"
+icon = "extensions"
+
+[[groups.manage.buttons]]
+id = "update"
+label = "Update Deps"
+command = "{{cargo}} update"
+icon = "sync"
+
+[[groups.manage.buttons]]
+id = "tree"
+label = "Dep Tree"
+command = "{{cargo}} tree"
+icon = "list-tree"
+
+[[groups.manage.buttons]]
+id = "clean"
+label = "Clean"
+command = "{{cargo}} clean"
+icon = "trash"
+confirm = true

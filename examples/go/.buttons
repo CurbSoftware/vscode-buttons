@@ -1,0 +1,156 @@
+version = 1
+title = "Go Project"
+description = "Go build, test, and module workflows"
+layout = "grid"
+terminal = "current"
+
+[display]
+show_command = true
+show_labels = true
+show_icons = true
+
+[macros]
+go = "go"
+
+[variables]
+binary = "myapp"
+main_pkg = "./cmd/server"
+
+[groups.build]
+name = "Build & Run"
+description = "Compile and execute Go binaries"
+icon = "rocket"
+color = "#00ADD8"
+ports = [8080]
+
+[[groups.build.buttons]]
+id = "build"
+label = "Build"
+command = "{{go}} build -o {{binary}} {{main_pkg}}"
+icon = "tools"
+
+[[groups.build.buttons]]
+id = "run"
+label = "Run"
+command = "{{go}} run {{main_pkg}}"
+icon = "play"
+run_in_new_terminal = true
+open_ports = [8080]
+
+[[groups.build.buttons]]
+id = "install"
+label = "Install"
+command = "{{go}} install {{main_pkg}}"
+icon = "cloud-download"
+
+[[groups.build.links]]
+label = "Server"
+url = "http://localhost:8080"
+icon = "globe"
+
+[groups.test]
+name = "Testing"
+icon = "beaker"
+color = "#48B57A"
+
+[[groups.test.buttons]]
+id = "test"
+label = "Test All"
+command = "{{go}} test ./..."
+icon = "beaker"
+
+[[groups.test.buttons]]
+id = "test-verbose"
+label = "Test (Verbose)"
+command = "{{go}} test -v ./..."
+icon = "output"
+
+[[groups.test.buttons]]
+id = "test-race"
+label = "Test (Race)"
+command = "{{go}} test -race ./..."
+icon = "warning"
+
+[[groups.test.buttons]]
+id = "test-cover"
+label = "Coverage"
+command = "{{go}} test -coverprofile=coverage.out ./... && {{go}} tool cover -html=coverage.out"
+icon = "graph"
+
+[[groups.test.buttons]]
+id = "bench"
+label = "Benchmarks"
+command = "{{go}} test -bench=. -benchmem ./..."
+icon = "dashboard"
+
+[groups.quality]
+name = "Lint & Format"
+icon = "checklist"
+
+[[groups.quality.buttons]]
+id = "vet"
+label = "Vet"
+command = "{{go}} vet ./..."
+icon = "shield"
+
+[[groups.quality.buttons]]
+id = "fmt"
+label = "Format"
+command = "gofmt -w ."
+icon = "symbol-color"
+
+[[groups.quality.buttons]]
+id = "lint"
+label = "golangci-lint"
+command = "golangci-lint run ./..."
+icon = "verified"
+
+[[groups.quality.buttons]]
+id = "staticcheck"
+label = "Staticcheck"
+command = "staticcheck ./..."
+icon = "search"
+
+[groups.modules]
+name = "Module Management"
+icon = "extensions"
+
+[[groups.modules.buttons]]
+id = "tidy"
+label = "Tidy"
+command = "{{go}} mod tidy"
+icon = "sync"
+
+[[groups.modules.buttons]]
+id = "download"
+label = "Download"
+command = "{{go}} mod download"
+icon = "cloud-download"
+
+[[groups.modules.buttons]]
+id = "vendor"
+label = "Vendor"
+command = "{{go}} mod vendor"
+icon = "folder"
+
+[[groups.modules.buttons]]
+id = "graph"
+label = "Dep Graph"
+command = "{{go}} mod graph"
+icon = "list-tree"
+
+[groups.generate]
+name = "Code Generation"
+icon = "wand"
+
+[[groups.generate.buttons]]
+id = "generate"
+label = "Go Generate"
+command = "{{go}} generate ./..."
+icon = "wand"
+
+[[groups.generate.buttons]]
+id = "mock"
+label = "Generate Mocks"
+command = "mockgen -source=internal/service/interface.go -destination=internal/service/mock_service.go"
+icon = "file-code"
