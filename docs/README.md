@@ -1,3 +1,5 @@
+<p align="center"><img src="logo.svg" width="120" alt="Buttons logo"></p>
+
 # Buttons
 
 Buttons is a VS Code extension that turns `.buttons` TOML files into a visual command panel inside the editor.

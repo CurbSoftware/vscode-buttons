@@ -8,7 +8,7 @@ This document is a complete, self-contained reference for LLMs and AI agents to 
 
 A `.buttons` file is a [TOML](https://toml.io/) configuration file that defines clickable command buttons in VS Code. Place it at a project's workspace root for project-scoped buttons, or at `~/.buttons` for user-scoped buttons available across all projects.
 
-The extension parses the file and renders groups of buttons in a visual panel. Users can run commands in the terminal, copy them to clipboard, or open related URLs and ports.
+The extension parses the file and renders groups of buttons in a visual panel. Each button card has 5 action buttons: run in current terminal, run in new terminal, copy to terminal (without executing), copy to new terminal (without executing), and copy to clipboard. Buttons can also open related URLs and ports.
 
 ---
 
@@ -28,6 +28,16 @@ show_icons = true
 compact = false
 button_color = "#6B8AFF"       # hex color for button accents
 group_bg_color = "#1E2333"     # hex color for group backgrounds
+show_run = true                # show/hide each of the 5 action buttons
+show_new_terminal = true
+show_copy_to_terminal = true
+show_copy_to_new_terminal = true
+show_copy_to_clipboard = true
+run_color = "#48B57A"          # per-action-button colors (hex)
+new_terminal_color = "#6B8AFF"
+copy_to_terminal_color = "#D4A843"
+copy_to_new_terminal_color = "#C77DBA"
+copy_to_clipboard_color = "#8B8B8B"
 
 [defaults]                     # behavior defaults (cascade to all buttons)
 enabled = true
@@ -99,6 +109,18 @@ icon = "link-external"
 | `compact` | `boolean` | `false` | Reduce padding for denser UI. |
 | `button_color` | `string` | — | Hex color (`#RGB` or `#RRGGBB`) for button border accent. |
 | `group_bg_color` | `string` | — | Hex color for group section background. |
+| `show_run` | `boolean` | `true` | Show the Run action button (execute in current terminal). |
+| `show_new_terminal` | `boolean` | `true` | Show the New Terminal action button (execute in new terminal). |
+| `show_copy_to_terminal` | `boolean` | `true` | Show the Copy to Terminal action button (paste without executing). |
+| `show_copy_to_new_terminal` | `boolean` | `true` | Show the Copy to New Terminal action button (paste into new terminal without executing). |
+| `show_copy_to_clipboard` | `boolean` | `true` | Show the Copy to Clipboard action button. |
+| `run_color` | `string` | — | Hex color for the Run action button. |
+| `new_terminal_color` | `string` | — | Hex color for the New Terminal action button. |
+| `copy_to_terminal_color` | `string` | — | Hex color for the Copy to Terminal action button. |
+| `copy_to_new_terminal_color` | `string` | — | Hex color for the Copy to New Terminal action button. |
+| `copy_to_clipboard_color` | `string` | — | Hex color for the Copy to Clipboard action button. |
+
+Display fields can also be set at the group level via `[groups.ID.display]` (see section 3.4a).
 
 ### 3.3 Defaults Fields (`[defaults]`)
 
@@ -136,6 +158,27 @@ These cascade: document → group → button. Lower levels override higher.
 | `buttons` | `array` | — | Static button array. |
 | `generate` | `table` | — | Dynamic generation config. |
 | `links` | `array` | — | Quick links in header. |
+| `display` | `table` | — | Per-group display overrides (see 3.4a). |
+
+### 3.4a Per-Group Display (`[groups.ID.display]`)
+
+Groups can override document-level display settings with their own display block. All fields from section 3.2 are supported at the group level.
+
+```toml
+[groups.dev.display]
+compact = true
+show_copy_to_terminal = false
+run_color = "#48B57A"
+```
+
+The full display settings cascade is:
+
+```
+VS Code settings (fallbacks)
+    → User ~/.buttons [display]
+        → Project .buttons [display]
+            → Group [groups.ID.display] (highest priority)
+```
 
 ### 3.5 Button Fields (`[[groups.ID.buttons]]`)
 
@@ -247,12 +290,21 @@ This produces 4 buttons:
 
 ## 6. Defaults Cascade
 
-Settings cascade from document level → group level → button level. Each lower level can override fields from above.
+**Behavior settings** cascade from document level → group level → button level. Each lower level can override fields from above.
 
 ```
 [defaults]               ← document level (broadest)
   └─ [groups.ID]         ← group level (narrows scope)
       └─ [[...buttons]]  ← button level (most specific, wins)
+```
+
+**Display settings** cascade with additional layers for VS Code settings and per-group overrides:
+
+```
+VS Code settings (fallbacks)
+  └─ User ~/.buttons [display]
+      └─ Project .buttons [display]
+          └─ Group [groups.ID.display]  ← most specific, wins
 ```
 
 Example: Set all buttons to non-dangerous at the document level, override for a specific group, then override again for a specific button:
@@ -582,6 +634,20 @@ show_icons = true         # show codicon icons
 compact = false           # tighter spacing when true
 button_color = "#6B8AFF"  # default accent color for button borders
 group_bg_color = "#1A1D2E" # background color for group sections
+
+# Action button visibility (all default to true)
+show_run = true
+show_new_terminal = true
+show_copy_to_terminal = true
+show_copy_to_new_terminal = true
+show_copy_to_clipboard = true
+
+# Action button colors (hex, all optional)
+run_color = "#48B57A"
+new_terminal_color = "#6B8AFF"
+copy_to_terminal_color = "#D4A843"
+copy_to_new_terminal_color = "#C77DBA"
+copy_to_clipboard_color = "#8B8B8B"
 
 # === BEHAVIOR DEFAULTS (cascade: document → group → button) ===
 [defaults]
@@ -948,6 +1014,7 @@ Format:     TOML
 Required:   version = 1, at least one group with buttons
 Layouts:    grid | rows | columns | table | flow
 Terminals:  current | new
+Actions:    run | new-terminal | copy-to-terminal | copy-to-new-terminal | copy-to-clipboard
 Templates:  {{base}}, {{arg1}}, {{variableName}}, {{macroName}}
 Colors:     #RGB or #RRGGBB
 Icons:      VS Code codicons (lowercase, letters/digits/dashes)
@@ -955,6 +1022,7 @@ Ports:      integers 1-65535
 URLs:       absolute (http://... or https://...)
 Max gen:    1000 buttons per generate block
 Danger:     auto-detected for rm, drop, prune, reset, delete, deploy
-Cascade:    document [defaults] → group → button
+Cascade:    document [defaults] → group → button (behavior)
+Display:    VS Code settings → user [display] → project [display] → group [display]
 Merging:    project display settings override user display settings
 ```

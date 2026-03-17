@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as vscode from "vscode";
 import { loadCombinedButtonsState } from "./config/loadButtonsConfig";
 import { getButtonsFileUri, getUserButtonsFileUri } from "./config/findButtonsFile";
-import { copyButtonCommand, openButtonPort, openButtonUrl, runButton } from "./execution/actions";
+import { copyButtonCommand, copyToTerminal, openButtonPort, openButtonUrl, runButton } from "./execution/actions";
 import { CombinedButtonsState, LayoutMode, PanelActionMessage, ResolvedButtonsButton, ResolvedButtonsGroup } from "./models/types";
 import { ButtonsPanel } from "./panel/ButtonsPanel";
 import { ButtonsSidebarProvider } from "./panel/ButtonsSidebarProvider";
@@ -148,6 +148,26 @@ export function activate(context: vscode.ExtensionContext): void {
       const state = await refreshState();
       const activeResolved = getActiveResolved(state);
       await copyButtonCommand(activeResolved, target.groupId, target.buttonId);
+    }),
+    vscode.commands.registerCommand("buttons.copyToTerminal", async (payload?: { groupId: string; buttonId: string }) => {
+      const target = payload ?? (await pickButtonTarget("Select a button to copy to terminal"));
+      if (!target) {
+        return;
+      }
+
+      const state = await refreshState();
+      const activeResolved = getActiveResolved(state);
+      await copyToTerminal(activeResolved, target.groupId, target.buttonId, "current");
+    }),
+    vscode.commands.registerCommand("buttons.copyToNewTerminal", async (payload?: { groupId: string; buttonId: string }) => {
+      const target = payload ?? (await pickButtonTarget("Select a button to copy to new terminal"));
+      if (!target) {
+        return;
+      }
+
+      const state = await refreshState();
+      const activeResolved = getActiveResolved(state);
+      await copyToTerminal(activeResolved, target.groupId, target.buttonId, "new");
     }),
     vscode.commands.registerCommand("buttons.openButtonUrl", async (url?: string) => {
       if (url) {
@@ -324,6 +344,16 @@ async function handlePanelMessage(message: PanelActionMessage, panel: ButtonsPan
     case "run-new":
       if (message.groupId && message.buttonId) {
         await vscode.commands.executeCommand("buttons.runButtonInNewTerminal", { groupId: message.groupId, buttonId: message.buttonId });
+      }
+      return;
+    case "copy-to-terminal":
+      if (message.groupId && message.buttonId) {
+        await vscode.commands.executeCommand("buttons.copyToTerminal", { groupId: message.groupId, buttonId: message.buttonId });
+      }
+      return;
+    case "copy-to-new-terminal":
+      if (message.groupId && message.buttonId) {
+        await vscode.commands.executeCommand("buttons.copyToNewTerminal", { groupId: message.groupId, buttonId: message.buttonId });
       }
       return;
     case "copy":

@@ -93,6 +93,14 @@
       {
         "command": "buttons.openUserButtonsFile",
         "title": "Buttons: Open User .buttons File"
+      },
+      {
+        "command": "buttons.copyToTerminal",
+        "title": "Buttons: Copy to Terminal"
+      },
+      {
+        "command": "buttons.copyToNewTerminal",
+        "title": "Buttons: Copy to New Terminal"
       }
     ],
     "configuration": {

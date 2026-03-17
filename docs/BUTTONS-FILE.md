@@ -31,6 +31,11 @@ show_icons = true
 compact = false
 button_color = "#6B8AFF"
 group_bg_color = "#1E2333"
+show_run = true
+show_new_terminal = true
+show_copy_to_terminal = true
+show_copy_to_new_terminal = true
+show_copy_to_clipboard = true
 
 [defaults]
 enabled = true
@@ -109,6 +114,20 @@ show_icons = true
 compact = false
 button_color = "#6B8AFF"
 group_bg_color = "#1E2333"
+
+# Action button visibility
+show_run = true
+show_new_terminal = true
+show_copy_to_terminal = true
+show_copy_to_new_terminal = true
+show_copy_to_clipboard = true
+
+# Action button colors
+run_color = "#48B57A"
+new_terminal_color = "#6B8AFF"
+copy_to_terminal_color = "#D4A843"
+copy_to_new_terminal_color = "#C77DBA"
+copy_to_clipboard_color = "#8B8B8B"
 ```
 
 | Key | Type | Default | Description |
@@ -119,6 +138,16 @@ group_bg_color = "#1E2333"
 | `compact` | `boolean` | `false` | Use tighter padding and spacing. |
 | `button_color` | `string` | — | Hex color (`#RGB` or `#RRGGBB`) for default button border accent. |
 | `group_bg_color` | `string` | — | Hex color for group background. |
+| `show_run` | `boolean` | `true` | Show the "Run" action button (execute in current terminal). |
+| `show_new_terminal` | `boolean` | `true` | Show the "New Terminal" action button (execute in new terminal). |
+| `show_copy_to_terminal` | `boolean` | `true` | Show the "Copy to Terminal" action button (paste without executing). |
+| `show_copy_to_new_terminal` | `boolean` | `true` | Show the "Copy to New Terminal" action button (paste into new terminal without executing). |
+| `show_copy_to_clipboard` | `boolean` | `true` | Show the "Copy to Clipboard" action button. |
+| `run_color` | `string` | — | Hex color for the Run action button. |
+| `new_terminal_color` | `string` | — | Hex color for the New Terminal action button. |
+| `copy_to_terminal_color` | `string` | — | Hex color for the Copy to Terminal action button. |
+| `copy_to_new_terminal_color` | `string` | — | Hex color for the Copy to New Terminal action button. |
+| `copy_to_clipboard_color` | `string` | — | Hex color for the Copy to Clipboard action button. |
 
 When both user and project files define display settings, **project settings take precedence**. Undefined project fields fall through from the user file.
 
@@ -187,6 +216,7 @@ ports = [3000]
 | `buttons` | `array` | — | Static button definitions. |
 | `generate` | `table` | — | Dynamic button generation config. |
 | `links` | `array` | — | Quick-access links shown as badges. |
+| `display` | `table` | — | Per-group display overrides (see [Per-Group Display](#per-group-display)). |
 
 ### Group Links
 
@@ -202,6 +232,28 @@ icon = "link-external"
 | `label` | `string` | Yes | Link display text. |
 | `url` | `string` | Yes | Absolute URL (must be valid). |
 | `icon` | `string` | No | Codicon name for the badge. |
+
+---
+
+## Per-Group Display
+
+Groups can override document-level display settings with their own `[groups.ID.display]` block. All display fields (visibility toggles, colors, action button settings) are supported at the group level.
+
+```toml
+[display]
+show_command = true
+show_copy_to_clipboard = false   # hidden globally
+
+[groups.dev]
+name = "Development"
+
+[groups.dev.display]
+compact = true                   # override: compact for this group only
+show_copy_to_clipboard = true    # override: re-enable clipboard for this group
+run_color = "#48B57A"            # custom Run button color for this group
+```
+
+Group display settings override document display settings. Undefined fields fall through from the document `[display]` block (or the user `~/.buttons` display, if applicable).
 
 ---
 
@@ -370,12 +422,21 @@ Unknown tokens resolve to an empty string. Whitespace inside braces is trimmed: 
 
 ## Defaults Cascade
 
-Settings cascade from document → group → button level. Lower levels override higher levels.
+**Behavior settings** cascade from document → group → button level. Lower levels override higher levels.
 
 ```
 Document [defaults]
     └─► Group settings
          └─► Button settings (highest priority)
+```
+
+**Display settings** cascade with an additional layer for VS Code settings and per-group overrides:
+
+```
+VS Code settings (fallbacks)
+    └─► User ~/.buttons [display]
+         └─► Project .buttons [display]
+              └─► Group [groups.ID.display] (highest priority)
 ```
 
 Example:

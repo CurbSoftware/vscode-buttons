@@ -15,9 +15,10 @@ import {
   validateCodicon,
   validatePorts,
   mergeDisplaySettings,
+  resolveGroupDisplay,
   TemplateContext,
 } from "../config/configHelpers";
-import { ButtonsDiagnostic, ButtonsDocument, ResolvedButtonsConfig } from "../models/types";
+import { ButtonsDiagnostic, ButtonsDocument, ResolvedButtonsConfig, ResolvedGroupDisplay } from "../models/types";
 
 // ── cartesian ──────────────────────────────────────────────
 
@@ -558,6 +559,11 @@ describe("mergeDisplaySettings", () => {
       showLabels: true,
       showIcons: true,
       compact: false,
+      showRun: true,
+      showNewTerminal: true,
+      showCopyToTerminal: true,
+      showCopyToNewTerminal: true,
+      showCopyToClipboard: true,
       groups: [],
       ...overrides,
     };
@@ -602,5 +608,191 @@ describe("mergeDisplaySettings", () => {
     const result = mergeDisplaySettings(undefined, project, fallbacks);
     assert.strictEqual(result.compact, true);
     assert.strictEqual(result.groupBgColor, "#CCC");
+  });
+
+  it("merges action button visibility — project overrides user", () => {
+    const user = makeResolved({ showRun: false, showCopyToClipboard: false });
+    const project = makeResolved({ showRun: true, showCopyToClipboard: true });
+    const result = mergeDisplaySettings(user, project, fallbacks);
+    assert.strictEqual(result.showRun, true);
+    assert.strictEqual(result.showCopyToClipboard, true);
+  });
+
+  it("user action visibility used when no project", () => {
+    const user = makeResolved({ showRun: false, showCopyToClipboard: false });
+    const result = mergeDisplaySettings(user, undefined, fallbacks);
+    assert.strictEqual(result.showRun, false);
+    assert.strictEqual(result.showCopyToClipboard, false);
+  });
+
+  it("merges action button colors with fallthrough", () => {
+    const user = makeResolved({ runColor: "#AA0000", copyToClipboardColor: "#00AA00" });
+    const project = makeResolved({ runColor: "#BB0000" });
+    const result = mergeDisplaySettings(user, project, fallbacks);
+    assert.strictEqual(result.runColor, "#BB0000");
+    assert.strictEqual(result.copyToClipboardColor, "#00AA00");
+  });
+
+  it("defaults action buttons to visible", () => {
+    const result = mergeDisplaySettings(undefined, undefined, fallbacks);
+    assert.strictEqual(result.showRun, true);
+    assert.strictEqual(result.showNewTerminal, true);
+    assert.strictEqual(result.showCopyToTerminal, true);
+    assert.strictEqual(result.showCopyToNewTerminal, true);
+    assert.strictEqual(result.showCopyToClipboard, true);
+  });
+});
+
+// ── resolveGroupDisplay ───────────────────────────────────
+
+describe("resolveGroupDisplay", () => {
+  const baseDisplay: ResolvedGroupDisplay = {
+    layout: "grid",
+    showCommandPreview: true,
+    showLabels: true,
+    showIcons: true,
+    compact: false,
+    showRun: true,
+    showNewTerminal: true,
+    showCopyToTerminal: true,
+    showCopyToNewTerminal: true,
+    showCopyToClipboard: true,
+  };
+
+  it("returns base when no group display or layout", () => {
+    const result = resolveGroupDisplay(baseDisplay, undefined, undefined);
+    assert.deepStrictEqual(result, baseDisplay);
+  });
+
+  it("overrides layout from group.layout", () => {
+    const result = resolveGroupDisplay(baseDisplay, undefined, "table");
+    assert.strictEqual(result.layout, "table");
+  });
+
+  it("overrides fields from group display", () => {
+    const result = resolveGroupDisplay(baseDisplay, { show_icons: false, compact: true }, undefined);
+    assert.strictEqual(result.showIcons, false);
+    assert.strictEqual(result.compact, true);
+    assert.strictEqual(result.showLabels, true); // unchanged
+  });
+
+  it("overrides action button settings from group display", () => {
+    const result = resolveGroupDisplay(baseDisplay, {
+      show_run: false,
+      show_copy_to_clipboard: false,
+      run_color: "#FF0000",
+    }, undefined);
+    assert.strictEqual(result.showRun, false);
+    assert.strictEqual(result.showCopyToClipboard, false);
+    assert.strictEqual(result.runColor, "#FF0000");
+    assert.strictEqual(result.showNewTerminal, true); // unchanged
+  });
+
+  it("group display colors override document colors", () => {
+    const base = { ...baseDisplay, buttonColor: "#AAA", groupBgColor: "#BBB" };
+    const result = resolveGroupDisplay(base, { button_color: "#CCC" }, undefined);
+    assert.strictEqual(result.buttonColor, "#CCC");
+    assert.strictEqual(result.groupBgColor, "#BBB"); // unchanged
+  });
+});
+
+// ── resolveDocument action button fields ───────────────────
+
+describe("resolveDocument action button fields", () => {
+  it("defaults all action buttons to visible", () => {
+    const doc: ButtonsDocument = {
+      version: 1,
+      groups: { main: { buttons: [{ id: "test", command: "echo" }] } },
+    };
+    const result = resolveDocument(doc, true, "grid", "current", []);
+    assert.strictEqual(result.showRun, true);
+    assert.strictEqual(result.showNewTerminal, true);
+    assert.strictEqual(result.showCopyToTerminal, true);
+    assert.strictEqual(result.showCopyToNewTerminal, true);
+    assert.strictEqual(result.showCopyToClipboard, true);
+  });
+
+  it("passes through action button display settings", () => {
+    const doc: ButtonsDocument = {
+      version: 1,
+      display: { show_run: false, run_color: "#FF0000" },
+      groups: { main: { buttons: [{ id: "test", command: "echo" }] } },
+    };
+    const result = resolveDocument(doc, true, "grid", "current", []);
+    assert.strictEqual(result.showRun, false);
+    assert.strictEqual(result.runColor, "#FF0000");
+    assert.strictEqual(result.groups[0].showRun, false);
+    assert.strictEqual(result.groups[0].runColor, "#FF0000");
+  });
+
+  it("group display overrides document display", () => {
+    const doc: ButtonsDocument = {
+      version: 1,
+      display: { show_run: false },
+      groups: {
+        main: {
+          display: { show_run: true },
+          buttons: [{ id: "test", command: "echo" }],
+        },
+      },
+    };
+    const result = resolveDocument(doc, true, "grid", "current", []);
+    assert.strictEqual(result.showRun, false); // document level
+    assert.strictEqual(result.groups[0].showRun, true); // group overrides
+  });
+
+  it("group layout overrides document layout", () => {
+    const doc: ButtonsDocument = {
+      version: 1,
+      layout: "grid",
+      groups: {
+        main: {
+          layout: "table",
+          buttons: [{ id: "test", command: "echo" }],
+        },
+      },
+    };
+    const result = resolveDocument(doc, true, "grid", "current", []);
+    assert.strictEqual(result.layout, "grid");
+    assert.strictEqual(result.groups[0].layout, "table");
+  });
+});
+
+// ── action button color validation ────────────────────────
+
+describe("validateDocument action button colors", () => {
+  function minimalDoc(overrides?: Partial<ButtonsDocument>): ButtonsDocument {
+    return {
+      version: 1,
+      groups: { main: { buttons: [{ command: "echo hi" }] } },
+      ...overrides,
+    };
+  }
+
+  it("accepts valid action button colors", () => {
+    const diagnostics = validateDocument(minimalDoc({
+      display: { run_color: "#FF0000", copy_to_clipboard_color: "#00FF00" },
+    }));
+    const colorWarnings = diagnostics.filter((d) => d.message.includes("color"));
+    assert.strictEqual(colorWarnings.length, 0);
+  });
+
+  it("warns on invalid action button color", () => {
+    const diagnostics = validateDocument(minimalDoc({
+      display: { run_color: "red" },
+    }));
+    assert.ok(diagnostics.some((d) => d.severity === "warning" && d.message.includes("color")));
+  });
+
+  it("validates group display colors", () => {
+    const diagnostics = validateDocument(minimalDoc({
+      groups: {
+        main: {
+          display: { run_color: "bad" },
+          buttons: [{ command: "echo" }],
+        },
+      },
+    }));
+    assert.ok(diagnostics.some((d) => d.severity === "warning" && d.message.includes("color")));
   });
 });

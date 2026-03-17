@@ -9,6 +9,16 @@ export interface ButtonsDisplayConfig {
   compact?: boolean;
   button_color?: string;
   group_bg_color?: string;
+  show_run?: boolean;
+  show_new_terminal?: boolean;
+  show_copy_to_terminal?: boolean;
+  show_copy_to_new_terminal?: boolean;
+  show_copy_to_clipboard?: boolean;
+  run_color?: string;
+  new_terminal_color?: string;
+  copy_to_terminal_color?: string;
+  copy_to_new_terminal_color?: string;
+  copy_to_clipboard_color?: string;
 }
 
 export interface ButtonsDefaults {
@@ -67,6 +77,7 @@ export interface ButtonsGroupConfig extends Partial<ButtonsDefaults> {
   buttons?: ButtonsButtonConfig[];
   generate?: ButtonsGenerateConfig;
   links?: ButtonsLinkConfig[];
+  display?: ButtonsDisplayConfig;
 }
 
 export interface ButtonsDocument {
@@ -106,7 +117,27 @@ export interface ResolvedButtonsButton extends ButtonsDefaults {
   source: ResolvedButtonsActionTarget;
 }
 
-export interface ResolvedButtonsGroup {
+export interface ResolvedGroupDisplay {
+  layout: LayoutMode;
+  showCommandPreview: boolean;
+  showLabels: boolean;
+  showIcons: boolean;
+  compact: boolean;
+  buttonColor?: string;
+  groupBgColor?: string;
+  showRun: boolean;
+  showNewTerminal: boolean;
+  showCopyToTerminal: boolean;
+  showCopyToNewTerminal: boolean;
+  showCopyToClipboard: boolean;
+  runColor?: string;
+  newTerminalColor?: string;
+  copyToTerminalColor?: string;
+  copyToNewTerminalColor?: string;
+  copyToClipboardColor?: string;
+}
+
+export interface ResolvedButtonsGroup extends ResolvedGroupDisplay {
   id: string;
   name: string;
   description?: string;
@@ -127,6 +158,16 @@ export interface ResolvedButtonsConfig {
   compact: boolean;
   buttonColor?: string;
   groupBgColor?: string;
+  showRun: boolean;
+  showNewTerminal: boolean;
+  showCopyToTerminal: boolean;
+  showCopyToNewTerminal: boolean;
+  showCopyToClipboard: boolean;
+  runColor?: string;
+  newTerminalColor?: string;
+  copyToTerminalColor?: string;
+  copyToNewTerminalColor?: string;
+  copyToClipboardColor?: string;
   groups: ResolvedButtonsGroup[];
 }
 
@@ -145,6 +186,16 @@ export interface MergedDisplaySettings {
   buttonColor?: string;
   groupBgColor?: string;
   layout: LayoutMode;
+  showRun: boolean;
+  showNewTerminal: boolean;
+  showCopyToTerminal: boolean;
+  showCopyToNewTerminal: boolean;
+  showCopyToClipboard: boolean;
+  runColor?: string;
+  newTerminalColor?: string;
+  copyToTerminalColor?: string;
+  copyToNewTerminalColor?: string;
+  copyToClipboardColor?: string;
 }
 
 export interface CombinedButtonsState {
@@ -155,7 +206,9 @@ export interface CombinedButtonsState {
 }
 
 export interface PanelActionMessage {
-  type: "ready" | "reload" | "open-file" | "run-current" | "run-new" | "copy" | "open-url" | "open-port"
+  type: "ready" | "reload" | "open-file" | "run-current" | "run-new"
+    | "copy-to-terminal" | "copy-to-new-terminal" | "copy"
+    | "open-url" | "open-port"
     | "toggle-source" | "toggle-group" | "toggle-button-visibility";
   groupId?: string;
   buttonId?: string;

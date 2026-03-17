@@ -1,4 +1,4 @@
-import { CombinedButtonsState, LoadedButtonsState, MergedDisplaySettings, ResolvedButtonsConfig, ResolvedButtonsGroup } from "../models/types";
+import { CombinedButtonsState, LoadedButtonsState, MergedDisplaySettings, ResolvedButtonsGroup } from "../models/types";
 
 export interface RenderOptions {
   sidebar: boolean;
@@ -8,9 +8,6 @@ export function renderHtml(state: CombinedButtonsState, codiconUri: string, opti
   const padding = options.sidebar ? "12px" : "24px";
   const titleSize = options.sidebar ? "20px" : "28px";
   const groupTitleSize = options.sidebar ? "16px" : "20px";
-  const display = state.mergedDisplay;
-  const groupBgVar = display.groupBgColor ? display.groupBgColor : undefined;
-  const buttonColorVar = display.buttonColor ? display.buttonColor : undefined;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -30,8 +27,6 @@ export function renderHtml(state: CombinedButtonsState, codiconUri: string, opti
       --accent: var(--vscode-focusBorder);
       --danger: var(--vscode-errorForeground);
       --card-gap: 12px;
-      ${groupBgVar ? `--group-bg: ${groupBgVar};` : ""}
-      ${buttonColorVar ? `--default-button-color: ${buttonColorVar};` : ""}
     }
 
     * { box-sizing: border-box; }
@@ -62,6 +57,15 @@ export function renderHtml(state: CombinedButtonsState, codiconUri: string, opti
 
     button.primary:hover {
       background: var(--vscode-button-hoverBackground);
+    }
+
+    button.colored-action {
+      border-color: transparent;
+      color: #fff;
+    }
+
+    button.colored-action:hover {
+      filter: brightness(1.15);
     }
 
     .shell {
@@ -157,7 +161,7 @@ export function renderHtml(state: CombinedButtonsState, codiconUri: string, opti
     .group {
       border: 1px solid var(--border);
       border-radius: ${options.sidebar ? "12px" : "16px"};
-      background: var(--group-bg, color-mix(in srgb, var(--panel) 92%, transparent));
+      background: color-mix(in srgb, var(--panel) 92%, transparent);
       overflow: hidden;
     }
 
@@ -269,7 +273,7 @@ export function renderHtml(state: CombinedButtonsState, codiconUri: string, opti
     .button-card {
       display: grid;
       gap: 12px;
-      border: 1px solid ${buttonColorVar ? `color-mix(in srgb, var(--default-button-color) 40%, var(--border))` : "var(--border)"};
+      border: 1px solid var(--border);
       border-radius: 14px;
       padding: ${options.sidebar ? "10px" : "14px"};
       background: color-mix(in srgb, var(--vscode-editor-background) 86%, var(--panel));
@@ -536,7 +540,7 @@ function renderApp(state: CombinedButtonsState, options: RenderOptions): string 
       </header>
       ${showTabs ? renderSourceTabs(state.activeSource) : ""}
       ${renderDiagnostics(activeState)}
-      ${renderGroups(activeState, state.mergedDisplay, options)}
+      ${renderGroups(activeState, options)}
     </div>
   `;
 }
@@ -565,13 +569,11 @@ function renderDiagnostics(state: LoadedButtonsState): string {
     .join("")}</div>`;
 }
 
-function renderGroups(state: LoadedButtonsState, display: MergedDisplaySettings, options: RenderOptions): string {
+function renderGroups(state: LoadedButtonsState, options: RenderOptions): string {
   const resolved = state.resolved;
   if (!resolved || resolved.groups.length === 0) {
     return '<div class="empty">No buttons are available yet. Create a .buttons file or add groups to it.</div>';
   }
-
-  const layout = options.sidebar ? "rows" : display.layout;
 
   return `<div class="groups">${resolved.groups
     .map((group) => {
@@ -582,21 +584,26 @@ function renderGroups(state: LoadedButtonsState, display: MergedDisplaySettings,
       const linkBadges = group.links
         .map(
           (link) =>
-            `<button class="badge" data-url="${escapeHtml(link.url)}">${renderCodicon(link.icon, display.showIcons)}${escapeText(link.label)}</button>`,
+            `<button class="badge" data-url="${escapeHtml(link.url)}">${renderCodicon(link.icon, group.showIcons)}${escapeText(link.label)}</button>`,
         )
         .join("");
 
+      const layout = options.sidebar ? "rows" : group.layout;
       const buttonsHtml = layout === "table"
-        ? renderButtonsTable(group, display)
-        : renderButtonsCards(group, layout, display);
+        ? renderButtonsTable(group)
+        : renderButtonsCards(group, layout);
+
+      const bgStyle = group.groupBgColor
+        ? ` style="background:${escapeHtml(group.groupBgColor)}"`
+        : "";
 
       return `
-        <section class="group" data-group-id="${escapeHtml(group.id)}">
+        <section class="group" data-group-id="${escapeHtml(group.id)}"${bgStyle}>
           <div class="group-head">
             <div class="group-head-left">
               <span class="codicon codicon-chevron-down group-chevron"></span>
               <div class="group-title-text">
-                <div class="group-title">${renderCodicon(group.icon, display.showIcons)}<span>${escapeHtml(group.name)}</span></div>
+                <div class="group-title">${renderCodicon(group.icon, group.showIcons)}<span>${escapeHtml(group.name)}</span></div>
                 ${groupDescription}
               </div>
             </div>
@@ -614,14 +621,64 @@ function renderGroups(state: LoadedButtonsState, display: MergedDisplaySettings,
     .join("")}</div>`;
 }
 
-function renderButtonsCards(group: ResolvedButtonsGroup, layout: string, display: MergedDisplaySettings): string {
-  const compact = display.compact;
+function actionBtnStyle(color: string | undefined): string {
+  if (!color) return "";
+  return ` style="background:${escapeHtml(color)};border-color:transparent;color:#fff"`;
+}
+
+function actionBtnClass(color: string | undefined, primary: boolean): string {
+  if (color) return "colored-action";
+  if (primary) return "primary";
+  return "";
+}
+
+function renderActionButtons(group: ResolvedButtonsGroup, buttonId: string, compact: boolean): string {
+  const gid = escapeHtml(group.id);
+  const bid = escapeHtml(buttonId);
+  const attrs = `data-group-id="${gid}" data-button-id="${bid}"`;
+
+  const parts: string[] = [];
+
+  if (group.showRun) {
+    const cls = actionBtnClass(group.runColor, true);
+    const style = actionBtnStyle(group.runColor);
+    parts.push(`<button${cls ? ` class="${cls}"` : ""}${style} data-action="run-current" ${attrs}>Run</button>`);
+  }
+  if (group.showNewTerminal) {
+    const cls = actionBtnClass(group.newTerminalColor, false);
+    const style = actionBtnStyle(group.newTerminalColor);
+    parts.push(`<button${cls ? ` class="${cls}"` : ""}${style} data-action="run-new" ${attrs}>${compact ? "New" : "New Terminal"}</button>`);
+  }
+  if (group.showCopyToTerminal) {
+    const cls = actionBtnClass(group.copyToTerminalColor, false);
+    const style = actionBtnStyle(group.copyToTerminalColor);
+    parts.push(`<button${cls ? ` class="${cls}"` : ""}${style} data-action="copy-to-terminal" ${attrs}>${compact ? "→Term" : "Copy to Terminal"}</button>`);
+  }
+  if (group.showCopyToNewTerminal) {
+    const cls = actionBtnClass(group.copyToNewTerminalColor, false);
+    const style = actionBtnStyle(group.copyToNewTerminalColor);
+    parts.push(`<button${cls ? ` class="${cls}"` : ""}${style} data-action="copy-to-new-terminal" ${attrs}>${compact ? "→New" : "Copy to New Terminal"}</button>`);
+  }
+  if (group.showCopyToClipboard) {
+    const cls = actionBtnClass(group.copyToClipboardColor, false);
+    const style = actionBtnStyle(group.copyToClipboardColor);
+    parts.push(`<button${cls ? ` class="${cls}"` : ""}${style} data-action="copy" ${attrs}>Copy</button>`);
+  }
+
+  return parts.join("\n                ");
+}
+
+function renderButtonsCards(group: ResolvedButtonsGroup, layout: string): string {
+  const compact = group.compact;
+  const cardBorderStyle = group.buttonColor
+    ? ` style="border-color:color-mix(in srgb, ${escapeHtml(group.buttonColor)} 40%, var(--border))"`
+    : "";
 
   const buttons = group.buttons
     .map((button) => {
       const buttonKey = `${group.id}:${button.id}`;
       const description = button.description ? `<div class="subtitle">${escapeHtml(button.description)}</div>` : "";
-      const command = display.showCommandPreview ? `<div class="command">${escapeHtml(button.command)}</div>` : "";
+      const command = group.showCommandPreview ? `<div class="command">${escapeHtml(button.command)}</div>` : "";
       const danger = button.danger ? '<span class="badge danger-pill">Danger</span>' : "";
       const urlActions = button.open_urls
         .map((url) => `<button data-action="open-url" data-url="${escapeHtml(url)}">Open URL</button>`)
@@ -629,11 +686,11 @@ function renderButtonsCards(group: ResolvedButtonsGroup, layout: string, display
       const portActions = button.open_ports
         .map((port) => `<button data-action="open-port" data-port="${port}">Open :${port}</button>`)
         .join("");
-      const label = renderButtonLabel(button.label, button.icon, display.showLabels, display.showIcons);
+      const label = renderButtonLabel(button.label, button.icon, group.showLabels, group.showIcons);
       const cardClassName = compact ? "button-card compact" : "button-card";
 
       return `
-        <article class="${cardClassName}" data-button-key="${escapeHtml(buttonKey)}">
+        <article class="${cardClassName}" data-button-key="${escapeHtml(buttonKey)}"${cardBorderStyle}>
           <div class="button-title">
             ${label}
             <div class="button-title-actions">
@@ -646,9 +703,7 @@ function renderButtonsCards(group: ResolvedButtonsGroup, layout: string, display
           ${description}
           ${command}
           <div class="button-actions">
-            <button class="primary" data-action="run-current" data-group-id="${escapeHtml(group.id)}" data-button-id="${escapeHtml(button.id)}">Run</button>
-            <button data-action="run-new" data-group-id="${escapeHtml(group.id)}" data-button-id="${escapeHtml(button.id)}">New Terminal</button>
-            <button data-action="copy" data-group-id="${escapeHtml(group.id)}" data-button-id="${escapeHtml(button.id)}">Copy</button>
+            ${renderActionButtons(group, button.id, false)}
             ${urlActions}
             ${portActions}
           </div>
@@ -660,13 +715,13 @@ function renderButtonsCards(group: ResolvedButtonsGroup, layout: string, display
   return `<div class="buttons ${layout}">${buttons}</div>`;
 }
 
-function renderButtonsTable(group: ResolvedButtonsGroup, display: MergedDisplaySettings): string {
+function renderButtonsTable(group: ResolvedButtonsGroup): string {
   const rows = group.buttons
     .map((button) => {
       const buttonKey = `${group.id}:${button.id}`;
-      const iconHtml = renderCodicon(button.icon, display.showIcons);
-      const labelHtml = display.showLabels ? escapeHtml(button.label) : "";
-      const commandHtml = display.showCommandPreview ? escapeHtml(button.command) : "";
+      const iconHtml = renderCodicon(button.icon, group.showIcons);
+      const labelHtml = group.showLabels ? escapeHtml(button.label) : "";
+      const commandHtml = group.showCommandPreview ? escapeHtml(button.command) : "";
 
       return `
         <tr data-button-key="${escapeHtml(buttonKey)}">
@@ -675,9 +730,7 @@ function renderButtonsTable(group: ResolvedButtonsGroup, display: MergedDisplayS
           <td class="table-command" title="${escapeHtml(button.command)}">${commandHtml}</td>
           <td>
             <div class="table-actions">
-              <button class="primary" data-action="run-current" data-group-id="${escapeHtml(group.id)}" data-button-id="${escapeHtml(button.id)}">Run</button>
-              <button data-action="run-new" data-group-id="${escapeHtml(group.id)}" data-button-id="${escapeHtml(button.id)}">New</button>
-              <button data-action="copy" data-group-id="${escapeHtml(group.id)}" data-button-id="${escapeHtml(button.id)}">Copy</button>
+              ${renderActionButtons(group, button.id, true)}
               <span class="icon-btn eye-toggle" title="Toggle visibility">
                 <span class="codicon codicon-eye"></span>
               </span>

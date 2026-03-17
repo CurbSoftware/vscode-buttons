@@ -33,6 +33,23 @@ export async function runButton(
   terminal.sendText(button.command, true);
 }
 
+export async function copyToTerminal(
+  resolved: ResolvedButtonsConfig | undefined,
+  groupId: string,
+  buttonId: string,
+  terminalMode: "current" | "new",
+): Promise<void> {
+  const button = findButton(resolved, groupId, buttonId);
+  if (!button) {
+    void vscode.window.showErrorMessage("Button not found in the current Buttons config.");
+    return;
+  }
+
+  const terminal = terminalMode === "new" ? createNewTerminal(button) : getOrCreateCurrentTerminal(button);
+  terminal.show(Boolean(button.reveal_terminal));
+  terminal.sendText(button.command, false);
+}
+
 export async function copyButtonCommand(resolved: ResolvedButtonsConfig | undefined, groupId: string, buttonId: string): Promise<void> {
   const button = findButton(resolved, groupId, buttonId);
   if (!button) {

@@ -1,6 +1,7 @@
 import {
   ButtonsButtonConfig,
   ButtonsDiagnostic,
+  ButtonsDisplayConfig,
   ButtonsDocument,
   ButtonsGenerateConfig,
   ButtonsGroupConfig,
@@ -9,6 +10,7 @@ import {
   ResolvedButtonsButton,
   ResolvedButtonsConfig,
   ResolvedButtonsGroup,
+  ResolvedGroupDisplay,
   TerminalMode,
 } from "../models/types";
 
@@ -45,8 +47,7 @@ export function validateDocument(document: ButtonsDocument): ButtonsDiagnostic[]
   }
 
   if (document.display) {
-    validateColor(document.display.button_color, "Display", diagnostics);
-    validateColor(document.display.group_bg_color, "Display", diagnostics);
+    validateDisplayConfig(document.display, "Display", diagnostics);
   }
 
   for (const [groupId, group] of Object.entries(document.groups ?? {})) {
@@ -54,6 +55,10 @@ export function validateDocument(document: ButtonsDocument): ButtonsDiagnostic[]
     validateColor(group.color, `Group '${groupId}'`, diagnostics);
     validatePorts(group.ports, `Group '${groupId}'`, diagnostics);
     validateLinks(group.links, `Group '${groupId}'`, diagnostics);
+
+    if (group.display) {
+      validateDisplayConfig(group.display, `Group '${groupId}' display`, diagnostics);
+    }
 
     for (const button of group.buttons ?? []) {
       validateButton(button, `Group '${groupId}'`, diagnostics);
@@ -79,6 +84,26 @@ export function resolveDocument(
   const groups: ResolvedButtonsGroup[] = [];
   const seenIds = new Set<string>();
 
+  const documentDisplay: ResolvedGroupDisplay = {
+    layout: document.layout ?? defaultLayout,
+    showCommandPreview: document.display?.show_command ?? showCommandPreviewFallback,
+    showLabels: document.display?.show_labels ?? true,
+    showIcons: document.display?.show_icons ?? true,
+    compact: document.display?.compact ?? false,
+    buttonColor: document.display?.button_color,
+    groupBgColor: document.display?.group_bg_color,
+    showRun: document.display?.show_run ?? true,
+    showNewTerminal: document.display?.show_new_terminal ?? true,
+    showCopyToTerminal: document.display?.show_copy_to_terminal ?? true,
+    showCopyToNewTerminal: document.display?.show_copy_to_new_terminal ?? true,
+    showCopyToClipboard: document.display?.show_copy_to_clipboard ?? true,
+    runColor: document.display?.run_color,
+    newTerminalColor: document.display?.new_terminal_color,
+    copyToTerminalColor: document.display?.copy_to_terminal_color,
+    copyToNewTerminalColor: document.display?.copy_to_new_terminal_color,
+    copyToClipboardColor: document.display?.copy_to_clipboard_color,
+  };
+
   for (const [groupId, group] of Object.entries(document.groups ?? {})) {
     if (group.enabled === false) {
       continue;
@@ -99,6 +124,8 @@ export function resolveDocument(
       deduplicatedButtons.push(button);
     }
 
+    const groupDisplay = resolveGroupDisplay(documentDisplay, group.display, group.layout);
+
     groups.push({
       id: groupId,
       name: group.name ?? toTitleCase(groupId),
@@ -108,19 +135,14 @@ export function resolveDocument(
       links: group.links ?? [],
       ports: group.ports ?? [],
       buttons: deduplicatedButtons,
+      ...groupDisplay,
     });
   }
 
   return {
     title: document.title ?? "Buttons",
     description: document.description,
-    layout: document.layout ?? defaultLayout,
-    showCommandPreview: document.display?.show_command ?? showCommandPreviewFallback,
-    showLabels: document.display?.show_labels ?? true,
-    showIcons: document.display?.show_icons ?? true,
-    compact: document.display?.compact ?? false,
-    buttonColor: document.display?.button_color,
-    groupBgColor: document.display?.group_bg_color,
+    ...documentDisplay,
     groups,
   };
 }
@@ -404,6 +426,47 @@ export function isDangerousCommand(command: string): boolean {
   return DANGER_PATTERNS.some((pattern) => padded.includes(pattern));
 }
 
+export function validateDisplayConfig(display: ButtonsDisplayConfig, scope: string, diagnostics: ButtonsDiagnostic[]): void {
+  validateColor(display.button_color, scope, diagnostics);
+  validateColor(display.group_bg_color, scope, diagnostics);
+  validateColor(display.run_color, scope, diagnostics);
+  validateColor(display.new_terminal_color, scope, diagnostics);
+  validateColor(display.copy_to_terminal_color, scope, diagnostics);
+  validateColor(display.copy_to_new_terminal_color, scope, diagnostics);
+  validateColor(display.copy_to_clipboard_color, scope, diagnostics);
+}
+
+export function resolveGroupDisplay(
+  base: ResolvedGroupDisplay,
+  groupDisplay: ButtonsDisplayConfig | undefined,
+  groupLayout: LayoutMode | undefined,
+): ResolvedGroupDisplay {
+  const result = { ...base };
+  if (groupLayout) {
+    result.layout = groupLayout;
+  }
+  if (!groupDisplay) {
+    return result;
+  }
+  if (groupDisplay.show_command !== undefined) result.showCommandPreview = groupDisplay.show_command;
+  if (groupDisplay.show_labels !== undefined) result.showLabels = groupDisplay.show_labels;
+  if (groupDisplay.show_icons !== undefined) result.showIcons = groupDisplay.show_icons;
+  if (groupDisplay.compact !== undefined) result.compact = groupDisplay.compact;
+  if (groupDisplay.button_color !== undefined) result.buttonColor = groupDisplay.button_color;
+  if (groupDisplay.group_bg_color !== undefined) result.groupBgColor = groupDisplay.group_bg_color;
+  if (groupDisplay.show_run !== undefined) result.showRun = groupDisplay.show_run;
+  if (groupDisplay.show_new_terminal !== undefined) result.showNewTerminal = groupDisplay.show_new_terminal;
+  if (groupDisplay.show_copy_to_terminal !== undefined) result.showCopyToTerminal = groupDisplay.show_copy_to_terminal;
+  if (groupDisplay.show_copy_to_new_terminal !== undefined) result.showCopyToNewTerminal = groupDisplay.show_copy_to_new_terminal;
+  if (groupDisplay.show_copy_to_clipboard !== undefined) result.showCopyToClipboard = groupDisplay.show_copy_to_clipboard;
+  if (groupDisplay.run_color !== undefined) result.runColor = groupDisplay.run_color;
+  if (groupDisplay.new_terminal_color !== undefined) result.newTerminalColor = groupDisplay.new_terminal_color;
+  if (groupDisplay.copy_to_terminal_color !== undefined) result.copyToTerminalColor = groupDisplay.copy_to_terminal_color;
+  if (groupDisplay.copy_to_new_terminal_color !== undefined) result.copyToNewTerminalColor = groupDisplay.copy_to_new_terminal_color;
+  if (groupDisplay.copy_to_clipboard_color !== undefined) result.copyToClipboardColor = groupDisplay.copy_to_clipboard_color;
+  return result;
+}
+
 export function mergeDisplaySettings(
   user: ResolvedButtonsConfig | undefined,
   project: ResolvedButtonsConfig | undefined,
@@ -415,6 +478,11 @@ export function mergeDisplaySettings(
     showIcons: true,
     compact: false,
     layout: fallbacks.layout,
+    showRun: true,
+    showNewTerminal: true,
+    showCopyToTerminal: true,
+    showCopyToNewTerminal: true,
+    showCopyToClipboard: true,
   };
 
   if (user) {
@@ -425,6 +493,16 @@ export function mergeDisplaySettings(
     base.layout = user.layout;
     base.buttonColor = user.buttonColor;
     base.groupBgColor = user.groupBgColor;
+    base.showRun = user.showRun;
+    base.showNewTerminal = user.showNewTerminal;
+    base.showCopyToTerminal = user.showCopyToTerminal;
+    base.showCopyToNewTerminal = user.showCopyToNewTerminal;
+    base.showCopyToClipboard = user.showCopyToClipboard;
+    base.runColor = user.runColor;
+    base.newTerminalColor = user.newTerminalColor;
+    base.copyToTerminalColor = user.copyToTerminalColor;
+    base.copyToNewTerminalColor = user.copyToNewTerminalColor;
+    base.copyToClipboardColor = user.copyToClipboardColor;
   }
 
   if (project) {
@@ -433,12 +511,18 @@ export function mergeDisplaySettings(
     base.showIcons = project.showIcons;
     base.compact = project.compact;
     base.layout = project.layout;
-    if (project.buttonColor !== undefined) {
-      base.buttonColor = project.buttonColor;
-    }
-    if (project.groupBgColor !== undefined) {
-      base.groupBgColor = project.groupBgColor;
-    }
+    base.showRun = project.showRun;
+    base.showNewTerminal = project.showNewTerminal;
+    base.showCopyToTerminal = project.showCopyToTerminal;
+    base.showCopyToNewTerminal = project.showCopyToNewTerminal;
+    base.showCopyToClipboard = project.showCopyToClipboard;
+    if (project.buttonColor !== undefined) base.buttonColor = project.buttonColor;
+    if (project.groupBgColor !== undefined) base.groupBgColor = project.groupBgColor;
+    if (project.runColor !== undefined) base.runColor = project.runColor;
+    if (project.newTerminalColor !== undefined) base.newTerminalColor = project.newTerminalColor;
+    if (project.copyToTerminalColor !== undefined) base.copyToTerminalColor = project.copyToTerminalColor;
+    if (project.copyToNewTerminalColor !== undefined) base.copyToNewTerminalColor = project.copyToNewTerminalColor;
+    if (project.copyToClipboardColor !== undefined) base.copyToClipboardColor = project.copyToClipboardColor;
   }
 
   return base;
