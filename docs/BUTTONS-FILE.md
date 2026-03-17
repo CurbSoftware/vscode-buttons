@@ -129,6 +129,28 @@ new_terminal_color = "#6B8AFF"
 copy_to_terminal_color = "#D4A843"
 copy_to_new_terminal_color = "#C77DBA"
 copy_to_clipboard_color = "#8B8B8B"
+
+# Action button custom labels
+run_label = "Run"
+new_terminal_label = "New Terminal"
+copy_to_terminal_label = "Copy to Terminal"
+copy_to_new_terminal_label = "Copy to New Terminal"
+copy_to_clipboard_label = "Copy"
+
+# Action button icons (codicon name; replaces text label, label becomes tooltip)
+run_icon = "play"
+new_terminal_icon = "terminal"
+copy_to_terminal_icon = "arrow-right"
+copy_to_new_terminal_icon = "split-horizontal"
+copy_to_clipboard_icon = "copy"
+
+# Click-to-copy on command preview
+command_click_to_copy = false
+
+# Size and style
+label_size = "14px"
+action_size = "12px"
+action_border_radius = "6px"
 ```
 
 | Key | Type | Default | Description |
@@ -149,6 +171,20 @@ copy_to_clipboard_color = "#8B8B8B"
 | `copy_to_terminal_color` | `string` | — | Hex color for the Copy to Terminal action button. |
 | `copy_to_new_terminal_color` | `string` | — | Hex color for the Copy to New Terminal action button. |
 | `copy_to_clipboard_color` | `string` | — | Hex color for the Copy to Clipboard action button. |
+| `run_label` | `string` | `"Run"` | Custom text label for the Run action button. |
+| `new_terminal_label` | `string` | `"New Terminal"` | Custom text label for the New Terminal action button. |
+| `copy_to_terminal_label` | `string` | `"Copy to Terminal"` | Custom text label for the Copy to Terminal action button. |
+| `copy_to_new_terminal_label` | `string` | `"Copy to New Terminal"` | Custom text label for the Copy to New Terminal action button. |
+| `copy_to_clipboard_label` | `string` | `"Copy"` | Custom text label for the Copy to Clipboard action button. |
+| `run_icon` | `string` | — | Codicon name for the Run action button (e.g. `play`). Replaces text; label becomes tooltip. |
+| `new_terminal_icon` | `string` | — | Codicon name for the New Terminal action button (e.g. `terminal`). |
+| `copy_to_terminal_icon` | `string` | — | Codicon name for the Copy to Terminal action button (e.g. `arrow-right`). |
+| `copy_to_new_terminal_icon` | `string` | — | Codicon name for the Copy to New Terminal action button (e.g. `split-horizontal`). |
+| `copy_to_clipboard_icon` | `string` | — | Codicon name for the Copy to Clipboard action button (e.g. `copy`). |
+| `command_click_to_copy` | `boolean` | `false` | When enabled, clicking the command preview copies it to clipboard. Shows hover hint and feedback. |
+| `label_size` | `string` | — | CSS font-size for button labels (e.g. `"14px"`, `"1.1em"`). |
+| `action_size` | `string` | — | CSS font-size for action buttons (e.g. `"12px"`). |
+| `action_border_radius` | `string` | — | CSS border-radius for action buttons (e.g. `"6px"`, `"999px"`). |
 
 When both user and project files define display settings, **project settings take precedence**. Undefined project fields fall through from the user file.
 

@@ -1,0 +1,148 @@
+version = 1
+title = "Custom Labels & Icons"
+description = "Tests custom action button labels, icon-only actions, and mixed icon+text"
+layout = "grid"
+
+[display]
+show_command = true
+show_labels = true
+show_icons = true
+
+[macros]
+echo = "echo"
+
+# ── Default labels (no customization) ──
+[groups.defaults]
+name = "Default Labels"
+description = "Standard action button text"
+icon = "list-flat"
+color = "#64748B"
+
+[[groups.defaults.buttons]]
+id = "def-1"
+label = "Standard Button"
+command = "{{echo}} 'default labels'"
+icon = "play"
+
+# ── Custom text labels ──
+[groups.custom-text]
+name = "Custom Text Labels"
+description = "All 5 action buttons renamed"
+icon = "tag"
+color = "#2563EB"
+
+[groups.custom-text.display]
+run_label = "Execute"
+new_terminal_label = "Fresh Terminal"
+copy_to_terminal_label = "Paste"
+copy_to_new_terminal_label = "Paste New"
+copy_to_clipboard_label = "Clipboard"
+
+[[groups.custom-text.buttons]]
+id = "ct-1"
+label = "Custom Labels"
+command = "{{echo}} 'custom labels'"
+icon = "play"
+
+[[groups.custom-text.buttons]]
+id = "ct-2"
+label = "Also Custom"
+command = "{{echo}} 'also custom'"
+icon = "package"
+
+# ── Icon-only actions ──
+[groups.icon-actions]
+name = "Icon-Only Actions"
+description = "Action buttons display only icons (with tooltip for label)"
+icon = "symbol-color"
+color = "#16A34A"
+
+[groups.icon-actions.display]
+run_icon = "play"
+new_terminal_icon = "terminal"
+copy_to_terminal_icon = "arrow-right"
+copy_to_new_terminal_icon = "split-horizontal"
+copy_to_clipboard_icon = "copy"
+
+[[groups.icon-actions.buttons]]
+id = "io-1"
+label = "Icon Actions"
+command = "{{echo}} 'icon-only actions'"
+icon = "zap"
+
+[[groups.icon-actions.buttons]]
+id = "io-2"
+label = "Also Icons"
+command = "{{echo}} 'also icons'"
+icon = "rocket"
+
+# ── Mixed: some icons, some text ──
+[groups.mixed]
+name = "Mixed Icons & Text"
+description = "Run uses icon, others use custom text"
+icon = "merge"
+color = "#9333EA"
+
+[groups.mixed.display]
+run_icon = "play"
+run_label = "Go"
+new_terminal_label = "New"
+copy_to_clipboard_icon = "clippy"
+copy_to_clipboard_label = "Clip"
+
+[[groups.mixed.buttons]]
+id = "mix-1"
+label = "Mixed Button"
+command = "{{echo}} 'mixed'"
+icon = "play"
+
+# ── Short emoji-style labels ──
+[groups.short-labels]
+name = "Short Labels"
+description = "Single-character or emoji-length labels"
+icon = "text-size"
+color = "#DC2626"
+
+[groups.short-labels.display]
+run_label = "▶"
+new_terminal_label = "+"
+copy_to_terminal_label = "→"
+copy_to_new_terminal_label = "⇒"
+copy_to_clipboard_label = "📋"
+
+[[groups.short-labels.buttons]]
+id = "sl-1"
+label = "Short Label Actions"
+command = "{{echo}} 'short labels'"
+icon = "play"
+
+# ── Icons with colored buttons ──
+[groups.colored-icons]
+name = "Colored Icon Actions"
+description = "Icon-only actions with custom colors"
+icon = "paintcan"
+color = "#D97706"
+
+[groups.colored-icons.display]
+run_icon = "play"
+run_color = "#16A34A"
+new_terminal_icon = "terminal"
+new_terminal_color = "#2563EB"
+copy_to_terminal_icon = "arrow-right"
+copy_to_terminal_color = "#D97706"
+copy_to_new_terminal_icon = "split-horizontal"
+copy_to_new_terminal_color = "#9333EA"
+copy_to_clipboard_icon = "copy"
+copy_to_clipboard_color = "#64748B"
+
+[[groups.colored-icons.buttons]]
+id = "ci-1"
+label = "Colored Icons"
+command = "{{echo}} 'colored icons'"
+icon = "zap"
+
+[[groups.colored-icons.buttons]]
+id = "ci-2"
+label = "More Colored Icons"
+command = "{{echo}} 'more colored'"
+icon = "rocket"

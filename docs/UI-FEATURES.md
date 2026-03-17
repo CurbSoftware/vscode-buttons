@@ -49,6 +49,36 @@ copy_to_clipboard_color = "#8B8B8B"
 
 All five action buttons are visible by default. See the [Display Block](BUTTONS-FILE.md#display-block) reference for the full list of fields.
 
+### Custom Action Button Labels
+
+Each action button's text can be customized via the `[display]` block:
+
+```toml
+[display]
+run_label = "Execute"
+new_terminal_label = "Fresh Terminal"
+copy_to_terminal_label = "Paste"
+copy_to_new_terminal_label = "Paste (New)"
+copy_to_clipboard_label = "Clip"
+```
+
+The defaults are `"Run"`, `"New Terminal"`, `"Copy to Terminal"`, `"Copy to New Terminal"`, and `"Copy"`.
+
+### Action Button Icons
+
+Each action button can display a codicon icon instead of its text label. When an icon is set, it replaces the text and the text label becomes a tooltip:
+
+```toml
+[display]
+run_icon = "play"
+new_terminal_icon = "terminal"
+copy_to_terminal_icon = "arrow-right"
+copy_to_new_terminal_icon = "split-horizontal"
+copy_to_clipboard_icon = "copy"
+```
+
+Icon names follow the same codicon format as button and group icons. This is useful for creating a more compact action bar.
+
 ## Source Tabs
 
 When both a project `.buttons` file and a user `~/.buttons` file exist, **tabs** appear at the top of the panel:
@@ -106,6 +136,19 @@ copy_to_clipboard_color = "#8B8B8B"
 ```
 
 These can also be set at the group level via `[groups.ID.display]`.
+
+### Sizes and Styles
+
+Control the font size of button labels and action buttons, and the corner rounding of action buttons:
+
+```toml
+[display]
+label_size = "14px"           # CSS font-size for button labels
+action_size = "12px"          # CSS font-size for action buttons
+action_border_radius = "999px" # fully rounded action buttons
+```
+
+Any valid CSS value works (e.g. `"14px"`, `"1.1em"`, `"0.9rem"`). These can also be set per-group via `[groups.ID.display]`.
 
 ### Color Format
 
@@ -172,6 +215,23 @@ When `show_icons = true` and `show_labels = false`, buttons display as icon-only
 ## Command Preview
 
 When `show_command = true` (the default), each button card shows the resolved command in a monospace code block. This helps users verify what will run before clicking.
+
+### Click-to-Copy Command
+
+Enable click-to-copy on the command preview area:
+
+```toml
+[display]
+command_click_to_copy = true
+```
+
+When enabled:
+- Clicking the command preview copies the command text to the clipboard
+- A "click to copy" hint appears on hover
+- After clicking, a "copied!" confirmation is briefly shown
+- The cursor changes to a pointer and the border highlights on hover
+
+This provides a quick way to grab commands without using the Copy to Clipboard action button. Works at both document `[display]` and per-group `[groups.ID.display]` level.
 
 ## Compact Mode
 

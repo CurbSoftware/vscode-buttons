@@ -1,0 +1,171 @@
+version = 1
+title = "Sizes & Styles"
+description = "Tests label_size, action_size, and action_border_radius at document and group level"
+layout = "grid"
+
+[display]
+show_command = true
+show_labels = true
+show_icons = true
+
+[macros]
+echo = "echo"
+
+# ── Default sizes (no customization) ──
+[groups.default-size]
+name = "Default Sizes"
+description = "No size overrides — baseline for comparison"
+icon = "text-size"
+color = "#64748B"
+
+[[groups.default-size.buttons]]
+id = "ds-1"
+label = "Default Size"
+command = "{{echo}} 'default'"
+icon = "play"
+
+[[groups.default-size.buttons]]
+id = "ds-2"
+label = "Also Default"
+command = "{{echo}} 'also default'"
+icon = "package"
+
+# ── Large action buttons ──
+[groups.large-actions]
+name = "Large Action Buttons"
+description = "action_size = 16px — bigger action buttons"
+icon = "arrow-up"
+color = "#2563EB"
+
+[groups.large-actions.display]
+action_size = "16px"
+
+[[groups.large-actions.buttons]]
+id = "la-1"
+label = "Large Actions"
+command = "{{echo}} 'large actions'"
+icon = "play"
+
+[[groups.large-actions.buttons]]
+id = "la-2"
+label = "Also Large"
+command = "{{echo}} 'also large'"
+icon = "package"
+
+# ── Small action buttons ──
+[groups.small-actions]
+name = "Small Action Buttons"
+description = "action_size = 10px — compact action buttons"
+icon = "arrow-down"
+color = "#16A34A"
+
+[groups.small-actions.display]
+action_size = "10px"
+
+[[groups.small-actions.buttons]]
+id = "sa-1"
+label = "Small Actions"
+command = "{{echo}} 'small actions'"
+icon = "play"
+
+[[groups.small-actions.buttons]]
+id = "sa-2"
+label = "Also Small"
+command = "{{echo}} 'also small'"
+icon = "package"
+
+# ── Pill-shaped action buttons ──
+[groups.pill-actions]
+name = "Pill-Shaped Actions"
+description = "action_border_radius = 999px — fully rounded"
+icon = "circle"
+color = "#9333EA"
+
+[groups.pill-actions.display]
+action_border_radius = "999px"
+
+[[groups.pill-actions.buttons]]
+id = "pill-1"
+label = "Pill Actions"
+command = "{{echo}} 'pill shaped'"
+icon = "play"
+
+[[groups.pill-actions.buttons]]
+id = "pill-2"
+label = "Also Pill"
+command = "{{echo}} 'also pill'"
+icon = "package"
+
+# ── Square action buttons ──
+[groups.square-actions]
+name = "Square Actions"
+description = "action_border_radius = 2px — nearly square"
+icon = "primitive-square"
+color = "#DC2626"
+
+[groups.square-actions.display]
+action_border_radius = "2px"
+
+[[groups.square-actions.buttons]]
+id = "sq-1"
+label = "Square Actions"
+command = "{{echo}} 'square'"
+icon = "play"
+
+[[groups.square-actions.buttons]]
+id = "sq-2"
+label = "Also Square"
+command = "{{echo}} 'also square'"
+icon = "package"
+
+# ── Large label text ──
+[groups.large-labels]
+name = "Large Label Text"
+description = "label_size = 18px — bigger button labels"
+icon = "text-size"
+color = "#D97706"
+
+[groups.large-labels.display]
+label_size = "18px"
+
+[[groups.large-labels.buttons]]
+id = "ll-1"
+label = "Large Label"
+command = "{{echo}} 'large label'"
+icon = "play"
+
+[[groups.large-labels.buttons]]
+id = "ll-2"
+label = "Also Large Label"
+command = "{{echo}} 'also large'"
+icon = "package"
+
+# ── Combined: large labels + large pills + colored ──
+[groups.combined]
+name = "Combined Styles"
+description = "Large labels, large pill actions, custom colors"
+icon = "sparkle"
+color = "#EC4899"
+
+[groups.combined.display]
+label_size = "16px"
+action_size = "14px"
+action_border_radius = "999px"
+run_color = "#EC4899"
+new_terminal_color = "#8B5CF6"
+copy_to_clipboard_color = "#0EA5E9"
+run_icon = "play"
+new_terminal_icon = "terminal"
+copy_to_clipboard_icon = "copy"
+
+[[groups.combined.buttons]]
+id = "comb-1"
+label = "Styled Button"
+command = "{{echo}} 'combined styles'"
+icon = "rocket"
+
+[[groups.combined.buttons]]
+id = "comb-2"
+label = "Another Styled"
+command = "{{echo}} 'another styled'"
+icon = "zap"

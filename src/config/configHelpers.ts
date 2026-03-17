@@ -102,6 +102,20 @@ export function resolveDocument(
     copyToTerminalColor: document.display?.copy_to_terminal_color,
     copyToNewTerminalColor: document.display?.copy_to_new_terminal_color,
     copyToClipboardColor: document.display?.copy_to_clipboard_color,
+    runLabel: document.display?.run_label ?? "Run",
+    newTerminalLabel: document.display?.new_terminal_label ?? "New Terminal",
+    copyToTerminalLabel: document.display?.copy_to_terminal_label ?? "Copy to Terminal",
+    copyToNewTerminalLabel: document.display?.copy_to_new_terminal_label ?? "Copy to New Terminal",
+    copyToClipboardLabel: document.display?.copy_to_clipboard_label ?? "Copy",
+    runIcon: document.display?.run_icon,
+    newTerminalIcon: document.display?.new_terminal_icon,
+    copyToTerminalIcon: document.display?.copy_to_terminal_icon,
+    copyToNewTerminalIcon: document.display?.copy_to_new_terminal_icon,
+    copyToClipboardIcon: document.display?.copy_to_clipboard_icon,
+    commandClickToCopy: document.display?.command_click_to_copy ?? false,
+    labelSize: document.display?.label_size,
+    actionSize: document.display?.action_size,
+    actionBorderRadius: document.display?.action_border_radius,
   };
 
   for (const [groupId, group] of Object.entries(document.groups ?? {})) {
@@ -434,6 +448,11 @@ export function validateDisplayConfig(display: ButtonsDisplayConfig, scope: stri
   validateColor(display.copy_to_terminal_color, scope, diagnostics);
   validateColor(display.copy_to_new_terminal_color, scope, diagnostics);
   validateColor(display.copy_to_clipboard_color, scope, diagnostics);
+  validateCodicon(display.run_icon, `${scope} run_icon`, diagnostics);
+  validateCodicon(display.new_terminal_icon, `${scope} new_terminal_icon`, diagnostics);
+  validateCodicon(display.copy_to_terminal_icon, `${scope} copy_to_terminal_icon`, diagnostics);
+  validateCodicon(display.copy_to_new_terminal_icon, `${scope} copy_to_new_terminal_icon`, diagnostics);
+  validateCodicon(display.copy_to_clipboard_icon, `${scope} copy_to_clipboard_icon`, diagnostics);
 }
 
 export function resolveGroupDisplay(
@@ -464,6 +483,20 @@ export function resolveGroupDisplay(
   if (groupDisplay.copy_to_terminal_color !== undefined) result.copyToTerminalColor = groupDisplay.copy_to_terminal_color;
   if (groupDisplay.copy_to_new_terminal_color !== undefined) result.copyToNewTerminalColor = groupDisplay.copy_to_new_terminal_color;
   if (groupDisplay.copy_to_clipboard_color !== undefined) result.copyToClipboardColor = groupDisplay.copy_to_clipboard_color;
+  if (groupDisplay.run_label !== undefined) result.runLabel = groupDisplay.run_label;
+  if (groupDisplay.new_terminal_label !== undefined) result.newTerminalLabel = groupDisplay.new_terminal_label;
+  if (groupDisplay.copy_to_terminal_label !== undefined) result.copyToTerminalLabel = groupDisplay.copy_to_terminal_label;
+  if (groupDisplay.copy_to_new_terminal_label !== undefined) result.copyToNewTerminalLabel = groupDisplay.copy_to_new_terminal_label;
+  if (groupDisplay.copy_to_clipboard_label !== undefined) result.copyToClipboardLabel = groupDisplay.copy_to_clipboard_label;
+  if (groupDisplay.run_icon !== undefined) result.runIcon = groupDisplay.run_icon;
+  if (groupDisplay.new_terminal_icon !== undefined) result.newTerminalIcon = groupDisplay.new_terminal_icon;
+  if (groupDisplay.copy_to_terminal_icon !== undefined) result.copyToTerminalIcon = groupDisplay.copy_to_terminal_icon;
+  if (groupDisplay.copy_to_new_terminal_icon !== undefined) result.copyToNewTerminalIcon = groupDisplay.copy_to_new_terminal_icon;
+  if (groupDisplay.copy_to_clipboard_icon !== undefined) result.copyToClipboardIcon = groupDisplay.copy_to_clipboard_icon;
+  if (groupDisplay.command_click_to_copy !== undefined) result.commandClickToCopy = groupDisplay.command_click_to_copy;
+  if (groupDisplay.label_size !== undefined) result.labelSize = groupDisplay.label_size;
+  if (groupDisplay.action_size !== undefined) result.actionSize = groupDisplay.action_size;
+  if (groupDisplay.action_border_radius !== undefined) result.actionBorderRadius = groupDisplay.action_border_radius;
   return result;
 }
 

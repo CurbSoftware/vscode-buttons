@@ -657,6 +657,12 @@ describe("resolveGroupDisplay", () => {
     showCopyToTerminal: true,
     showCopyToNewTerminal: true,
     showCopyToClipboard: true,
+    runLabel: "Run",
+    newTerminalLabel: "New Terminal",
+    copyToTerminalLabel: "Copy to Terminal",
+    copyToNewTerminalLabel: "Copy to New Terminal",
+    copyToClipboardLabel: "Copy",
+    commandClickToCopy: false,
   };
 
   it("returns base when no group display or layout", () => {

@@ -19,6 +19,20 @@ export interface ButtonsDisplayConfig {
   copy_to_terminal_color?: string;
   copy_to_new_terminal_color?: string;
   copy_to_clipboard_color?: string;
+  run_label?: string;
+  new_terminal_label?: string;
+  copy_to_terminal_label?: string;
+  copy_to_new_terminal_label?: string;
+  copy_to_clipboard_label?: string;
+  run_icon?: string;
+  new_terminal_icon?: string;
+  copy_to_terminal_icon?: string;
+  copy_to_new_terminal_icon?: string;
+  copy_to_clipboard_icon?: string;
+  command_click_to_copy?: boolean;
+  label_size?: string;
+  action_size?: string;
+  action_border_radius?: string;
 }
 
 export interface ButtonsDefaults {
@@ -136,6 +150,20 @@ export interface ResolvedGroupDisplay {
   copyToTerminalColor?: string;
   copyToNewTerminalColor?: string;
   copyToClipboardColor?: string;
+  runLabel: string;
+  newTerminalLabel: string;
+  copyToTerminalLabel: string;
+  copyToNewTerminalLabel: string;
+  copyToClipboardLabel: string;
+  runIcon?: string;
+  newTerminalIcon?: string;
+  copyToTerminalIcon?: string;
+  copyToNewTerminalIcon?: string;
+  copyToClipboardIcon?: string;
+  commandClickToCopy: boolean;
+  labelSize?: string;
+  actionSize?: string;
+  actionBorderRadius?: string;
 }
 
 export interface ResolvedButtonsGroup extends ResolvedGroupDisplay {
