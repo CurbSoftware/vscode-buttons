@@ -9,7 +9,7 @@ Buttons expects a valid TOML file named `.buttons` at the workspace root. Common
 - duplicate keys
 - invalid URLs, colors, or ports
 
-Start with the examples in [EXAMPLES.md](EXAMPLES.md) or the real config in [.buttons](../.buttons).
+Start with the examples in [EXAMPLES.md](EXAMPLES.md) or the real config in [.buttons](https://github.com/CurbSoftware/vscode-buttons/blob/main/.buttons).
 
 ## No Buttons Are Visible
 

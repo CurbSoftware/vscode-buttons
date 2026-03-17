@@ -4,10 +4,10 @@ Buttons v1 loads only the `.buttons` file in the workspace root. The files under
 
 ## Included Example Packs
 
-- [examples/node/.buttons](../examples/node/.buttons)
-- [examples/docker/.buttons](../examples/docker/.buttons)
-- [examples/python/.buttons](../examples/python/.buttons)
-- [examples/git/.buttons](../examples/git/.buttons)
+- [examples/node/.buttons](https://github.com/CurbSoftware/vscode-buttons/blob/main/examples/node/.buttons)
+- [examples/docker/.buttons](https://github.com/CurbSoftware/vscode-buttons/blob/main/examples/docker/.buttons)
+- [examples/python/.buttons](https://github.com/CurbSoftware/vscode-buttons/blob/main/examples/python/.buttons)
+- [examples/git/.buttons](https://github.com/CurbSoftware/vscode-buttons/blob/main/examples/git/.buttons)
 
 ## Node Example
 

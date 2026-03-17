@@ -4,16 +4,50 @@ import { getButtonsFileUri } from "./config/findButtonsFile";
 import { copyButtonCommand, openButtonPort, openButtonUrl, runButton } from "./execution/actions";
 import { LoadedButtonsState, PanelActionMessage, ResolvedButtonsButton, ResolvedButtonsGroup } from "./models/types";
 import { ButtonsPanel } from "./panel/ButtonsPanel";
+import { ButtonsSidebarProvider } from "./panel/ButtonsSidebarProvider";
 
 let currentState: LoadedButtonsState | undefined;
 
 export function activate(context: vscode.ExtensionContext): void {
-  let panel: ButtonsPanel;
-  panel = new ButtonsPanel(
+  const panel = new ButtonsPanel(
     context.extensionUri,
     async () => refreshState(),
-    async (message: PanelActionMessage): Promise<void> => handlePanelMessage(message, panel),
+    async (message: PanelActionMessage): Promise<void> => handlePanelMessage(message, panel, sidebarProvider),
   );
+
+  const sidebarProvider = new ButtonsSidebarProvider(
+    context.extensionUri,
+    async () => refreshState(),
+    async (message: PanelActionMessage): Promise<void> => handlePanelMessage(message, panel, sidebarProvider),
+  );
+
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider("buttons.sidebarView", sidebarProvider),
+  );
+
+  // Status bar item
+  const statusBarItem = vscode.window.createStatusBarItem("buttons.status", vscode.StatusBarAlignment.Left, 50);
+  statusBarItem.text = "$(list-selection) Buttons";
+  statusBarItem.tooltip = "Open Buttons";
+  statusBarItem.command = "buttons.openPanel";
+  context.subscriptions.push(statusBarItem);
+
+  // Show/hide status bar based on .buttons file existence
+  const updateStatusBar = async (): Promise<void> => {
+    const fileUri = getButtonsFileUri();
+    if (!fileUri) {
+      statusBarItem.hide();
+      return;
+    }
+    try {
+      await vscode.workspace.fs.stat(fileUri);
+      statusBarItem.show();
+    } catch {
+      statusBarItem.hide();
+    }
+  };
+
+  void updateStatusBar();
 
   context.subscriptions.push(
     vscode.commands.registerCommand("buttons.openPanel", async () => {
@@ -22,6 +56,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand("buttons.reloadConfig", async () => {
       await refreshState(true);
       await panel.refresh();
+      await sidebarProvider.refresh();
       void vscode.window.showInformationMessage("Buttons config reloaded.");
     }),
     vscode.commands.registerCommand("buttons.openButtonsFile", async () => {
@@ -48,6 +83,7 @@ export function activate(context: vscode.ExtensionContext): void {
       await createExampleButtonsFile();
       await refreshState(true);
       await panel.refresh();
+      await sidebarProvider.refresh();
     }),
     vscode.commands.registerCommand("buttons.runButton", async (payload?: { groupId: string; buttonId: string }) => {
       const target = payload ?? (await pickButtonTarget("Select a button to run"));
@@ -57,6 +93,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
       await runButton((await refreshState()).resolved, target.groupId, target.buttonId, "current", getConfirmDangerousCommands());
       await panel.refresh();
+      await sidebarProvider.refresh();
     }),
     vscode.commands.registerCommand("buttons.runButtonInNewTerminal", async (payload?: { groupId: string; buttonId: string }) => {
       const target = payload ?? (await pickButtonTarget("Select a button to run in a new terminal"));
@@ -66,6 +103,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
       await runButton((await refreshState()).resolved, target.groupId, target.buttonId, "new", getConfirmDangerousCommands());
       await panel.refresh();
+      await sidebarProvider.refresh();
     }),
     vscode.commands.registerCommand("buttons.copyButtonCommand", async (payload?: { groupId: string; buttonId: string }) => {
       const target = payload ?? (await pickButtonTarget("Select a button command to copy"));
@@ -90,7 +128,7 @@ export function activate(context: vscode.ExtensionContext): void {
   if (vscode.workspace.getConfiguration("buttons").get<boolean>("watchConfigChanges", true)) {
     const watcher = vscode.workspace.createFileSystemWatcher("**/.buttons");
     let debounceTimer: ReturnType<typeof setTimeout> | undefined;
-    const refreshPanel = (): void => {
+    const refreshAll = (): void => {
       if (debounceTimer) {
         clearTimeout(debounceTimer);
       }
@@ -98,19 +136,52 @@ export function activate(context: vscode.ExtensionContext): void {
         void (async () => {
           await refreshState(true);
           await panel.refresh();
+          await sidebarProvider.refresh();
+          await updateStatusBar();
         })();
       }, 300);
     };
 
-    watcher.onDidChange(refreshPanel, undefined, context.subscriptions);
-    watcher.onDidCreate(refreshPanel, undefined, context.subscriptions);
-    watcher.onDidDelete(refreshPanel, undefined, context.subscriptions);
+    watcher.onDidChange(refreshAll, undefined, context.subscriptions);
+    watcher.onDidCreate(refreshAll, undefined, context.subscriptions);
+    watcher.onDidDelete(refreshAll, undefined, context.subscriptions);
     context.subscriptions.push(watcher);
   }
+
+  // Auto-open sidebar on first detection of .buttons file
+  void autoRevealSidebar(context);
 }
 
 export function deactivate(): void {
   currentState = undefined;
+}
+
+async function autoRevealSidebar(context: vscode.ExtensionContext): Promise<void> {
+  const autoOpen = vscode.workspace.getConfiguration("buttons").get<string>("autoOpen", "firstTime");
+  if (autoOpen === "never") {
+    return;
+  }
+
+  const fileUri = getButtonsFileUri();
+  if (!fileUri) {
+    return;
+  }
+
+  try {
+    await vscode.workspace.fs.stat(fileUri);
+  } catch {
+    return;
+  }
+
+  if (autoOpen === "firstTime") {
+    const hasAutoOpened = context.workspaceState.get<boolean>("buttons.hasAutoOpened");
+    if (hasAutoOpened) {
+      return;
+    }
+    await context.workspaceState.update("buttons.hasAutoOpened", true);
+  }
+
+  await vscode.commands.executeCommand("buttons.sidebarView.focus");
 }
 
 async function refreshState(force = false): Promise<LoadedButtonsState> {
@@ -127,11 +198,12 @@ async function refreshState(force = false): Promise<LoadedButtonsState> {
   return currentState;
 }
 
-async function handlePanelMessage(message: PanelActionMessage, panel: ButtonsPanel): Promise<void> {
+async function handlePanelMessage(message: PanelActionMessage, panel: ButtonsPanel, sidebar: ButtonsSidebarProvider): Promise<void> {
   switch (message.type) {
     case "reload":
       await refreshState(true);
       await panel.refresh();
+      await sidebar.refresh();
       return;
     case "open-file":
       await vscode.commands.executeCommand("buttons.openButtonsFile");

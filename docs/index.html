@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, shrink-to-fit=no, viewport-fit=cover" />
+  <meta name="description" content="Documentation for the Buttons VS Code extension. Define shared project commands in a .buttons TOML file and run them from a visual panel." />
+  <title>Buttons — VS Code Extension Docs</title>
+
+  <!-- Themes (light + dark, auto-switching) -->
+  <link rel="stylesheet" media="(prefers-color-scheme: light)" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple.css" />
+  <link rel="stylesheet" media="(prefers-color-scheme: dark)" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple-dark.css" />
+
+  <!-- CurbSoftware Custom Theme: Zinc + Amber/Copper -->
+  <style>
+    /* ── Light Mode ──────────────────────────────────── */
+    :root {
+      --theme-color: #b45309;
+
+      /* Base */
+      --base-background-color: #fafafa;
+      --base-color: #3f3f46;
+      --base-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+
+      /* Headings */
+      --heading-color: #18181b;
+
+      /* Links */
+      --link-color: #b45309;
+      --link-color--hover: #92400e;
+
+      /* Sidebar */
+      --sidebar-background: #f4f4f5;
+      --sidebar-border-color: #e4e4e7;
+      --sidebar-border-width: 1px;
+      --sidebar-name-color: #b45309;
+      --sidebar-name-font-weight: 600;
+      --sidebar-nav-link-color: #52525b;
+      --sidebar-nav-link-color--active: #b45309;
+      --sidebar-nav-link-font-weight--active: 600;
+      --sidebar-nav-link-text-decoration--active: none;
+      --sidebar-nav-link-text-decoration--hover: none;
+      --sidebar-nav-link-border-color--active: #b45309;
+      --sidebar-nav-link-border-width--active: 0 0 0 3px;
+      --sidebar-nav-link-border-style--active: solid;
+      --sidebar-nav-link-padding: 0.35em 0;
+
+      /* Code */
+      --code-theme-background: #e4e4e7;
+      --code-theme-text: #3f3f46;
+      --code-inline-background: #e4e4e7;
+      --code-inline-color: #92400e;
+      --code-block-border-radius: 6px;
+
+      /* Content */
+      --blockquote-background: #f4f4f5;
+      --blockquote-border-color: #d4a017;
+      --blockquote-border-width: 0 0 0 4px;
+
+      /* Tables */
+      --table-row-odd-background: #f4f4f5;
+      --table-cell-border-color: #e4e4e7;
+
+      /* Notice */
+      --notice-background: #f4f4f5;
+      --notice-border-color: #d4a017;
+      --notice-border-width: 0 0 0 4px;
+      --notice-tip-border-color: #16a34a;
+      --notice-important-border-color: #dc2626;
+
+      /* Search */
+      --search-input-border-color: #d4d4d8;
+      --search-input-background-color: #ffffff;
+      --search-result-keyword-background: #fde68a;
+
+      /* Selection */
+      --selection-color: rgba(212, 160, 23, 0.25);
+
+      /* Misc */
+      --hr-border: 1px solid #e4e4e7;
+      --mark-background: #fde68a;
+
+      /* Copy Code Plugin */
+      --copycode-background: #52525b;
+      --copycode-color: #fafafa;
+    }
+
+    /* ── Dark Mode ───────────────────────────────────── */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --theme-color: #d4a017;
+
+        /* Base */
+        --base-background-color: #18181b;
+        --base-color: #d4d4d8;
+
+        /* Headings */
+        --heading-color: #fafafa;
+
+        /* Links */
+        --link-color: #d4a017;
+        --link-color--hover: #fbbf24;
+
+        /* Sidebar */
+        --sidebar-background: #1f1f23;
+        --sidebar-border-color: #2e2e33;
+        --sidebar-border-width: 1px;
+        --sidebar-name-color: #d4a017;
+        --sidebar-name-font-weight: 600;
+        --sidebar-nav-link-color: #a1a1aa;
+        --sidebar-nav-link-color--active: #d4a017;
+        --sidebar-nav-link-color--hover: #d4d4d8;
+        --sidebar-nav-link-font-weight--active: 600;
+        --sidebar-nav-link-text-decoration--active: none;
+        --sidebar-nav-link-text-decoration--hover: none;
+        --sidebar-nav-link-border-color--active: #d4a017;
+        --sidebar-nav-link-border-width--active: 0 0 0 3px;
+        --sidebar-nav-link-border-style--active: solid;
+
+        /* Code */
+        --code-theme-background: #27272a;
+        --code-theme-text: #d4d4d8;
+        --code-inline-background: #27272a;
+        --code-inline-color: #fbbf24;
+        --code-block-border-radius: 6px;
+
+        /* Content */
+        --blockquote-background: #1f1f23;
+        --blockquote-border-color: #d4a017;
+        --blockquote-border-width: 0 0 0 4px;
+        --blockquote-color: #a1a1aa;
+
+        /* Tables */
+        --table-row-odd-background: #1f1f23;
+        --table-cell-border-color: #2e2e33;
+
+        /* Notice */
+        --notice-background: #1f1f23;
+        --notice-border-color: #d4a017;
+        --notice-border-width: 0 0 0 4px;
+        --notice-tip-border-color: #22c55e;
+        --notice-important-border-color: #ef4444;
+
+        /* Search */
+        --search-input-border-color: #3f3f46;
+        --search-input-background-color: #27272a;
+        --search-input-color: #d4d4d8;
+        --search-input-placeholder-color: #71717a;
+        --search-result-keyword-background: rgba(212, 160, 23, 0.3);
+        --search-result-keyword-color: #fbbf24;
+
+        /* Selection */
+        --selection-color: rgba(212, 160, 23, 0.35);
+
+        /* Misc */
+        --hr-border: 1px solid #2e2e33;
+        --mark-background: rgba(212, 160, 23, 0.3);
+        --mark-color: #fbbf24;
+        --strong-color: #fafafa;
+
+        /* Sidebar Toggle */
+        --sidebar-toggle-icon-color: #a1a1aa;
+
+        /* Copy Code Plugin */
+        --copycode-background: #3f3f46;
+        --copycode-color: #fafafa;
+
+        /* Zoom Image */
+        --zoomimage-overlay-background: rgba(24, 24, 27, 0.92);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    window.$docsify = {
+      name: "Buttons",
+      repo: "https://github.com/CurbSoftware/vscode-buttons",
+      loadSidebar: true,
+      subMaxLevel: 2,
+      auto2top: true,
+      search: {
+        placeholder: "Search docs...",
+        noData: "No results.",
+        depth: 3
+      },
+      themeable: {
+        readyTransition: true,
+        responsiveTables: true
+      }
+    };
+  </script>
+
+  <!-- Required -->
+  <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify-themeable@0/dist/js/docsify-themeable.min.js"></script>
+
+  <!-- Plugins -->
+  <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/plugins/zoom-image.min.js"></script>
+
+  <!-- Syntax highlighting -->
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-toml.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-typescript.min.js"></script>
+</body>
+</html>

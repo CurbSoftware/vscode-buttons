@@ -45,7 +45,7 @@ icon = "play"
 
 ## Real Example In This Repo
 
-The repository already ships with a valid root config in [.buttons](../.buttons). It includes real commands for this project such as dependency install, compile, lint, and watch mode.
+The repository already ships with a valid root config in [.buttons](https://github.com/CurbSoftware/vscode-buttons/blob/main/.buttons). It includes real commands for this project such as dependency install, compile, lint, and watch mode.
 
 ## More Docs
 

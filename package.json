@@ -33,6 +33,24 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "buttons",
+          "title": "Buttons",
+          "icon": "media/buttons-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "buttons": [
+        {
+          "type": "webview",
+          "id": "buttons.sidebarView",
+          "name": "Project Buttons"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "buttons.openPanel",
@@ -106,6 +124,16 @@
           "type": "boolean",
           "default": true,
           "description": "Prompt before running commands marked as dangerous or matched by danger heuristics."
+        },
+        "buttons.autoOpen": {
+          "type": "string",
+          "enum": [
+            "never",
+            "firstTime",
+            "always"
+          ],
+          "default": "firstTime",
+          "description": "Controls whether the Buttons sidebar opens automatically when a .buttons file exists."
         }
       }
     }
