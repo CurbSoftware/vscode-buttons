@@ -14,9 +14,10 @@ import {
   validateColor,
   validateCodicon,
   validatePorts,
+  mergeDisplaySettings,
   TemplateContext,
 } from "../config/configHelpers";
-import { ButtonsDiagnostic, ButtonsDocument } from "../models/types";
+import { ButtonsDiagnostic, ButtonsDocument, ResolvedButtonsConfig } from "../models/types";
 
 // ── cartesian ──────────────────────────────────────────────
 
@@ -452,5 +453,154 @@ describe("validatePorts", () => {
     const d: ButtonsDiagnostic[] = [];
     validatePorts([0, -1, 70000], "test", d);
     assert.strictEqual(d.length, 3);
+  });
+});
+
+// ── new layout modes ──────────────────────────────────────
+
+describe("validateDocument layout modes", () => {
+  function minimalDoc(overrides?: Partial<ButtonsDocument>): ButtonsDocument {
+    return {
+      version: 1,
+      groups: { main: { buttons: [{ command: "echo hi" }] } },
+      ...overrides,
+    };
+  }
+
+  it("accepts columns layout", () => {
+    const diagnostics = validateDocument(minimalDoc({ layout: "columns" }));
+    const errors = diagnostics.filter((d) => d.severity === "error");
+    assert.strictEqual(errors.length, 0);
+  });
+
+  it("accepts table layout", () => {
+    const diagnostics = validateDocument(minimalDoc({ layout: "table" }));
+    const errors = diagnostics.filter((d) => d.severity === "error");
+    assert.strictEqual(errors.length, 0);
+  });
+
+  it("accepts flow layout", () => {
+    const diagnostics = validateDocument(minimalDoc({ layout: "flow" }));
+    const errors = diagnostics.filter((d) => d.severity === "error");
+    assert.strictEqual(errors.length, 0);
+  });
+});
+
+// ── display config validation ──────────────────────────────
+
+describe("validateDocument display config", () => {
+  function minimalDoc(overrides?: Partial<ButtonsDocument>): ButtonsDocument {
+    return {
+      version: 1,
+      groups: { main: { buttons: [{ command: "echo hi" }] } },
+      ...overrides,
+    };
+  }
+
+  it("accepts valid button_color and group_bg_color", () => {
+    const diagnostics = validateDocument(minimalDoc({
+      display: { button_color: "#FF0000", group_bg_color: "#00FF00" },
+    }));
+    const colorWarnings = diagnostics.filter((d) => d.message.includes("color"));
+    assert.strictEqual(colorWarnings.length, 0);
+  });
+
+  it("warns on invalid button_color", () => {
+    const diagnostics = validateDocument(minimalDoc({
+      display: { button_color: "red" },
+    }));
+    assert.ok(diagnostics.some((d) => d.severity === "warning" && d.message.includes("color")));
+  });
+
+  it("warns on invalid group_bg_color", () => {
+    const diagnostics = validateDocument(minimalDoc({
+      display: { group_bg_color: "blue" },
+    }));
+    assert.ok(diagnostics.some((d) => d.severity === "warning" && d.message.includes("color")));
+  });
+});
+
+// ── resolveDocument new display fields ─────────────────────
+
+describe("resolveDocument display fields", () => {
+  it("passes through buttonColor and groupBgColor", () => {
+    const doc: ButtonsDocument = {
+      version: 1,
+      display: { button_color: "#FF0000", group_bg_color: "#00FF00" },
+      groups: { main: { buttons: [{ id: "test", command: "echo" }] } },
+    };
+    const result = resolveDocument(doc, true, "grid", "current", []);
+    assert.strictEqual(result.buttonColor, "#FF0000");
+    assert.strictEqual(result.groupBgColor, "#00FF00");
+  });
+
+  it("leaves buttonColor and groupBgColor undefined when not set", () => {
+    const doc: ButtonsDocument = {
+      version: 1,
+      groups: { main: { buttons: [{ id: "test", command: "echo" }] } },
+    };
+    const result = resolveDocument(doc, true, "grid", "current", []);
+    assert.strictEqual(result.buttonColor, undefined);
+    assert.strictEqual(result.groupBgColor, undefined);
+  });
+});
+
+// ── mergeDisplaySettings ──────────────────────────────────
+
+describe("mergeDisplaySettings", () => {
+  const fallbacks = { showCommandPreview: true, layout: "grid" as const };
+
+  function makeResolved(overrides: Partial<ResolvedButtonsConfig>): ResolvedButtonsConfig {
+    return {
+      title: "Test",
+      layout: "grid",
+      showCommandPreview: true,
+      showLabels: true,
+      showIcons: true,
+      compact: false,
+      groups: [],
+      ...overrides,
+    };
+  }
+
+  it("returns fallbacks when both are undefined", () => {
+    const result = mergeDisplaySettings(undefined, undefined, fallbacks);
+    assert.strictEqual(result.showCommandPreview, true);
+    assert.strictEqual(result.layout, "grid");
+    assert.strictEqual(result.showLabels, true);
+    assert.strictEqual(result.showIcons, true);
+    assert.strictEqual(result.compact, false);
+    assert.strictEqual(result.buttonColor, undefined);
+    assert.strictEqual(result.groupBgColor, undefined);
+  });
+
+  it("uses user settings when project is undefined", () => {
+    const user = makeResolved({ showLabels: false, buttonColor: "#AAA" });
+    const result = mergeDisplaySettings(user, undefined, fallbacks);
+    assert.strictEqual(result.showLabels, false);
+    assert.strictEqual(result.buttonColor, "#AAA");
+  });
+
+  it("project overrides user settings", () => {
+    const user = makeResolved({ showLabels: false, buttonColor: "#AAA", layout: "rows" });
+    const project = makeResolved({ showLabels: true, buttonColor: "#BBB", layout: "table" });
+    const result = mergeDisplaySettings(user, project, fallbacks);
+    assert.strictEqual(result.showLabels, true);
+    assert.strictEqual(result.buttonColor, "#BBB");
+    assert.strictEqual(result.layout, "table");
+  });
+
+  it("project undefined buttonColor falls through from user", () => {
+    const user = makeResolved({ buttonColor: "#AAA" });
+    const project = makeResolved({ buttonColor: undefined });
+    const result = mergeDisplaySettings(user, project, fallbacks);
+    assert.strictEqual(result.buttonColor, "#AAA");
+  });
+
+  it("uses project settings when user is undefined", () => {
+    const project = makeResolved({ compact: true, groupBgColor: "#CCC" });
+    const result = mergeDisplaySettings(undefined, project, fallbacks);
+    assert.strictEqual(result.compact, true);
+    assert.strictEqual(result.groupBgColor, "#CCC");
   });
 });

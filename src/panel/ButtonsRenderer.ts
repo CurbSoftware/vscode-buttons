@@ -1,13 +1,16 @@
-import { LoadedButtonsState } from "../models/types";
+import { CombinedButtonsState, LoadedButtonsState, MergedDisplaySettings, ResolvedButtonsConfig, ResolvedButtonsGroup } from "../models/types";
 
 export interface RenderOptions {
   sidebar: boolean;
 }
 
-export function renderHtml(state: LoadedButtonsState, codiconUri: string, options: RenderOptions): string {
+export function renderHtml(state: CombinedButtonsState, codiconUri: string, options: RenderOptions): string {
   const padding = options.sidebar ? "12px" : "24px";
   const titleSize = options.sidebar ? "20px" : "28px";
   const groupTitleSize = options.sidebar ? "16px" : "20px";
+  const display = state.mergedDisplay;
+  const groupBgVar = display.groupBgColor ? display.groupBgColor : undefined;
+  const buttonColorVar = display.buttonColor ? display.buttonColor : undefined;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -27,6 +30,8 @@ export function renderHtml(state: LoadedButtonsState, codiconUri: string, option
       --accent: var(--vscode-focusBorder);
       --danger: var(--vscode-errorForeground);
       --card-gap: 12px;
+      ${groupBgVar ? `--group-bg: ${groupBgVar};` : ""}
+      ${buttonColorVar ? `--default-button-color: ${buttonColorVar};` : ""}
     }
 
     * { box-sizing: border-box; }
@@ -35,10 +40,7 @@ export function renderHtml(state: LoadedButtonsState, codiconUri: string, option
       padding: ${padding};
       font-family: var(--vscode-font-family);
       color: var(--fg);
-      background:
-        radial-gradient(circle at top left, color-mix(in srgb, var(--vscode-textLink-foreground) 14%, transparent), transparent 28%),
-        radial-gradient(circle at top right, color-mix(in srgb, var(--vscode-button-background) 18%, transparent), transparent 24%),
-        var(--bg);
+      background: var(--bg);
     }
 
     button {
@@ -114,25 +116,85 @@ export function renderHtml(state: LoadedButtonsState, codiconUri: string, option
       color: var(--vscode-errorForeground);
     }
 
+    /* Source tabs */
+    .source-tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .tab {
+      padding: 6px 16px;
+      border-radius: 8px 8px 0 0;
+      border: 1px solid var(--border);
+      border-bottom: none;
+      background: var(--panel);
+      color: var(--muted);
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .tab:hover {
+      color: var(--fg);
+      border-color: var(--accent);
+    }
+
+    .tab.active {
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+      border-color: transparent;
+    }
+
     .groups {
       display: grid;
       gap: ${options.sidebar ? "10px" : "16px"};
     }
 
+    /* Accordion groups */
     .group {
       border: 1px solid var(--border);
       border-radius: ${options.sidebar ? "12px" : "16px"};
-      padding: ${options.sidebar ? "10px" : "16px"};
-      background: color-mix(in srgb, var(--panel) 92%, transparent);
-      display: grid;
-      gap: ${options.sidebar ? "10px" : "14px"};
+      background: var(--group-bg, color-mix(in srgb, var(--panel) 92%, transparent));
+      overflow: hidden;
     }
 
     .group-head {
       display: flex;
       justify-content: space-between;
       gap: 12px;
-      align-items: start;
+      align-items: center;
+      padding: ${options.sidebar ? "10px" : "16px"};
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .group-head:hover {
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
+    }
+
+    .group-head-left {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .group-chevron {
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .group.collapsed .group-chevron {
+      transform: rotate(-90deg);
+    }
+
+    .group-title-text {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
     }
 
     .group-title {
@@ -141,6 +203,21 @@ export function renderHtml(state: LoadedButtonsState, codiconUri: string, option
       align-items: center;
       font-size: ${groupTitleSize};
       font-weight: 600;
+    }
+
+    .group-body {
+      padding: 0 ${options.sidebar ? "10px" : "16px"} ${options.sidebar ? "10px" : "16px"};
+      display: grid;
+      gap: ${options.sidebar ? "10px" : "14px"};
+      transition: max-height 0.25s ease, padding 0.25s ease, opacity 0.2s ease;
+      overflow: hidden;
+    }
+
+    .group.collapsed .group-body {
+      max-height: 0 !important;
+      padding-top: 0;
+      padding-bottom: 0;
+      opacity: 0;
     }
 
     .badge-row {
@@ -158,6 +235,7 @@ export function renderHtml(state: LoadedButtonsState, codiconUri: string, option
       border: 1px solid var(--border);
     }
 
+    /* Layout modes */
     .buttons.grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -170,10 +248,28 @@ export function renderHtml(state: LoadedButtonsState, codiconUri: string, option
       gap: var(--card-gap);
     }
 
+    .buttons.columns {
+      display: grid;
+      grid-template-columns: repeat(var(--col-count, 3), 1fr);
+      gap: var(--card-gap);
+    }
+
+    .buttons.flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--card-gap);
+    }
+
+    .buttons.flow .button-card {
+      min-width: 180px;
+      flex: 1 1 180px;
+      max-width: 320px;
+    }
+
     .button-card {
       display: grid;
       gap: 12px;
-      border: 1px solid var(--border);
+      border: 1px solid ${buttonColorVar ? `color-mix(in srgb, var(--default-button-color) 40%, var(--border))` : "var(--border)"};
       border-radius: 14px;
       padding: ${options.sidebar ? "10px" : "14px"};
       background: color-mix(in srgb, var(--vscode-editor-background) 86%, var(--panel));
@@ -184,12 +280,30 @@ export function renderHtml(state: LoadedButtonsState, codiconUri: string, option
       padding: 10px;
     }
 
+    /* Hidden button (eye toggle) */
+    .button-card.hidden-button {
+      opacity: 0.4;
+      padding: 6px 12px;
+    }
+
+    .button-card.hidden-button .button-actions,
+    .button-card.hidden-button .command,
+    .button-card.hidden-button .subtitle {
+      display: none;
+    }
+
     .button-title {
       display: flex;
       justify-content: space-between;
       gap: 10px;
       align-items: center;
       font-weight: 600;
+    }
+
+    .button-title-actions {
+      display: flex;
+      gap: 4px;
+      align-items: center;
     }
 
     .button-label {
@@ -202,6 +316,22 @@ export function renderHtml(state: LoadedButtonsState, codiconUri: string, option
     .button-label.icon-only {
       min-width: 20px;
       justify-content: center;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 2px 4px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .icon-btn:hover {
+      color: var(--fg);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
     }
 
     .command {
@@ -225,6 +355,62 @@ export function renderHtml(state: LoadedButtonsState, codiconUri: string, option
       color: var(--vscode-errorForeground);
       border-color: color-mix(in srgb, var(--danger) 60%, var(--border));
     }
+
+    /* Table layout */
+    .buttons-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 4px;
+    }
+
+    .buttons-table td {
+      padding: 8px 10px;
+      background: color-mix(in srgb, var(--vscode-editor-background) 86%, var(--panel));
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .buttons-table td:first-child {
+      border-left: 1px solid var(--border);
+      border-radius: 8px 0 0 8px;
+    }
+
+    .buttons-table td:last-child {
+      border-right: 1px solid var(--border);
+      border-radius: 0 8px 8px 0;
+    }
+
+    .buttons-table .table-label {
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .buttons-table .table-command {
+      font-family: var(--vscode-editor-font-family);
+      font-size: 12px;
+      color: var(--muted);
+      max-width: 400px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .buttons-table .table-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+
+    .buttons-table .table-actions button {
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 6px;
+    }
+
+    .buttons-table .hidden-row {
+      opacity: 0.4;
+    }
   </style>
 </head>
 <body>
@@ -232,7 +418,65 @@ export function renderHtml(state: LoadedButtonsState, codiconUri: string, option
   <script>
     const vscode = acquireVsCodeApi();
     const postMessage = (message) => vscode.postMessage(message);
+
+    // Restore persisted webview state
+    let panelState = vscode.getState() || { collapsedGroups: {}, hiddenButtons: {} };
+
+    // Apply persisted collapsed state
+    document.querySelectorAll('.group[data-group-id]').forEach(section => {
+      const groupId = section.dataset.groupId;
+      if (panelState.collapsedGroups[groupId]) {
+        section.classList.add('collapsed');
+      }
+    });
+
+    // Apply persisted hidden button state
+    document.querySelectorAll('.button-card[data-button-key], tr[data-button-key]').forEach(el => {
+      const key = el.dataset.buttonKey;
+      if (panelState.hiddenButtons[key]) {
+        el.classList.add(el.tagName === 'TR' ? 'hidden-row' : 'hidden-button');
+        const eyeIcon = el.querySelector('.eye-toggle .codicon');
+        if (eyeIcon) {
+          eyeIcon.classList.remove('codicon-eye');
+          eyeIcon.classList.add('codicon-eye-closed');
+        }
+      }
+    });
+
     document.addEventListener('click', (event) => {
+      // Accordion toggle
+      const groupHead = event.target.closest('.group-head');
+      if (groupHead && !event.target.closest('button')) {
+        const section = groupHead.closest('.group');
+        const groupId = section.dataset.groupId;
+        section.classList.toggle('collapsed');
+        panelState.collapsedGroups[groupId] = section.classList.contains('collapsed');
+        vscode.setState(panelState);
+        return;
+      }
+
+      // Eye toggle
+      const eyeBtn = event.target.closest('.eye-toggle');
+      if (eyeBtn) {
+        const card = eyeBtn.closest('.button-card') || eyeBtn.closest('tr');
+        const key = card.dataset.buttonKey;
+        const isTable = card.tagName === 'TR';
+        card.classList.toggle(isTable ? 'hidden-row' : 'hidden-button');
+        const isHidden = card.classList.contains(isTable ? 'hidden-row' : 'hidden-button');
+        panelState.hiddenButtons[key] = isHidden;
+        const icon = eyeBtn.querySelector('.codicon');
+        if (isHidden) {
+          icon.classList.remove('codicon-eye');
+          icon.classList.add('codicon-eye-closed');
+        } else {
+          icon.classList.remove('codicon-eye-closed');
+          icon.classList.add('codicon-eye');
+        }
+        vscode.setState(panelState);
+        event.stopPropagation();
+        return;
+      }
+
       const target = event.target.closest('button');
       if (!target) {
         return;
@@ -246,6 +490,7 @@ export function renderHtml(state: LoadedButtonsState, codiconUri: string, option
           buttonId: target.dataset.buttonId,
           url: target.dataset.url,
           port: target.dataset.port ? Number(target.dataset.port) : undefined,
+          source: target.dataset.source,
         });
         return;
       }
@@ -264,12 +509,17 @@ export function renderHtml(state: LoadedButtonsState, codiconUri: string, option
 </html>`;
 }
 
-function renderApp(state: LoadedButtonsState, options: RenderOptions): string {
-  const title = escapeHtml(state.resolved?.title ?? "Buttons");
-  const description = state.resolved?.description
-    ? `<div class="subtitle">${escapeHtml(state.resolved.description)}</div>`
+function renderApp(state: CombinedButtonsState, options: RenderOptions): string {
+  const activeState = state.activeSource === "user" ? state.user : state.project;
+  const title = escapeHtml(activeState.resolved?.title ?? "Buttons");
+  const description = activeState.resolved?.description
+    ? `<div class="subtitle">${escapeHtml(activeState.resolved.description)}</div>`
     : "";
-  const filePath = escapeHtml(state.filePath ?? "No .buttons file found");
+  const filePath = escapeHtml(activeState.filePath ?? "No .buttons file found");
+
+  const hasUserConfig = state.user.resolved !== undefined;
+  const hasProjectConfig = state.project.resolved !== undefined;
+  const showTabs = hasUserConfig && hasProjectConfig;
 
   return `
     <div class="shell">
@@ -284,8 +534,20 @@ function renderApp(state: LoadedButtonsState, options: RenderOptions): string {
           <button data-action="open-file">Open .buttons</button>
         </div>
       </header>
-      ${renderDiagnostics(state)}
-      ${renderGroups(state, options)}
+      ${showTabs ? renderSourceTabs(state.activeSource) : ""}
+      ${renderDiagnostics(activeState)}
+      ${renderGroups(activeState, state.mergedDisplay, options)}
+    </div>
+  `;
+}
+
+function renderSourceTabs(activeSource: string): string {
+  const projectActive = activeSource === "project" ? " active" : "";
+  const userActive = activeSource === "user" ? " active" : "";
+  return `
+    <div class="source-tabs">
+      <button class="tab${projectActive}" data-action="toggle-source" data-source="project">Project</button>
+      <button class="tab${userActive}" data-action="toggle-source" data-source="user">User</button>
     </div>
   `;
 }
@@ -303,13 +565,13 @@ function renderDiagnostics(state: LoadedButtonsState): string {
     .join("")}</div>`;
 }
 
-function renderGroups(state: LoadedButtonsState, options: RenderOptions): string {
+function renderGroups(state: LoadedButtonsState, display: MergedDisplaySettings, options: RenderOptions): string {
   const resolved = state.resolved;
   if (!resolved || resolved.groups.length === 0) {
     return '<div class="empty">No buttons are available yet. Create a .buttons file or add groups to it.</div>';
   }
 
-  const layout = options.sidebar ? "rows" : resolved.layout;
+  const layout = options.sidebar ? "rows" : display.layout;
 
   return `<div class="groups">${resolved.groups
     .map((group) => {
@@ -320,62 +582,113 @@ function renderGroups(state: LoadedButtonsState, options: RenderOptions): string
       const linkBadges = group.links
         .map(
           (link) =>
-            `<button class="badge" data-url="${escapeHtml(link.url)}">${renderCodicon(link.icon, resolved.showIcons)}${escapeText(link.label)}</button>`,
+            `<button class="badge" data-url="${escapeHtml(link.url)}">${renderCodicon(link.icon, display.showIcons)}${escapeText(link.label)}</button>`,
         )
         .join("");
-      const buttons = group.buttons
-        .map((button) => {
-          const description = button.description ? `<div class="subtitle">${escapeHtml(button.description)}</div>` : "";
-          const command = resolved.showCommandPreview ? `<div class="command">${escapeHtml(button.command)}</div>` : "";
-          const danger = button.danger ? '<span class="badge danger-pill">Danger</span>' : "";
-          const urlActions = button.open_urls
-            .map((url) => `<button data-action="open-url" data-url="${escapeHtml(url)}">Open URL</button>`)
-            .join("");
-          const portActions = button.open_ports
-            .map((port) => `<button data-action="open-port" data-port="${port}">Open :${port}</button>`)
-            .join("");
-          const label = renderButtonLabel(button.label, button.icon, resolved.showLabels, resolved.showIcons);
-          const cardClassName = resolved.compact ? "button-card compact" : "button-card";
 
-          return `
-            <article class="${cardClassName}">
-              <div class="button-title">
-                ${label}
-                ${danger}
-              </div>
-              ${description}
-              ${command}
-              <div class="button-actions">
-                <button class="primary" data-action="run-current" data-group-id="${escapeHtml(group.id)}" data-button-id="${escapeHtml(button.id)}">Run</button>
-                <button data-action="run-new" data-group-id="${escapeHtml(group.id)}" data-button-id="${escapeHtml(button.id)}">New Terminal</button>
-                <button data-action="copy" data-group-id="${escapeHtml(group.id)}" data-button-id="${escapeHtml(button.id)}">Copy</button>
-                ${urlActions}
-                ${portActions}
-              </div>
-            </article>
-          `;
-        })
-        .join("");
+      const buttonsHtml = layout === "table"
+        ? renderButtonsTable(group, display)
+        : renderButtonsCards(group, layout, display);
 
       return `
-        <section class="group">
+        <section class="group" data-group-id="${escapeHtml(group.id)}">
           <div class="group-head">
-            <div>
-              <div class="group-title">${renderCodicon(group.icon, resolved.showIcons)}<span>${escapeHtml(group.name)}</span></div>
-              ${groupDescription}
+            <div class="group-head-left">
+              <span class="codicon codicon-chevron-down group-chevron"></span>
+              <div class="group-title-text">
+                <div class="group-title">${renderCodicon(group.icon, display.showIcons)}<span>${escapeHtml(group.name)}</span></div>
+                ${groupDescription}
+              </div>
             </div>
             <div class="badge-row">
               ${portBadges}
               ${linkBadges}
             </div>
           </div>
-          <div class="buttons ${layout}">
-            ${buttons}
+          <div class="group-body">
+            ${buttonsHtml}
           </div>
         </section>
       `;
     })
     .join("")}</div>`;
+}
+
+function renderButtonsCards(group: ResolvedButtonsGroup, layout: string, display: MergedDisplaySettings): string {
+  const compact = display.compact;
+
+  const buttons = group.buttons
+    .map((button) => {
+      const buttonKey = `${group.id}:${button.id}`;
+      const description = button.description ? `<div class="subtitle">${escapeHtml(button.description)}</div>` : "";
+      const command = display.showCommandPreview ? `<div class="command">${escapeHtml(button.command)}</div>` : "";
+      const danger = button.danger ? '<span class="badge danger-pill">Danger</span>' : "";
+      const urlActions = button.open_urls
+        .map((url) => `<button data-action="open-url" data-url="${escapeHtml(url)}">Open URL</button>`)
+        .join("");
+      const portActions = button.open_ports
+        .map((port) => `<button data-action="open-port" data-port="${port}">Open :${port}</button>`)
+        .join("");
+      const label = renderButtonLabel(button.label, button.icon, display.showLabels, display.showIcons);
+      const cardClassName = compact ? "button-card compact" : "button-card";
+
+      return `
+        <article class="${cardClassName}" data-button-key="${escapeHtml(buttonKey)}">
+          <div class="button-title">
+            ${label}
+            <div class="button-title-actions">
+              ${danger}
+              <span class="icon-btn eye-toggle" title="Toggle visibility">
+                <span class="codicon codicon-eye"></span>
+              </span>
+            </div>
+          </div>
+          ${description}
+          ${command}
+          <div class="button-actions">
+            <button class="primary" data-action="run-current" data-group-id="${escapeHtml(group.id)}" data-button-id="${escapeHtml(button.id)}">Run</button>
+            <button data-action="run-new" data-group-id="${escapeHtml(group.id)}" data-button-id="${escapeHtml(button.id)}">New Terminal</button>
+            <button data-action="copy" data-group-id="${escapeHtml(group.id)}" data-button-id="${escapeHtml(button.id)}">Copy</button>
+            ${urlActions}
+            ${portActions}
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+
+  return `<div class="buttons ${layout}">${buttons}</div>`;
+}
+
+function renderButtonsTable(group: ResolvedButtonsGroup, display: MergedDisplaySettings): string {
+  const rows = group.buttons
+    .map((button) => {
+      const buttonKey = `${group.id}:${button.id}`;
+      const iconHtml = renderCodicon(button.icon, display.showIcons);
+      const labelHtml = display.showLabels ? escapeHtml(button.label) : "";
+      const commandHtml = display.showCommandPreview ? escapeHtml(button.command) : "";
+
+      return `
+        <tr data-button-key="${escapeHtml(buttonKey)}">
+          <td>${iconHtml}</td>
+          <td class="table-label">${labelHtml}</td>
+          <td class="table-command" title="${escapeHtml(button.command)}">${commandHtml}</td>
+          <td>
+            <div class="table-actions">
+              <button class="primary" data-action="run-current" data-group-id="${escapeHtml(group.id)}" data-button-id="${escapeHtml(button.id)}">Run</button>
+              <button data-action="run-new" data-group-id="${escapeHtml(group.id)}" data-button-id="${escapeHtml(button.id)}">New</button>
+              <button data-action="copy" data-group-id="${escapeHtml(group.id)}" data-button-id="${escapeHtml(button.id)}">Copy</button>
+              <span class="icon-btn eye-toggle" title="Toggle visibility">
+                <span class="codicon codicon-eye"></span>
+              </span>
+            </div>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  return `<table class="buttons-table">${rows}</table>`;
 }
 
 function renderButtonLabel(label: string, icon: string | undefined, showLabels: boolean, showIcons: boolean): string {

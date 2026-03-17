@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { LoadedButtonsState, PanelActionMessage } from "../models/types";
+import { CombinedButtonsState, PanelActionMessage } from "../models/types";
 import { renderHtml } from "./ButtonsRenderer";
 
 export class ButtonsPanel {
@@ -7,7 +7,7 @@ export class ButtonsPanel {
 
   public constructor(
     private readonly extensionUri: vscode.Uri,
-    private readonly getState: () => Promise<LoadedButtonsState>,
+    private readonly getState: () => Promise<CombinedButtonsState>,
     private readonly onMessage: (message: PanelActionMessage) => Promise<void>,
   ) {}
 

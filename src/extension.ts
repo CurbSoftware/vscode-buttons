@@ -1,12 +1,13 @@
+import * as fs from "fs";
 import * as vscode from "vscode";
-import { loadButtonsState } from "./config/loadButtonsConfig";
-import { getButtonsFileUri } from "./config/findButtonsFile";
+import { loadCombinedButtonsState } from "./config/loadButtonsConfig";
+import { getButtonsFileUri, getUserButtonsFileUri } from "./config/findButtonsFile";
 import { copyButtonCommand, openButtonPort, openButtonUrl, runButton } from "./execution/actions";
-import { LoadedButtonsState, PanelActionMessage, ResolvedButtonsButton, ResolvedButtonsGroup } from "./models/types";
+import { CombinedButtonsState, LayoutMode, PanelActionMessage, ResolvedButtonsButton, ResolvedButtonsGroup } from "./models/types";
 import { ButtonsPanel } from "./panel/ButtonsPanel";
 import { ButtonsSidebarProvider } from "./panel/ButtonsSidebarProvider";
 
-let currentState: LoadedButtonsState | undefined;
+let currentState: CombinedButtonsState | undefined;
 
 export function activate(context: vscode.ExtensionContext): void {
   const panel = new ButtonsPanel(
@@ -32,17 +33,30 @@ export function activate(context: vscode.ExtensionContext): void {
   statusBarItem.command = "buttons.openPanel";
   context.subscriptions.push(statusBarItem);
 
-  // Show/hide status bar based on .buttons file existence
+  // Show/hide status bar based on .buttons file existence (either user or project)
   const updateStatusBar = async (): Promise<void> => {
-    const fileUri = getButtonsFileUri();
-    if (!fileUri) {
-      statusBarItem.hide();
-      return;
+    const projectUri = getButtonsFileUri();
+    const userUri = getUserButtonsFileUri();
+
+    let hasAnyFile = false;
+
+    if (projectUri) {
+      try {
+        await vscode.workspace.fs.stat(projectUri);
+        hasAnyFile = true;
+      } catch { /* not found */ }
     }
-    try {
-      await vscode.workspace.fs.stat(fileUri);
+
+    if (!hasAnyFile) {
+      try {
+        await vscode.workspace.fs.stat(userUri);
+        hasAnyFile = true;
+      } catch { /* not found */ }
+    }
+
+    if (hasAnyFile) {
       statusBarItem.show();
-    } catch {
+    } else {
       statusBarItem.hide();
     }
   };
@@ -79,6 +93,22 @@ export function activate(context: vscode.ExtensionContext): void {
       const document = await vscode.workspace.openTextDocument(fileUri);
       await vscode.window.showTextDocument(document);
     }),
+    vscode.commands.registerCommand("buttons.openUserButtonsFile", async () => {
+      const fileUri = getUserButtonsFileUri();
+
+      try {
+        await vscode.workspace.fs.stat(fileUri);
+      } catch {
+        const createFile = await vscode.window.showInformationMessage("No user .buttons file exists yet.", "Create Example");
+        if (createFile === "Create Example") {
+          await createUserExampleButtonsFile();
+        }
+        return;
+      }
+
+      const document = await vscode.workspace.openTextDocument(fileUri);
+      await vscode.window.showTextDocument(document);
+    }),
     vscode.commands.registerCommand("buttons.createExampleButtons", async () => {
       await createExampleButtonsFile();
       await refreshState(true);
@@ -91,7 +121,9 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
-      await runButton((await refreshState()).resolved, target.groupId, target.buttonId, "current", getConfirmDangerousCommands());
+      const state = await refreshState();
+      const activeResolved = getActiveResolved(state);
+      await runButton(activeResolved, target.groupId, target.buttonId, "current", getConfirmDangerousCommands());
       await panel.refresh();
       await sidebarProvider.refresh();
     }),
@@ -101,7 +133,9 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
-      await runButton((await refreshState()).resolved, target.groupId, target.buttonId, "new", getConfirmDangerousCommands());
+      const state = await refreshState();
+      const activeResolved = getActiveResolved(state);
+      await runButton(activeResolved, target.groupId, target.buttonId, "new", getConfirmDangerousCommands());
       await panel.refresh();
       await sidebarProvider.refresh();
     }),
@@ -111,7 +145,9 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
-      await copyButtonCommand((await refreshState()).resolved, target.groupId, target.buttonId);
+      const state = await refreshState();
+      const activeResolved = getActiveResolved(state);
+      await copyButtonCommand(activeResolved, target.groupId, target.buttonId);
     }),
     vscode.commands.registerCommand("buttons.openButtonUrl", async (url?: string) => {
       if (url) {
@@ -125,6 +161,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   );
 
+  // Watch project .buttons file
   if (vscode.workspace.getConfiguration("buttons").get<boolean>("watchConfigChanges", true)) {
     const watcher = vscode.workspace.createFileSystemWatcher("**/.buttons");
     let debounceTimer: ReturnType<typeof setTimeout> | undefined;
@@ -146,6 +183,50 @@ export function activate(context: vscode.ExtensionContext): void {
     watcher.onDidCreate(refreshAll, undefined, context.subscriptions);
     watcher.onDidDelete(refreshAll, undefined, context.subscriptions);
     context.subscriptions.push(watcher);
+
+    // Watch user ~/.buttons file using Node.js fs.watch (workspace watcher is workspace-scoped)
+    const userFileUri = getUserButtonsFileUri();
+    const userFilePath = userFileUri.fsPath;
+    let userWatcher: fs.FSWatcher | undefined;
+    try {
+      userWatcher = fs.watch(userFilePath, { persistent: false }, () => {
+        refreshAll();
+      });
+    } catch {
+      // User file may not exist yet; that's fine
+    }
+
+    // If user file doesn't exist yet, poll periodically to detect creation
+    let userFileCheckInterval: ReturnType<typeof setInterval> | undefined;
+    if (!userWatcher) {
+      userFileCheckInterval = setInterval(() => {
+        try {
+          fs.accessSync(userFilePath);
+          // File now exists, start watching
+          if (!userWatcher) {
+            userWatcher = fs.watch(userFilePath, { persistent: false }, () => {
+              refreshAll();
+            });
+          }
+          if (userFileCheckInterval) {
+            clearInterval(userFileCheckInterval);
+            userFileCheckInterval = undefined;
+          }
+          refreshAll();
+        } catch {
+          // Still doesn't exist
+        }
+      }, 5000);
+    }
+
+    context.subscriptions.push({
+      dispose: () => {
+        userWatcher?.close();
+        if (userFileCheckInterval) {
+          clearInterval(userFileCheckInterval);
+        }
+      },
+    });
   }
 
   // Auto-open sidebar on first detection of .buttons file
@@ -156,20 +237,36 @@ export function deactivate(): void {
   currentState = undefined;
 }
 
+function getActiveResolved(state: CombinedButtonsState) {
+  return state.activeSource === "user" ? state.user.resolved : state.project.resolved;
+}
+
 async function autoRevealSidebar(context: vscode.ExtensionContext): Promise<void> {
   const autoOpen = vscode.workspace.getConfiguration("buttons").get<string>("autoOpen", "firstTime");
   if (autoOpen === "never") {
     return;
   }
 
-  const fileUri = getButtonsFileUri();
-  if (!fileUri) {
-    return;
+  // Check if any buttons file exists (project or user)
+  const projectUri = getButtonsFileUri();
+  const userUri = getUserButtonsFileUri();
+  let hasAnyFile = false;
+
+  if (projectUri) {
+    try {
+      await vscode.workspace.fs.stat(projectUri);
+      hasAnyFile = true;
+    } catch { /* not found */ }
   }
 
-  try {
-    await vscode.workspace.fs.stat(fileUri);
-  } catch {
+  if (!hasAnyFile) {
+    try {
+      await vscode.workspace.fs.stat(userUri);
+      hasAnyFile = true;
+    } catch { /* not found */ }
+  }
+
+  if (!hasAnyFile) {
     return;
   }
 
@@ -184,15 +281,15 @@ async function autoRevealSidebar(context: vscode.ExtensionContext): Promise<void
   await vscode.commands.executeCommand("buttons.sidebarView.focus");
 }
 
-async function refreshState(force = false): Promise<LoadedButtonsState> {
+async function refreshState(force = false): Promise<CombinedButtonsState> {
   if (!force && currentState) {
     return currentState;
   }
 
   const configuration = vscode.workspace.getConfiguration("buttons");
-  currentState = await loadButtonsState(
+  currentState = await loadCombinedButtonsState(
     configuration.get<boolean>("showCommandPreview", true),
-    configuration.get<"grid" | "rows">("defaultLayout", "grid"),
+    configuration.get<LayoutMode>("defaultLayout", "grid"),
     configuration.get<"current" | "new">("defaultTerminalMode", "current"),
   );
   return currentState;
@@ -207,6 +304,17 @@ async function handlePanelMessage(message: PanelActionMessage, panel: ButtonsPan
       return;
     case "open-file":
       await vscode.commands.executeCommand("buttons.openButtonsFile");
+      return;
+    case "toggle-source":
+      if (currentState && message.source) {
+        currentState = { ...currentState, activeSource: message.source };
+        await panel.refresh();
+        await sidebar.refresh();
+      }
+      return;
+    case "toggle-group":
+    case "toggle-button-visibility":
+      // Managed client-side in webview JS via vscode.getState/setState
       return;
     case "run-current":
       if (message.groupId && message.buttonId) {
@@ -324,20 +432,59 @@ icon = "link-external"
   await vscode.window.showTextDocument(document);
 }
 
+async function createUserExampleButtonsFile(): Promise<void> {
+  const fileUri = getUserButtonsFileUri();
+
+  const example = `version = 1
+title = "My Buttons"
+description = "Personal commands available across all projects"
+layout = "grid"
+
+[display]
+show_command = true
+show_labels = true
+show_icons = true
+compact = false
+
+[groups.tools]
+name = "Tools"
+description = "Common developer tools"
+icon = "tools"
+
+[[groups.tools.buttons]]
+id = "git-status"
+label = "Git Status"
+command = "git status"
+icon = "git-branch"
+
+[[groups.tools.buttons]]
+id = "git-log"
+label = "Git Log"
+command = "git log --oneline -10"
+icon = "history"
+`;
+
+  await vscode.workspace.fs.writeFile(fileUri, Buffer.from(example, "utf8"));
+  const document = await vscode.workspace.openTextDocument(fileUri);
+  await vscode.window.showTextDocument(document);
+}
+
 function getConfirmDangerousCommands(): boolean {
   return vscode.workspace.getConfiguration("buttons").get<boolean>("confirmDangerousCommands", true);
 }
 
 async function pickButtonTarget(placeHolder: string): Promise<{ groupId: string; buttonId: string } | undefined> {
   const state = await refreshState(true);
-  if (!state.resolved) {
-    const firstError = state.diagnostics.find((diagnostic) => diagnostic.severity === "error");
+  const activeResolved = getActiveResolved(state);
+  if (!activeResolved) {
+    const allDiagnostics = [...state.project.diagnostics, ...state.user.diagnostics];
+    const firstError = allDiagnostics.find((diagnostic) => diagnostic.severity === "error");
     void vscode.window.showErrorMessage(firstError?.message ?? "Buttons config is not available.");
     return undefined;
   }
 
-  const items = state.resolved.groups.flatMap((group) =>
-    group.buttons.map((button) => toQuickPickItem(group, button, state.resolved?.showCommandPreview ?? true)),
+  const items = activeResolved.groups.flatMap((group) =>
+    group.buttons.map((button) => toQuickPickItem(group, button, activeResolved.showCommandPreview)),
   );
 
   if (items.length === 0) {

@@ -30,7 +30,8 @@
     "Other"
   ],
   "activationEvents": [
-    "workspaceContains:.buttons"
+    "workspaceContains:.buttons",
+    "onStartupFinished"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -88,6 +89,10 @@
       {
         "command": "buttons.openButtonPort",
         "title": "Buttons: Open Button Port"
+      },
+      {
+        "command": "buttons.openUserButtonsFile",
+        "title": "Buttons: Open User .buttons File"
       }
     ],
     "configuration": {
@@ -97,7 +102,10 @@
           "type": "string",
           "enum": [
             "grid",
-            "rows"
+            "rows",
+            "columns",
+            "table",
+            "flow"
           ],
           "default": "grid",
           "description": "Fallback layout used when the .buttons file does not specify one."
