@@ -1,33 +1,18 @@
 # `.buttons` File Reference
 
-Buttons uses a single TOML file named `.buttons` at the root of the workspace.
-
-## Supported Top-Level Keys
-
-- `version`
-- `title`
-- `description`
-- `layout`
-- `terminal`
-- `display`
-- `defaults`
-- `variables`
-- `macros`
-- `groups`
+The `.buttons` file uses [TOML](https://toml.io/) format. Place it at the workspace root for project-scoped buttons, or at `~/.buttons` for user-scoped buttons available across all projects.
 
 ## Minimal File
 
 ```toml
 version = 1
-title = "Project Commands"
-layout = "grid"
+title = "Quick Commands"
 
-[groups.main]
-name = "Main"
-
-[[groups.main.buttons]]
-label = "Dev"
-command = "npm run dev"
+[groups.run]
+buttons = [
+  { id = "build", command = "npm run build" },
+  { id = "test", command = "npm test" },
+]
 ```
 
 ## Full Example
@@ -44,6 +29,8 @@ show_command = true
 show_labels = true
 show_icons = true
 compact = false
+button_color = "#6B8AFF"
+group_bg_color = "#1E2333"
 
 [defaults]
 enabled = true
@@ -93,6 +80,25 @@ url = "http://localhost:6006"
 icon = "link-external"
 ```
 
+---
+
+## Document-Level Keys
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `version` | `integer` | *(required)* | Must be `1`. |
+| `title` | `string` | `"Buttons"` | Title shown in the panel header. |
+| `description` | `string` | — | Subtitle shown below the title. |
+| `layout` | `string` | `"grid"` | Default layout: `grid`, `rows`, `columns`, `table`, or `flow`. |
+| `terminal` | `string` | `"current"` | Default terminal mode: `current` or `new`. |
+| `display` | `table` | — | Display settings block. See below. |
+| `defaults` | `table` | — | Default behavior settings. See below. |
+| `variables` | `table` | — | Key-value pairs for `{{variable}}` substitution. |
+| `macros` | `table` | — | Key-value pairs for `{{macro}}` expansion (recursive). |
+| `groups` | `table` | *(required)* | Named groups of buttons. At least one group required. |
+
+---
+
 ## Display Block
 
 ```toml
@@ -101,12 +107,22 @@ show_command = true
 show_labels = true
 show_icons = true
 compact = false
+button_color = "#6B8AFF"
+group_bg_color = "#1E2333"
 ```
 
-- `show_command` controls the command preview.
-- `show_labels` controls button labels.
-- `show_icons` controls icon display.
-- `compact` is reserved for a denser layout mode.
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `show_command` | `boolean` | `true` | Show the command preview text below the button label. |
+| `show_labels` | `boolean` | `true` | Show text labels on buttons. |
+| `show_icons` | `boolean` | `true` | Show codicon icons on buttons. |
+| `compact` | `boolean` | `false` | Use tighter padding and spacing. |
+| `button_color` | `string` | — | Hex color (`#RGB` or `#RRGGBB`) for default button border accent. |
+| `group_bg_color` | `string` | — | Hex color for group background. |
+
+When both user and project files define display settings, **project settings take precedence**. Undefined project fields fall through from the user file.
+
+---
 
 ## Defaults Block
 
@@ -122,110 +138,335 @@ reveal_terminal = true
 cwd = "."
 ```
 
-These values cascade from document to group to button.
+These values **cascade**: document → group → button. A button-level value overrides a group-level value, which overrides the document default.
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `enabled` | `boolean` | `true` | Whether the button/group is active. Disabled items are hidden. |
+| `copy_to_clipboard` | `boolean` | `true` | Copy the command to clipboard when run. |
+| `run_in_current_terminal` | `boolean` | `true` | Use the current/reusable "Buttons" terminal. |
+| `run_in_new_terminal` | `boolean` | `false` | Create a new terminal for each run. |
+| `confirm` | `boolean` | `false` | Show a confirmation dialog before running. |
+| `danger` | `boolean` | auto | Mark as dangerous. Auto-detected if not set (see [Danger Detection](#danger-detection)). |
+| `reveal_terminal` | `boolean` | `true` | Show the terminal panel after running. |
+| `cwd` | `string` | — | Working directory for the command. |
+| `env` | `table` | — | Environment variables as key-value pairs. |
+
+---
 
 ## Groups
 
-Groups are declared as `[groups.<name>]`.
+Groups are declared as `[groups.<id>]` where `<id>` becomes the group identifier.
 
-### Common Group Keys
+```toml
+[groups.dev]
+name = "Development"
+description = "Start and build the app"
+icon = "rocket"
+color = "#0070F3"
+layout = "grid"
+terminal = "current"
+ports = [3000]
+```
 
-- `name`
-- `description`
-- `enabled`
-- `base`
-- `icon`
-- `color`
-- `layout`
-- `terminal`
-- `cwd`
-- `env`
-- `delimiter`
-- `ports`
-- `tags`
-- `buttons`
-- `generate`
-- `links`
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `name` | `string` | Title-cased `id` | Display name in the group header. |
+| `description` | `string` | — | Subtitle below the group name. |
+| `enabled` | `boolean` | `true` | Hide entire group when `false`. |
+| `base` | `string` | — | Base command prepended to `args` on buttons. |
+| `icon` | `string` | — | Codicon name (e.g. `rocket`, `package`, `beaker`). |
+| `color` | `string` | — | Hex color for the group title icon. |
+| `layout` | `string` | Document layout | Override layout for this group only. |
+| `terminal` | `string` | Document terminal | Override terminal mode for this group. |
+| `cwd` | `string` | — | Working directory for all buttons in this group. |
+| `env` | `table` | — | Environment variables for all buttons in this group. |
+| `delimiter` | `string` | `" "` | Separator when joining `base` + `args`. |
+| `ports` | `integer[]` | — | Port numbers shown as clickable badges in the group header. |
+| `tags` | `string[]` | — | Arbitrary tags (reserved for future use). |
+| `buttons` | `array` | — | Static button definitions. |
+| `generate` | `table` | — | Dynamic button generation config. |
+| `links` | `array` | — | Quick-access links shown as badges. |
+
+### Group Links
+
+```toml
+[[groups.dev.links]]
+label = "App"
+url = "http://localhost:3000"
+icon = "link-external"
+```
+
+| Key | Type | Required | Description |
+|-----|------|----------|-------------|
+| `label` | `string` | Yes | Link display text. |
+| `url` | `string` | Yes | Absolute URL (must be valid). |
+| `icon` | `string` | No | Codicon name for the badge. |
+
+---
 
 ## Static Buttons
 
-Static buttons are declared as `[[groups.<name>.buttons]]`.
+Buttons are declared as `[[groups.<id>.buttons]]` array items.
 
-### Common Button Keys
+```toml
+[[groups.dev.buttons]]
+id = "start"
+label = "Start Dev Server"
+command = "npm run dev"
+description = "Starts the Vite dev server on port 3000"
+icon = "play"
+color = "#48B57A"
+run_in_new_terminal = true
+open_ports = [3000]
+```
 
-- `id`
-- `label`
-- `command`
-- `args`
-- `description`
-- `icon`
-- `color`
-- `enabled`
-- `copy_to_clipboard`
-- `run_in_current_terminal`
-- `run_in_new_terminal`
-- `confirm`
-- `danger`
-- `reveal_terminal`
-- `cwd`
-- `env`
-- `open_ports`
-- `open_urls`
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `id` | `string` | Auto-slugified | Unique identifier. Auto-generated from `groupId-label` if omitted. |
+| `label` | `string` | From `id` or command | Display text. Derived from first 3 words of command if omitted. |
+| `command` | `string` | — | Shell command to execute. Supports `{{template}}` substitution. |
+| `args` | `string[]` | — | Arguments joined with `group.delimiter` after `group.base`. |
+| `description` | `string` | — | Tooltip/subtitle text shown below the label. |
+| `icon` | `string` | Group icon | Codicon name. Falls back to group icon. |
+| `color` | `string` | Group color | Hex color override. Falls back to group color. |
+| `enabled` | `boolean` | `true` | Hide this button when `false`. |
+| `copy_to_clipboard` | `boolean` | `true` | Copy command on run. |
+| `run_in_current_terminal` | `boolean` | `true` | Use current terminal. |
+| `run_in_new_terminal` | `boolean` | `false` | Create new terminal. |
+| `confirm` | `boolean` | `false` | Show confirmation dialog. |
+| `danger` | `boolean` | Auto-detected | Mark as dangerous. |
+| `reveal_terminal` | `boolean` | `true` | Show terminal after run. |
+| `cwd` | `string` | — | Working directory override. |
+| `env` | `table` | — | Environment variable overrides. |
+| `open_ports` | `integer[]` | — | Ports to offer opening (renders "Open :PORT" actions). |
+| `open_urls` | `string[]` | — | URLs to offer opening (renders "Open URL" actions). |
+
+### Button Command Resolution
+
+A button's command is resolved from one of two sources:
+
+1. **`command` field** — used directly (with template substitution)
+2. **`base` + `args`** — group `base` joined with button `args` using `delimiter`
+
+```toml
+# Option 1: explicit command
+[[groups.dev.buttons]]
+command = "npm run dev"
+
+# Option 2: base + args
+[groups.docker]
+base = "docker compose"
+delimiter = " "
+
+[[groups.docker.buttons]]
+args = ["up", "-d"]
+# resolves to: docker compose up -d
+```
+
+### Inline Button Syntax
+
+For simple configs, buttons can be defined inline:
+
+```toml
+[groups.run]
+buttons = [
+  { id = "build", command = "npm run build" },
+  { id = "test", command = "npm test" },
+]
+```
+
+---
 
 ## Generated Buttons
 
-Generated buttons live under `[groups.<name>.generate]`.
+The `generate` block creates buttons from a cartesian product of parameters.
 
 ```toml
 [groups.scripts.generate]
 mode = "cartesian"
 template = "npm run {{arg1}}"
 label_template = "{{arg1}}"
+description_template = "Run {{arg1}} script"
 params = [["build", "test", "lint"]]
 ```
 
-Buttons expands the cartesian product of `params` into a flat list of buttons.
+This produces 3 buttons: `npm run build`, `npm run test`, `npm run lint`.
 
-## Variables And Macros
+Multi-dimensional generation:
 
-Variables and macros are simple string substitutions.
+```toml
+params = [["dev", "staging", "prod"], ["deploy", "status"]]
+# Produces 6 buttons: dev-deploy, dev-status, staging-deploy, ...
+```
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `mode` | `string` | `"cartesian"` | Generation mode (only `cartesian` supported). |
+| `template` | `string` | *(required)* | Command template with `{{arg1}}`, `{{arg2}}`, etc. |
+| `label_template` | `string` | Space-joined args | Label template. |
+| `description_template` | `string` | — | Description template. |
+| `params` | `string[][]` | *(required)* | Arrays to cartesian-product. |
+| `defaults` | `table` | — | Default values applied to all generated buttons. |
+
+> **Limit:** Generation is capped at **1,000 buttons** to prevent accidental explosion. An error diagnostic is emitted if exceeded.
+
+---
+
+## Variables and Macros
+
+### Variables
+
+Simple key-value string substitution:
 
 ```toml
 [variables]
 service = "api"
+port = "3000"
 
-[macros]
-docker_logs = "docker compose logs -f"
+[[groups.main.buttons]]
+command = "docker logs {{service}} --port {{port}}"
+# resolves to: docker logs api --port 3000
 ```
 
-They can be used inside commands and templates.
+### Macros
+
+Macros are like variables but support **recursive expansion** — a macro can reference other macros:
 
 ```toml
-command = "{{docker_logs}} {{service}}"
+[macros]
+npm = "npm"
+npm_run = "{{npm}} run"
+dev = "{{npm_run}} dev"
+
+[[groups.main.buttons]]
+command = "{{dev}}"
+# resolves to: npm run dev
 ```
+
+**Circular references** are detected and produce an error diagnostic:
+
+```toml
+[macros]
+a = "{{b}}"
+b = "{{a}}"
+# ERROR: Circular macro reference detected for 'a'
+```
+
+### Template Tokens
+
+Templates use `{{token}}` syntax. Recognized tokens:
+
+| Token | Source | Description |
+|-------|--------|-------------|
+| `{{base}}` | `group.base` | The group's base command. |
+| `{{arg1}}`, `{{arg2}}`, ... | `generate.params` | Cartesian product arguments (1-indexed). |
+| `{{variableName}}` | `[variables]` | Document-level variable value. |
+| `{{macroName}}` | `[macros]` | Expanded macro value. |
+
+Unknown tokens resolve to an empty string. Whitespace inside braces is trimmed: `{{ base }}` works the same as `{{base}}`.
+
+---
+
+## Defaults Cascade
+
+Settings cascade from document → group → button level. Lower levels override higher levels.
+
+```
+Document [defaults]
+    └─► Group settings
+         └─► Button settings (highest priority)
+```
+
+Example:
+
+```toml
+[defaults]
+danger = false          # document default
+
+[groups.ops]
+danger = true           # all ops buttons default to dangerous
+
+[[groups.ops.buttons]]
+id = "status"
+command = "kubectl get pods"
+danger = false          # this specific button is safe
+```
+
+---
+
+## Danger Detection
+
+Commands are automatically flagged as dangerous if they contain any of these patterns (with surrounding spaces):
+
+- ` rm `
+- ` drop `
+- ` prune `
+- ` reset `
+- ` delete `
+- ` deploy `
+
+For example, `git reset --hard HEAD` is auto-detected as dangerous. You can override this with `danger = false` on the button or `danger = true` to force-flag safe-looking commands.
+
+When `confirm = true` or `danger = true`, running the button shows a modal confirmation dialog (if the VS Code setting `buttons.confirmDangerousCommands` is enabled).
+
+---
+
+## ID Generation
+
+If a button omits `id`, one is auto-generated:
+
+1. Combine: `{groupId}-{label}`
+2. Lowercase
+3. Replace non-alphanumeric characters with `-`
+4. Strip leading/trailing `-`
+
+Example: group `ops`, label `"Deploy App"` → id `ops-deploy-app`
+
+**IDs must be unique** across all groups after resolution. If duplicates are found, the first wins and subsequent duplicates produce an error diagnostic.
+
+---
 
 ## Validation Rules
 
-- `version` must be `1`
-- `layout` must be `grid` or `rows`
-- `terminal` must be `current` or `new`
-- ports must be integers between `1` and `65535`
-- colors must be valid hex values
-- URLs must be absolute URLs
-- button ids must be unique after resolution
-- circular macros are rejected
+| Rule | Severity |
+|------|----------|
+| `version` must be `1` | Error |
+| `layout` must be `grid`, `rows`, `columns`, `table`, or `flow` | Error |
+| `terminal` must be `current` or `new` | Error |
+| At least one group must be defined | Warning |
+| Icons must match pattern `[a-z][a-z0-9-]*` | Warning |
+| Colors must be `#RGB` or `#RRGGBB` hex | Warning |
+| Ports must be integers `1`–`65535` | Error |
+| URLs must be valid absolute URLs | Error |
+| Macros must not have circular references | Error |
+| Cartesian generation must not exceed 1,000 buttons | Error |
+| Button IDs must be unique after resolution | Error |
+| Buttons must have a `command` or `args` | Warning |
 
-## Scope Limits In v1
+---
 
-- one `.buttons` file at workspace root
-- no nested groups
-- no platform-specific command branches
-- no arbitrary scripting or conditionals
-- no shell selection (planned for a future version)
-- no personal per-user config file
+## User Profile and Settings Merging
+
+Both the project `.buttons` (workspace root) and user `~/.buttons` (home directory) files use the same format.
+
+**Settings merging** applies to display settings when both files exist:
+
+1. Start with user file's display settings as the base
+2. Project file's display settings override any defined fields
+3. Undefined project fields fall through from the user file
+
+Button groups are **not** merged — the panel shows one source at a time, switchable via tabs.
+
+---
 
 ## Related Pages
 
-- [GETTING-STARTED.md](GETTING-STARTED.md)
-- [EXAMPLES.md](EXAMPLES.md)
-- [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- [Getting Started](GETTING-STARTED.md)
+- [Layouts](LAYOUTS.md)
+- [UI Features](UI-FEATURES.md)
+- [User Profile](USER-PROFILE.md)
+- [Settings & Commands](SETTINGS.md)
+- [Examples](EXAMPLES.md)
+- [LLM Instructions](LLM-INSTRUCTIONS.md)
+- [Troubleshooting](TROUBLESHOOTING.md)

@@ -1,8 +1,8 @@
 # Buttons
 
-Buttons is a VS Code extension that turns a repo-root `.buttons` TOML file into a visual command panel inside the editor.
+Buttons is a VS Code extension that turns `.buttons` TOML files into a visual command panel inside the editor.
 
-Teams can define common workflows once and expose them as clickable actions to **run in the terminal**, **copy to the clipboard**, or **open related URLs and local ports**.
+Teams define common workflows once and expose them as clickable actions to **run in the terminal**, **copy to the clipboard**, or **open related URLs and local ports**. Individual developers can also keep a personal `~/.buttons` file with commands available across all projects.
 
 ## Why Buttons?
 
@@ -10,15 +10,21 @@ Projects usually keep important commands scattered across `package.json`, Docker
 
 ## Features
 
-- Parse a single `.buttons` file from the workspace root
-- Render groups and buttons in a sidebar panel and editor webview
-- Run commands in the current or a new terminal
-- Copy resolved commands to the clipboard
-- Open related URLs and localhost ports
-- Static buttons and cartesian-generated buttons
-- Simple variables and reusable macros
-- Prompt before running dangerous commands
-- Activity Bar icon for quick access
+- **Project buttons** — parse a `.buttons` file from the workspace root
+- **User buttons** — personal `~/.buttons` file available in every project
+- **Source tabs** — toggle between project and user buttons in the panel
+- **5 layout modes** — grid, rows, columns, table, and flow
+- **Accordion groups** — collapse and expand groups with persistent state
+- **Eye toggle** — hide individual buttons from the panel
+- **Custom colors** — per-button, per-group, and global color theming
+- **Run commands** in the current or a new terminal
+- **Copy** resolved commands to the clipboard
+- **Open** related URLs and localhost ports
+- **Static and generated buttons** — cartesian product expansion
+- **Variables and macros** — simple string substitution with cycle detection
+- **Danger detection** — automatic flagging and confirmation for destructive commands
+- **Activity Bar icon** — sidebar panel for quick access
+- **Compact mode** — dense layout option for large configs
 
 ## Quick Start
 
@@ -31,6 +37,10 @@ Projects usually keep important commands scattered across `package.json`, Docker
 version = 1
 title = "My Project"
 layout = "grid"
+
+[display]
+show_icons = true
+show_labels = true
 
 [groups.dev]
 name = "Development"
@@ -49,9 +59,20 @@ command = "npm run build"
 icon = "package"
 ```
 
-## Next Steps
+## Personal User Buttons
+
+Create a `~/.buttons` file in your home directory to add buttons available across all projects. When both a project and user file exist, tabs appear in the panel to switch between them.
+
+See [User Profile](USER-PROFILE.md) for details.
+
+## Documentation
 
 - [Getting Started](GETTING-STARTED.md) — first-use walkthrough
-- [.buttons File Reference](BUTTONS-FILE.md) — full config schema
-- [Examples](EXAMPLES.md) — Node, Docker, Python, and Git example packs
+- [.buttons File Reference](BUTTONS-FILE.md) — complete TOML schema
+- [Layouts](LAYOUTS.md) — grid, rows, columns, table, and flow
+- [UI Features](UI-FEATURES.md) — accordion, eye toggle, colors, and more
+- [User Profile](USER-PROFILE.md) — personal `~/.buttons` file
+- [Settings & Commands](SETTINGS.md) — VS Code settings and commands
+- [Examples](EXAMPLES.md) — 29 example packs for every stack
+- [LLM Instructions](LLM-INSTRUCTIONS.md) — prompt for AI agents to generate `.buttons` files
 - [Troubleshooting](TROUBLESHOOTING.md) — common issues and fixes
