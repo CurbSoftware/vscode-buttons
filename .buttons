@@ -1,6 +1,6 @@
 version = 1
-title = "Buttons Extension Workspace"
-description = "Real commands for working on the Buttons VS Code extension"
+title = "Buttons Extension"
+description = "Commands for developing, testing, and releasing the Buttons VS Code extension"
 layout = "grid"
 terminal = "current"
 
@@ -8,68 +8,247 @@ terminal = "current"
 show_command = true
 show_labels = true
 show_icons = true
-compact = false
-
-[defaults]
-enabled = true
-copy_to_clipboard = true
-run_in_current_terminal = true
-run_in_new_terminal = false
-confirm = false
-danger = false
-reveal_terminal = true
 
 [macros]
 npm_run = "npm run"
+compile = "npm run compile"
+tsc = "./node_modules/.bin/tsc"
 
-[groups.workspace]
-name = "Workspace"
-description = "Install and inspect the project"
-icon = "rocket"
+# ── Build & Quality ─────────────────────────────────────────
+[groups.build]
+name = "Build & Quality"
+description = "Compile, type-check, and validate the extension"
+icon = "check-all"
+color = "#16A34A"
 
-[[groups.workspace.buttons]]
+[[groups.build.buttons]]
 id = "install"
 label = "Install Dependencies"
 command = "npm install"
 icon = "package"
+description = "Install all npm packages"
 
-[[groups.workspace.buttons]]
-id = "typescript-version"
-label = "TypeScript Version"
-command = "./node_modules/.bin/tsc --version"
-icon = "symbol-number"
-
-[groups.quality]
-name = "Quality"
-description = "Compile and type-check the extension"
-icon = "checklist"
-
-[[groups.quality.buttons]]
+[[groups.build.buttons]]
 id = "compile"
 label = "Compile"
-command = "{{npm_run}} compile"
+command = "{{compile}}"
 icon = "play"
 
-[[groups.quality.buttons]]
+[[groups.build.buttons]]
 id = "lint"
 label = "Type Check"
 command = "{{npm_run}} lint"
 icon = "verified"
+description = "tsc --noEmit"
 
-[groups.development]
+[[groups.build.buttons]]
+id = "compile-lint"
+label = "Compile + Lint"
+command = "{{compile}} && {{npm_run}} lint"
+icon = "run-all"
+
+# ── Development ─────────────────────────────────────────────
+[groups.dev]
 name = "Development"
-description = "Long-running local workflows"
+description = "Long-running dev workflows — watch mode and docs preview"
 icon = "tools"
+color = "#2563EB"
 
-[[groups.development.buttons]]
+[groups.dev.display]
+command_click_to_copy = true
+
+[[groups.dev.buttons]]
 id = "watch"
 label = "Watch TypeScript"
 command = "{{npm_run}} watch"
 icon = "sync"
+description = "Continuous compilation on file change"
 run_in_new_terminal = true
 
-[[groups.development.buttons]]
-id = "compile-and-lint"
-label = "Compile && Lint"
-command = "npm run compile && npm run lint"
+[[groups.dev.buttons]]
+id = "docs-server"
+label = "Docs Server"
+command = "cd docs && node server.js"
+icon = "book"
+description = "Serve documentation site locally"
+run_in_new_terminal = true
+port = 3001
+
+# ── Testing ─────────────────────────────────────────────────
+[groups.test]
+name = "Testing"
+description = "Run unit tests and validate config files"
+icon = "beaker"
+color = "#9333EA"
+
+[[groups.test.buttons]]
+id = "test-all"
+label = "Run All Tests"
+command = "{{compile}} && npm test"
 icon = "run-all"
+
+[[groups.test.buttons]]
+id = "test-config"
+label = "Test configHelpers"
+command = "{{compile}} && node --test dist/test/configHelpers.test.js"
+icon = "beaker"
+
+[[groups.test.buttons]]
+id = "test-includes"
+label = "Test includesMerge"
+command = "{{compile}} && node --test dist/test/includesMerge.test.js"
+icon = "beaker"
+
+[[groups.test.buttons]]
+id = "validate-examples"
+label = "Validate All Examples"
+command = "node scripts/validate-examples.js"
+icon = "checklist"
+description = "Parse and validate every .buttons file in examples/ and test-configs/"
+
+# ── Git ─────────────────────────────────────────────────────
+[groups.git]
+name = "Git"
+description = "Quick git commands"
+icon = "git-branch"
+color = "#D97706"
+layout = "flow"
+
+[groups.git.display]
+compact = true
+show_command = false
+
+[[groups.git.buttons]]
+id = "git-status"
+label = "Status"
+command = "git status"
+icon = "diff"
+
+[[groups.git.buttons]]
+id = "git-log"
+label = "Log"
+command = "git --no-pager log --oneline --decorate -10"
+icon = "history"
+
+[[groups.git.buttons]]
+id = "git-diff"
+label = "Diff"
+command = "git diff"
+icon = "compare-changes"
+
+[[groups.git.buttons]]
+id = "git-fetch"
+label = "Fetch"
+command = "git fetch --all --prune"
+icon = "cloud-download"
+
+[[groups.git.buttons]]
+id = "git-pull"
+label = "Pull"
+command = "git pull --ff-only"
+icon = "arrow-down"
+
+# ── Release ─────────────────────────────────────────────────
+[groups.release]
+name = "Release"
+description = "Package and publish the extension"
+icon = "rocket"
+color = "#DC2626"
+
+[groups.release.display]
+group_bg_color = "#1C1012"
+run_label = "Publish"
+show_copy_to_terminal = false
+show_copy_to_new_terminal = false
+
+[[groups.release.buttons]]
+id = "package"
+label = "Package .vsix"
+command = "{{npm_run}} package"
+icon = "archive"
+description = "Create buttons-vscode-*.vsix"
+
+[[groups.release.buttons]]
+id = "install-vsix"
+label = "Install .vsix Locally"
+command = "code --install-extension buttons-vscode-*.vsix"
+icon = "desktop-download"
+description = "Test the packaged extension"
+
+[[groups.release.buttons]]
+id = "publish-marketplace"
+label = "Publish to Marketplace"
+command = "vsce publish"
+icon = "cloud-upload"
+danger = true
+confirm = true
+description = "Publish to VS Code Marketplace"
+
+[[groups.release.buttons]]
+id = "publish-openvsx"
+label = "Publish to Open VSX"
+command = "npx ovsx publish buttons-vscode-*.vsix"
+icon = "globe"
+danger = true
+confirm = true
+description = "Publish to Open VSX Registry"
+
+# ── Try Examples ────────────────────────────────────────────
+[groups.examples]
+name = "Try Examples"
+description = "Copy an example .buttons file to the workspace root to preview it"
+icon = "library"
+color = "#0D9488"
+layout = "table"
+
+[groups.examples.display]
+show_new_terminal = false
+show_copy_to_clipboard = false
+run_label = "Load"
+run_icon = "arrow-right"
+
+[groups.examples.generate]
+mode = "cartesian"
+template = "cp examples/{{arg1}}/.buttons .buttons"
+label_template = "{{arg1}}"
+params = [["node", "docker", "python", "git", "devops-ci", "fullstack-nextjs", "monorepo", "database", "aws", "kubernetes"]]
+
+# ── Config Files ────────────────────────────────────────────
+[groups.config]
+name = "Config Files"
+description = "Open project configuration files"
+icon = "settings-gear"
+color = "#64748B"
+layout = "flow"
+
+[groups.config.display]
+compact = true
+show_command = false
+show_run = false
+show_new_terminal = false
+show_copy_to_terminal = false
+show_copy_to_new_terminal = false
+
+[[groups.config.buttons]]
+id = "open-buttons"
+label = ".buttons"
+command = "code .buttons"
+icon = "file-code"
+
+[[groups.config.buttons]]
+id = "open-package"
+label = "package.json"
+command = "code package.json"
+icon = "json"
+
+[[groups.config.buttons]]
+id = "open-tsconfig"
+label = "tsconfig.json"
+command = "code tsconfig.json"
+icon = "symbol-interface"
+
+[[groups.config.buttons]]
+id = "open-claude"
+label = "CLAUDE.md"
+command = "code CLAUDE.md"
+icon = "markdown"

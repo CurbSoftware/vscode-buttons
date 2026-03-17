@@ -2,7 +2,7 @@
 
 # Buttons
 
-Buttons is a VS Code extension that turns `.buttons` TOML files into a visual command panel inside the editor.
+Buttons is an extension for VS Code and VS Codium that turns `.buttons` TOML files into a visual command panel inside the editor.
 
 Teams define common workflows once and expose them as clickable actions to **run in the terminal**, **copy to the clipboard**, or **open related URLs and local ports**. Individual developers can also keep a personal `~/.buttons` file with commands available across all projects.
 
@@ -45,7 +45,7 @@ Projects usually keep important commands scattered across `package.json`, Docker
 
 ## Quick Start
 
-1. Install the extension from the VS Code Marketplace.
+1. Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=buttons-dev.buttons-vscode) or [Open VSX Registry](https://open-vsx.org/extension/buttons-dev/buttons-vscode) (VS Codium).
 2. Create a `.buttons` file at the root of your project.
 3. The Buttons sidebar appears automatically.
 4. Click **Run**, **New Terminal**, or **Copy** on any button.

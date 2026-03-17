@@ -1,10 +1,18 @@
 {
   "name": "buttons-vscode",
   "displayName": "Buttons",
-  "description": "Run shared project commands from a repo-root .buttons TOML file.",
+  "description": "Turn .buttons TOML files into a clickable command panel — run, copy, and share project workflows in VS Code.",
   "version": "0.1.0",
   "publisher": "buttons-dev",
   "license": "MIT",
+  "pricing": "Free",
+  "icon": "media/buttons-icon-128.png",
+  "galleryBanner": {
+    "color": "#18181b",
+    "theme": "dark"
+  },
+  "markdown": "github",
+  "qna": "marketplace",
   "repository": {
     "type": "git",
     "url": "https://github.com/CurbSoftware/vscode-buttons.git"
@@ -179,6 +187,8 @@
     "lint": "tsc -p ./ --noEmit",
     "test": "npm run compile && node --test dist/test/**/*.test.js",
     "package": "vsce package",
+    "publish:marketplace": "vsce publish",
+    "publish:ovsx": "ovsx publish buttons-vscode-*.vsix",
     "vscode:prepublish": "npm run compile"
   },
   "dependencies": {

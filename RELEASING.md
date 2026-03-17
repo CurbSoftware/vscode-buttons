@@ -1,93 +1,143 @@
 # Release Checklist
 
-## Pre-Release Validation
+## A. Metadata
+
+Confirm these fields in `package.json` before every release:
+
+- [ ] `publisher` matches your Marketplace publisher ID
+- [ ] `version` bumped appropriately (semver)
+- [ ] `engines.vscode` reflects the oldest supported VS Code version
+- [ ] `icon` points to a valid PNG (128x128 minimum)
+- [ ] `repository`, `homepage`, `bugs`, `license` are correct
+- [ ] `pricing` is set (`"Free"`)
+- [ ] `galleryBanner` is set
+
+## B. Build & Validation
 
 ```bash
-# 1. Clean compile
+npm ci
 npm run compile
-
-# 2. Run all tests
 npm test
-
-# 3. Type-check only (no emit)
 npm run lint
-
-# 4. Validate all example .buttons files
-node -e "
-const TOML = require('@iarna/toml');
-const fs = require('fs');
-const path = require('path');
-const { validateDocument } = require('./dist/config/configHelpers');
-const check = (dir) => {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const fp = path.join(dir, entry.name);
-    if (entry.isDirectory()) { check(fp); continue; }
-    if (entry.name !== '.buttons') continue;
-    const doc = TOML.parse(fs.readFileSync(fp, 'utf8'));
-    const errors = validateDocument(doc).filter(d => d.severity === 'error');
-    console.log(errors.length ? 'FAIL' : 'OK', fp);
-  }
-};
-check('./examples');
-check('./test-configs');
-"
-
-# 5. Verify no unused exports
-# Review: src/config/configHelpers.ts exports should all be imported somewhere
+node scripts/validate-examples.js
 ```
 
-## Version Bump
+## C. Packaging Hygiene
 
-1. Update `version` in `package.json`
-2. Follow [semver](https://semver.org/):
-   - **patch** (0.1.1): bug fixes only
-   - **minor** (0.2.0): new features, backward compatible
-   - **major** (1.0.0): breaking changes to `.buttons` format
+Ensure `.vscodeignore` excludes dev-only files. Verify with:
 
-## Package
+```bash
+vsce ls
+```
+
+Confirm only runtime files are included: `dist/`, `media/`, `node_modules/` (production only), `package.json`, `README.md`, `CHANGELOG.md`, `LICENSE`.
+
+Check for accidental secrets:
+
+```bash
+git ls-files | grep -iE '(^|/)\.env'
+```
+
+## D. Update CHANGELOG.md
+
+- Set the release date: `[X.Y.Z] - YYYY-MM-DD`
+- Document all changes since the last release
+
+## E. Package & Test Locally
 
 ```bash
 # Install vsce if needed
 npm install -g @vscode/vsce
 
-# Package the extension
-npm run package
-# Creates buttons-vscode-X.Y.Z.vsix
-```
+# Package
+vsce package
 
-## Test the .vsix
-
-```bash
 # Install locally
 code --install-extension buttons-vscode-*.vsix
-
-# Test in a fresh workspace:
-# 1. Create a .buttons file
-# 2. Verify sidebar appears
-# 3. Open panel (Buttons: Open Panel)
-# 4. Test all 5 layout modes
-# 5. Test all 5 action buttons
-# 6. Test accordion collapse/expand
-# 7. Test eye toggle hide/show
-# 8. Test source tabs (project + user)
-# 9. Test includes
-# 10. Test custom labels, icons, colors
-# 11. Test click-to-copy on command preview
-# 12. Test toolbar icon (top-right)
 ```
 
-## Publish
+Test in a clean workspace:
+
+- [ ] Activity Bar icon appears
+- [ ] Sidebar view loads
+- [ ] Command palette commands work
+- [ ] Root `.buttons` file renders correctly
+- [ ] `~/.buttons` user file works
+- [ ] File includes resolve
+- [ ] All 5 layout modes render
+- [ ] All 5 action buttons work (Run, New Terminal, Copy to Terminal, Copy to New Terminal, Copy)
+- [ ] Accordion collapse/expand persists
+- [ ] Eye toggle hides/shows buttons
+- [ ] Source tabs switch between project and user
+- [ ] Dangerous command confirmation appears
+- [ ] Toolbar icon visible in editor title bar
+- [ ] Behavior in empty workspace (no `.buttons`)
+- [ ] Behavior in untrusted workspace
+
+## F. One-Time Publisher Setup
+
+### VS Code Marketplace
+
+*(Skip if already done.)*
+
+1. Create an Azure DevOps organization
+2. Create a Personal Access Token (scope: **Marketplace > Manage**, org: **All accessible organizations**)
+3. Create a publisher at the [Marketplace management page](https://marketplace.visualstudio.com/manage)
+4. Put the publisher ID in `package.json`
+5. Run: `vsce login <publisher-id>`
+
+### Open VSX Registry (for VS Codium)
+
+*(Skip if already done.)*
+
+1. Create an account at [open-vsx.org](https://open-vsx.org)
+2. Generate a personal access token in your account settings
+3. Claim a namespace matching your publisher ID (or create one)
+
+## G. Publish
+
+### VS Code Marketplace
 
 ```bash
-# Publish to VS Code Marketplace
+# Publish current version
 vsce publish
 
-# Or publish to Open VSX
-npx ovsx publish buttons-vscode-*.vsix -p <token>
+# Or bump and publish in one step
+vsce publish patch   # 0.1.0 → 0.1.1
+vsce publish minor   # 0.1.0 → 0.2.0
+vsce publish major   # 0.1.0 → 1.0.0
 ```
 
-## Post-Release
+Or upload the `.vsix` manually via the [Marketplace management page](https://marketplace.visualstudio.com/manage).
+
+### Open VSX Registry
+
+```bash
+# Install ovsx if needed
+npm install -g ovsx
+
+# Publish the .vsix (must run vsce package first)
+ovsx publish buttons-vscode-*.vsix -p <open-vsx-token>
+```
+
+Or upload the `.vsix` manually at [open-vsx.org](https://open-vsx.org).
+
+> **Note:** The same `.vsix` file works for both marketplaces. Package once, publish to both.
+
+## H. Post-Release
 
 - [ ] Create GitHub release with tag `vX.Y.Z`
-- [ ] Update changelog (if maintained)
+- [ ] Verify extension appears on VS Code Marketplace
+- [ ] Verify extension appears on Open VSX Registry
+- [ ] Verify README images render correctly on both marketplace pages
 - [ ] Announce release
+
+## Version Strategy
+
+Follow [semver](https://semver.org/):
+
+| Bump | When |
+|------|------|
+| **patch** (0.1.1) | Bug fixes only |
+| **minor** (0.2.0) | New features, backward compatible |
+| **major** (1.0.0) | Breaking changes to `.buttons` format |

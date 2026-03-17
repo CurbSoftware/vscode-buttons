@@ -1,6 +1,8 @@
 # Buttons
 
-Buttons is a VS Code extension that turns `.buttons` TOML files into a visual command panel inside the editor. Teams define common workflows once and expose them as clickable actions to run in the terminal, copy to the clipboard, or open related URLs and local ports. Individual developers can also keep a personal `~/.buttons` file with commands available across all projects.
+Buttons is an extension for VS Code and VS Codium that turns `.buttons` TOML files into a visual command panel inside the editor. Teams define common workflows once and expose them as clickable actions to run in the terminal, copy to the clipboard, or open related URLs and local ports. Individual developers can also keep a personal `~/.buttons` file with commands available across all projects.
+
+**Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=buttons-dev.buttons-vscode) or [Open VSX Registry](https://open-vsx.org/extension/buttons-dev/buttons-vscode) (VS Codium).**
 
 ![Basic panel and sidebar](docs/screenshots/buttons-screenshot-basic-panel-and-sidebar.webp)
 
@@ -42,12 +44,36 @@ Projects usually keep important commands scattered across `package.json`, Docker
 
 ## Quick Start
 
-1. Install the extension or run it locally in an Extension Development Host.
+1. Install from the VS Code Marketplace or Open VSX Registry.
 2. Create a `.buttons` file at the root of your project.
-3. Run `Buttons: Open Panel` from the Command Palette.
-4. Click `Run`, `New Terminal`, or `Copy` on any button.
+3. The Buttons sidebar appears automatically.
+4. Click **Run**, **New Terminal**, or **Copy** on any button.
 
-The extension only loads the root `.buttons` file in v1. Sample files under `examples/` are meant to be copied into the root when you want to try them.
+```toml
+version = 1
+title = "My Project"
+layout = "grid"
+
+[display]
+show_command = true
+show_icons = true
+
+[groups.dev]
+name = "Development"
+icon = "rocket"
+
+[[groups.dev.buttons]]
+id = "start"
+label = "Start Dev Server"
+command = "npm run dev"
+icon = "play"
+
+[[groups.dev.buttons]]
+id = "build"
+label = "Build"
+command = "npm run build"
+icon = "package"
+```
 
 ## Documentation
 
@@ -60,66 +86,24 @@ The extension only loads the root `.buttons` file in v1. Sample files under `exa
 - [Examples](docs/EXAMPLES.md) — 29 example packs for every stack
 - [Troubleshooting](docs/TROUBLESHOOTING.md) — common issues and fixes
 
-## Example Root Config
+## Safety
 
-This repository includes a working root config in [.buttons](.buttons) that targets the actual commands available in this project.
+Buttons can run shell commands defined in `.buttons` files. Keep these points in mind:
 
-```toml
-version = 1
-title = "Buttons Extension Workspace"
-description = "Real commands for working on the Buttons VS Code extension"
-layout = "grid"
-terminal = "current"
+- **Review project configs before use.** A `.buttons` file can run any shell command. Treat it like a Makefile or `package.json` script — inspect before trusting.
+- **Dangerous command confirmation.** Commands containing destructive keywords (`rm -rf`, `drop`, `--force`, etc.) are flagged automatically. The extension prompts for confirmation before running them.
+- **User config is personal.** Your `~/.buttons` file is under your control and is never shared with the project.
 
-[display]
-show_command = true
-show_labels = true
-show_icons = true
-compact = false
+## Development
 
-[defaults]
-enabled = true
-copy_to_clipboard = true
-run_in_current_terminal = true
-run_in_new_terminal = false
-confirm = false
-danger = false
-reveal_terminal = true
-
-[groups.workspace]
-name = "Workspace"
-description = "Install and inspect the project"
-icon = "rocket"
-
-[[groups.workspace.buttons]]
-id = "install"
-label = "Install Dependencies"
-command = "npm install"
-icon = "package"
-
-[[groups.workspace.buttons]]
-id = "typescript-version"
-label = "TypeScript Version"
-command = "./node_modules/.bin/tsc --version"
-icon = "symbol-number"
+```bash
+npm install
+npm run compile
+npm test
+npm run watch    # continuous compilation
 ```
 
-## Example Packs
-
-Reusable sample `.buttons` files live under `examples/`:
-
-- [examples/node/.buttons](examples/node/.buttons)
-- [examples/docker/.buttons](examples/docker/.buttons)
-- [examples/python/.buttons](examples/python/.buttons)
-- [examples/git/.buttons](examples/git/.buttons)
-
-## Development Notes
-
-This project currently uses TypeScript plus the VS Code extension API. The local workflow is:
-
-1. `npm install`
-2. `npm run compile`
-3. Start the `Run Buttons Extension` launch configuration in VS Code
+Press F5 in VS Code to launch the Extension Development Host. See [CLAUDE.md](CLAUDE.md) for full architecture details.
 
 ## License
 
