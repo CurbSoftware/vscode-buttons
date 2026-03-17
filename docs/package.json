@@ -2,9 +2,12 @@
   "name": "buttons-docs",
   "private": true,
   "scripts": {
-    "start": "docsify serve . --port 3000 --host 0.0.0.0"
+    "start": "npx http-server . -p 3000 -a 0.0.0.0 -c-1"
   },
   "dependencies": {
     "docsify-cli": "^4.4.4"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
   }
 }
