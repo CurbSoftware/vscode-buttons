@@ -10,6 +10,10 @@ Buttons is an extension for VS Code and VS Codium that turns `.buttons` TOML fil
 
 Projects usually keep important commands scattered across `package.json`, Docker docs, onboarding guides, shell history, and README snippets. Buttons gives those commands one shared surface inside VS Code so developers can discover and run them without hunting.
 
+**If you find Buttons useful, please star the repo so we know**
+
+**Let us know about any bugs or feature ideas**
+
 ### Run commands from a visual panel
 
 ![Running buttons to terminal](docs/screenshots/buttons-screen-record-buttons-to-terminal.webp)
