@@ -57,7 +57,10 @@
       {
         "command": "buttons.openPanel",
         "title": "Buttons: Open Panel",
-        "icon": "$(list-selection)"
+        "icon": {
+          "dark": "media/buttons-icon.svg",
+          "light": "media/buttons-icon.svg"
+        }
       },
       {
         "command": "buttons.reloadConfig",
