@@ -6,9 +6,19 @@ Buttons is a VS Code extension that turns `.buttons` TOML files into a visual co
 
 Teams define common workflows once and expose them as clickable actions to **run in the terminal**, **copy to the clipboard**, or **open related URLs and local ports**. Individual developers can also keep a personal `~/.buttons` file with commands available across all projects.
 
+![Basic panel and sidebar](screenshots/buttons-screenshot-basic-panel-and-sidebar.webp)
+
 ## Why Buttons?
 
 Projects usually keep important commands scattered across `package.json`, Docker docs, onboarding guides, shell history, and README snippets. Buttons gives those commands one shared surface inside VS Code so developers can discover and run them without hunting.
+
+### Run commands from a visual panel
+
+![Running buttons to terminal](screenshots/buttons-screen-record-buttons-to-terminal.webp)
+
+### Customize with a simple TOML file
+
+![Changing settings file](screenshots/buttons-screen-record-buttons-change-settings-file.webp)
 
 ## Features
 
@@ -16,6 +26,8 @@ Projects usually keep important commands scattered across `package.json`, Docker
 - **User buttons** — personal `~/.buttons` file available in every project
 - **Source tabs** — toggle between project and user buttons in the panel
 - **5 layout modes** — grid, rows, columns, table, and flow
+
+![Layout modes](screenshots/buttons-screenshot-layouts-screens-panel.webp)
 - **Accordion groups** — collapse and expand groups with persistent state
 - **Eye toggle** — hide individual buttons from the panel
 - **Custom colors** — per-button, per-group, and global color theming
@@ -28,6 +40,8 @@ Projects usually keep important commands scattered across `package.json`, Docker
 - **Activity Bar icon** — sidebar panel for quick access
 - **Toolbar icon** — quick-access button in the editor title bar
 - **Compact mode** — dense layout option for large configs
+
+![Kitchen sink example](screenshots/buttons-screenshot-kitchen-sink-example-panel-and-sidebar.webp)
 
 ## Quick Start
 

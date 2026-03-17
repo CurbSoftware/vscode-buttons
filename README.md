@@ -1,22 +1,44 @@
 # Buttons
 
-Buttons is a VS Code extension that turns a repo-root `.buttons` TOML file into a visual command panel inside the editor. Teams can define common workflows once and expose them as clickable actions to run in the current terminal, run in a new terminal, copy to the clipboard, or open related URLs and local ports.
+Buttons is a VS Code extension that turns `.buttons` TOML files into a visual command panel inside the editor. Teams define common workflows once and expose them as clickable actions to run in the terminal, copy to the clipboard, or open related URLs and local ports. Individual developers can also keep a personal `~/.buttons` file with commands available across all projects.
+
+![Basic panel and sidebar](docs/screenshots/buttons-screenshot-basic-panel-and-sidebar.webp)
 
 ## What It Solves
 
 Projects usually keep important commands scattered across `package.json`, Docker docs, onboarding guides, shell history, and README snippets. Buttons gives those commands one shared surface inside VS Code so developers can discover and run them without hunting.
 
-## Current Capabilities
+### Run commands from a visual panel
 
-- Parse a single `.buttons` file from the workspace root
-- Render groups and buttons in an editor-area webview panel
-- Run commands in the current terminal
-- Run commands in a new terminal
-- Copy resolved commands to the clipboard
-- Open related URLs and localhost ports
-- Support static buttons and cartesian-generated buttons
-- Support simple variables and reusable macros
-- Prompt before running dangerous commands
+![Running buttons to terminal](docs/screenshots/buttons-screen-record-buttons-to-terminal.webp)
+
+### Customize with a simple TOML file
+
+![Changing settings file](docs/screenshots/buttons-screen-record-buttons-change-settings-file.webp)
+
+## Features
+
+- **Project buttons** — parse a `.buttons` file from the workspace root
+- **User buttons** — personal `~/.buttons` file available in every project
+- **Source tabs** — toggle between project and user buttons in the panel
+- **5 layout modes** — grid, rows, columns, table, and flow
+
+![Layout modes](docs/screenshots/buttons-screenshot-layouts-screens-panel.webp)
+
+- **Accordion groups** — collapse and expand groups with persistent state
+- **Eye toggle** — hide individual buttons from the panel
+- **Custom colors** — per-button, per-group, and global color theming
+- **Run commands** in the current or a new terminal
+- **Copy** resolved commands to the clipboard
+- **Open** related URLs and localhost ports
+- **Static and generated buttons** — cartesian product expansion
+- **Variables and macros** — simple string substitution with cycle detection
+- **Danger detection** — automatic flagging and confirmation for destructive commands
+- **Activity Bar icon** — sidebar panel for quick access
+- **Toolbar icon** — quick-access button in the editor title bar
+- **Compact mode** — dense layout option for large configs
+
+![Kitchen sink example](docs/screenshots/buttons-screenshot-kitchen-sink-example-panel-and-sidebar.webp)
 
 ## Quick Start
 
@@ -29,11 +51,14 @@ The extension only loads the root `.buttons` file in v1. Sample files under `exa
 
 ## Documentation
 
-- [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)
-- [docs/BUTTONS-FILE.md](docs/BUTTONS-FILE.md)
-- [docs/EXAMPLES.md](docs/EXAMPLES.md)
-- [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
-- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [Getting Started](docs/GETTING-STARTED.md) — first-use walkthrough
+- [.buttons File Reference](docs/BUTTONS-FILE.md) — complete TOML schema
+- [Layouts](docs/LAYOUTS.md) — grid, rows, columns, table, and flow
+- [UI Features](docs/UI-FEATURES.md) — accordion, eye toggle, colors, and more
+- [User Profile](docs/USER-PROFILE.md) — personal `~/.buttons` file
+- [Settings & Commands](docs/SETTINGS.md) — VS Code settings and commands
+- [Examples](docs/EXAMPLES.md) — 29 example packs for every stack
+- [Troubleshooting](docs/TROUBLESHOOTING.md) — common issues and fixes
 
 ## Example Root Config
 

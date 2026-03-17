@@ -4,18 +4,27 @@ Recommended screenshots, GIFs, and videos for the README, docs site, and VS Code
 
 ## Core UI
 
-- [ ] `buttons-screenshot-basic-panel-and-sidebar.png` — Panel + sidebar with a simple .buttons config (few groups, default display)
-- [ ] `buttons-screenshot-kitchen-sink-example-panel-and-sidebar.png` — Panel + sidebar with the kitchen-sink example (many groups, colors, icons)
+- [x] `buttons-screenshot-basic-panel-and-sidebar.webp` — Panel + sidebar with a simple .buttons config (few groups, default display)
+- [x] `buttons-screenshot-kitchen-sink-example-panel-and-sidebar.webp` — Panel + sidebar with the kitchen-sink example (many groups, colors, icons)
 - [ ] `buttons-screenshot-toolbar-icon.png` — Editor title bar showing the Buttons toolbar icon (top-right)
 - [ ] `buttons-screenshot-activity-bar.png` — Activity bar showing the Buttons sidebar icon
 
+## Screen Recordings
+
+- [x] `buttons-screen-record-buttons-to-terminal.webp` — Running buttons and sending commands to the terminal
+- [x] `buttons-screen-record-buttons-change-settings-file.webp` — Editing the .buttons TOML file and seeing live changes
+- [ ] `buttons-screen-record-accordion-toggle.webp` — Expanding and collapsing group accordions
+- [ ] `buttons-screen-record-layout-switching.webp` — Cycling through layout modes in Settings
+- [ ] `buttons-screen-record-copy-actions.webp` — Using Copy to Terminal, Copy to New Terminal, Copy to Clipboard
+
 ## Layout Modes
 
-- [ ] `buttons-screenshot-layout-grid.png` — Grid layout
-- [ ] `buttons-screenshot-layout-rows.png` — Rows layout
-- [ ] `buttons-screenshot-layout-columns.png` — Columns layout
-- [ ] `buttons-screenshot-layout-table.png` — Table layout
-- [ ] `buttons-screenshot-layout-compact.png` — Compact layout
+- [x] `buttons-screenshot-layouts-screens-panel.webp` — All 5 layout modes shown together in the panel
+- [ ] `buttons-screenshot-layout-grid.png` — Grid layout (individual)
+- [ ] `buttons-screenshot-layout-rows.png` — Rows layout (individual)
+- [ ] `buttons-screenshot-layout-columns.png` — Columns layout (individual)
+- [ ] `buttons-screenshot-layout-table.png` — Table layout (individual)
+- [ ] `buttons-screenshot-layout-compact.png` — Compact layout (individual)
 
 ## Features
 
@@ -28,14 +37,6 @@ Recommended screenshots, GIFs, and videos for the README, docs site, and VS Code
 - [ ] `buttons-screenshot-danger-warning.png` — Confirmation dialog for a dangerous command
 - [ ] `buttons-screenshot-dark-theme.png` — Extension in a dark theme
 - [ ] `buttons-screenshot-light-theme.png` — Extension in a light theme
-
-## GIFs
-
-- [ ] `buttons-gif-getting-started.gif` — Creating a .buttons file, sidebar appears, clicking Run
-- [ ] `buttons-gif-run-button.gif` — Clicking Run on a button, terminal opens and executes
-- [ ] `buttons-gif-accordion-toggle.gif` — Expanding and collapsing group accordions
-- [ ] `buttons-gif-layout-switching.gif` — Cycling through layout modes in Settings
-- [ ] `buttons-gif-copy-actions.gif` — Using Copy to Terminal, Copy to New Terminal, Copy to Clipboard
 
 ## Video
 
