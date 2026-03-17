@@ -1,11 +1,14 @@
-export type LayoutMode = "grid" | "rows";
+export type LayoutMode = "grid" | "rows" | "columns" | "table" | "flow";
 export type TerminalMode = "current" | "new";
+export type ButtonsSource = "user" | "project";
 
 export interface ButtonsDisplayConfig {
   show_command?: boolean;
   show_labels?: boolean;
   show_icons?: boolean;
   compact?: boolean;
+  button_color?: string;
+  group_bg_color?: string;
 }
 
 export interface ButtonsDefaults {
@@ -122,6 +125,8 @@ export interface ResolvedButtonsConfig {
   showLabels: boolean;
   showIcons: boolean;
   compact: boolean;
+  buttonColor?: string;
+  groupBgColor?: string;
   groups: ResolvedButtonsGroup[];
 }
 
@@ -132,10 +137,29 @@ export interface LoadedButtonsState {
   diagnostics: ButtonsDiagnostic[];
 }
 
+export interface MergedDisplaySettings {
+  showCommandPreview: boolean;
+  showLabels: boolean;
+  showIcons: boolean;
+  compact: boolean;
+  buttonColor?: string;
+  groupBgColor?: string;
+  layout: LayoutMode;
+}
+
+export interface CombinedButtonsState {
+  user: LoadedButtonsState;
+  project: LoadedButtonsState;
+  activeSource: ButtonsSource;
+  mergedDisplay: MergedDisplaySettings;
+}
+
 export interface PanelActionMessage {
-  type: "ready" | "reload" | "open-file" | "run-current" | "run-new" | "copy" | "open-url" | "open-port";
+  type: "ready" | "reload" | "open-file" | "run-current" | "run-new" | "copy" | "open-url" | "open-port"
+    | "toggle-source" | "toggle-group" | "toggle-button-visibility";
   groupId?: string;
   buttonId?: string;
   url?: string;
   port?: number;
+  source?: ButtonsSource;
 }

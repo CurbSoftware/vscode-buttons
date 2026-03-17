@@ -1,3 +1,5 @@
+import * as os from "os";
+import * as path from "path";
 import * as vscode from "vscode";
 
 function getWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
@@ -12,4 +14,8 @@ export function getButtonsFileUri(): vscode.Uri | undefined {
   }
 
   return vscode.Uri.joinPath(workspaceFolder.uri, ".buttons");
+}
+
+export function getUserButtonsFileUri(): vscode.Uri {
+  return vscode.Uri.file(path.join(os.homedir(), ".buttons"));
 }

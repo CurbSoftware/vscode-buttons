@@ -4,6 +4,8 @@ import {
   ButtonsDocument,
   ButtonsGenerateConfig,
   ButtonsGroupConfig,
+  LayoutMode,
+  MergedDisplaySettings,
   ResolvedButtonsButton,
   ResolvedButtonsConfig,
   ResolvedButtonsGroup,
@@ -14,6 +16,7 @@ export const DANGER_PATTERNS = [" rm ", " drop ", " prune ", " reset ", " delete
 export const MAX_GENERATED_BUTTONS = 1000;
 export const CODICON_PATTERN = /^[a-z][a-z0-9-]*$/;
 export const HEX_COLOR_PATTERN = /^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/;
+export const VALID_LAYOUTS: LayoutMode[] = ["grid", "rows", "columns", "table", "flow"];
 
 export interface TemplateContext {
   base?: string;
@@ -29,7 +32,7 @@ export function validateDocument(document: ButtonsDocument): ButtonsDiagnostic[]
     diagnostics.push({ message: "The .buttons file must declare version = 1.", severity: "error" });
   }
 
-  if (document.layout && !["grid", "rows"].includes(document.layout)) {
+  if (document.layout && !VALID_LAYOUTS.includes(document.layout)) {
     diagnostics.push({ message: `Invalid layout: ${document.layout}.`, severity: "error" });
   }
 
@@ -39,6 +42,11 @@ export function validateDocument(document: ButtonsDocument): ButtonsDiagnostic[]
 
   if (!document.groups || Object.keys(document.groups).length === 0) {
     diagnostics.push({ message: "The .buttons file must define at least one group.", severity: "warning" });
+  }
+
+  if (document.display) {
+    validateColor(document.display.button_color, "Display", diagnostics);
+    validateColor(document.display.group_bg_color, "Display", diagnostics);
   }
 
   for (const [groupId, group] of Object.entries(document.groups ?? {})) {
@@ -62,7 +70,7 @@ export function validateDocument(document: ButtonsDocument): ButtonsDiagnostic[]
 export function resolveDocument(
   document: ButtonsDocument,
   showCommandPreviewFallback: boolean,
-  defaultLayout: "grid" | "rows",
+  defaultLayout: LayoutMode,
   defaultTerminal: TerminalMode,
   diagnostics: ButtonsDiagnostic[],
 ): ResolvedButtonsConfig {
@@ -111,6 +119,8 @@ export function resolveDocument(
     showLabels: document.display?.show_labels ?? true,
     showIcons: document.display?.show_icons ?? true,
     compact: document.display?.compact ?? false,
+    buttonColor: document.display?.button_color,
+    groupBgColor: document.display?.group_bg_color,
     groups,
   };
 }
@@ -392,4 +402,44 @@ export function slugify(value: string): string {
 export function isDangerousCommand(command: string): boolean {
   const padded = ` ${command.toLowerCase()} `;
   return DANGER_PATTERNS.some((pattern) => padded.includes(pattern));
+}
+
+export function mergeDisplaySettings(
+  user: ResolvedButtonsConfig | undefined,
+  project: ResolvedButtonsConfig | undefined,
+  fallbacks: { showCommandPreview: boolean; layout: LayoutMode },
+): MergedDisplaySettings {
+  const base: MergedDisplaySettings = {
+    showCommandPreview: fallbacks.showCommandPreview,
+    showLabels: true,
+    showIcons: true,
+    compact: false,
+    layout: fallbacks.layout,
+  };
+
+  if (user) {
+    base.showCommandPreview = user.showCommandPreview;
+    base.showLabels = user.showLabels;
+    base.showIcons = user.showIcons;
+    base.compact = user.compact;
+    base.layout = user.layout;
+    base.buttonColor = user.buttonColor;
+    base.groupBgColor = user.groupBgColor;
+  }
+
+  if (project) {
+    base.showCommandPreview = project.showCommandPreview;
+    base.showLabels = project.showLabels;
+    base.showIcons = project.showIcons;
+    base.compact = project.compact;
+    base.layout = project.layout;
+    if (project.buttonColor !== undefined) {
+      base.buttonColor = project.buttonColor;
+    }
+    if (project.groupBgColor !== undefined) {
+      base.groupBgColor = project.groupBgColor;
+    }
+  }
+
+  return base;
 }
