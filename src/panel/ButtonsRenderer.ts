@@ -575,6 +575,7 @@ function renderApp(state: CombinedButtonsState, options: RenderOptions): string 
           <div class="path">${filePath}</div>
         </div>
         <div class="actions">
+          ${options.sidebar ? '<button class="primary" data-action="open-panel">Open Panel</button>' : ""}
           <button data-action="reload">Reload</button>
           <button data-action="open-file">Open .buttons</button>
         </div>

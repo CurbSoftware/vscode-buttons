@@ -223,77 +223,53 @@
     /* ── Footer ─────────────────────────────────────── */
     .docs-footer {
       margin-top: 64px;
-      padding: 24px 0 8px;
+      padding: 20px 0 8px;
       border-top: 1px solid #e4e4e7;
-      text-align: center;
-      font-size: 13px;
-      color: #71717a;
-    }
-    .docs-footer-profiles {
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 32px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
+      gap: 0;
+      font-size: 13px;
+      color: #71717a;
+      white-space: nowrap;
     }
-    .docs-footer-profile {
-      display: flex;
+    .docs-footer-item {
+      display: inline-flex;
       align-items: center;
-      gap: 10px;
+      gap: 6px;
     }
-    .docs-footer-profile img {
-      width: 36px;
-      height: 36px;
+    .docs-footer-item img {
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
       object-fit: cover;
+      vertical-align: middle;
     }
-    .docs-footer-profile a {
+    .docs-footer-item a {
       color: #52525b;
       text-decoration: none;
       font-weight: 500;
     }
-    .docs-footer-profile a:hover {
+    .docs-footer-item a:hover {
       color: #b45309;
     }
-    .docs-footer-profile .profile-sub {
-      font-size: 11px;
-      color: #a1a1aa;
-    }
-    .docs-footer-profile .profile-sub a {
-      font-weight: 400;
-      color: #a1a1aa;
-    }
-    .docs-footer-profile .profile-sub a:hover {
-      color: #b45309;
-    }
-    .docs-footer-repo a {
-      color: #b45309;
-      text-decoration: none;
-      font-weight: 500;
-    }
-    .docs-footer-repo a:hover {
-      text-decoration: underline;
+    .docs-footer-sep {
+      margin: 0 12px;
+      color: #d4d4d8;
+      user-select: none;
     }
     @media (prefers-color-scheme: dark) {
       .docs-footer {
         border-top-color: #2e2e33;
-        color: #71717a;
       }
-      .docs-footer-profile a {
+      .docs-footer-item a {
         color: #a1a1aa;
       }
-      .docs-footer-profile a:hover {
+      .docs-footer-item a:hover {
         color: #d4a017;
       }
-      .docs-footer-profile .profile-sub a {
-        color: #71717a;
-      }
-      .docs-footer-profile .profile-sub a:hover {
-        color: #d4a017;
-      }
-      .docs-footer-repo a {
-        color: #d4a017;
+      .docs-footer-sep {
+        color: #3f3f46;
       }
     }
   </style>
@@ -390,24 +366,23 @@
         var footer = document.createElement('div');
         footer.className = 'docs-footer';
         footer.innerHTML =
-          '<div class="docs-footer-profiles">' +
-            '<div class="docs-footer-profile">' +
-              '<img src="https://avatars.githubusercontent.com/u/92337925?v=4" alt="Robert Alexander H" />' +
-              '<div>' +
-                '<a href="https://github.com/RobertAlexanderH" target="_blank" rel="noopener">Robert Alexander H</a>' +
-              '</div>' +
-            '</div>' +
-            '<div class="docs-footer-profile">' +
-              '<img src="https://avatars.githubusercontent.com/u/95197639?s=400&amp;u=c9f489c5f60e5c47e59c00c4a9dcd693fa26187a&amp;v=4" alt="CurbSoftware" />' +
-              '<div>' +
-                '<a href="https://github.com/CurbSoftware" target="_blank" rel="noopener">CurbSoftware Tech Innovations</a>' +
-                '<div class="profile-sub"><a href="https://curbsoftware.com" target="_blank" rel="noopener">curbsoftware.com</a></div>' +
-              '</div>' +
-            '</div>' +
-          '</div>' +
-          '<div class="docs-footer-repo">' +
-            '<a href="https://github.com/CurbSoftware/vscode-buttons" target="_blank" rel="noopener">Buttons on GitHub</a>' +
-          '</div>';
+          '<span class="docs-footer-item">' +
+            '<img src="https://avatars.githubusercontent.com/u/92337925?v=4" alt="Robert Alexander H" />' +
+            '<a href="https://github.com/RobertAlexanderH" target="_blank" rel="noopener">Robert Alexander H</a>' +
+          '</span>' +
+          '<span class="docs-footer-sep">|</span>' +
+          '<span class="docs-footer-item">' +
+            '<img src="https://avatars.githubusercontent.com/u/95197639?s=400&amp;u=c9f489c5f60e5c47e59c00c4a9dcd693fa26187a&amp;v=4" alt="CurbSoftware" />' +
+            '<a href="https://github.com/CurbSoftware" target="_blank" rel="noopener">CurbSoftware Tech Innovations</a>' +
+          '</span>' +
+          '<span class="docs-footer-sep">|</span>' +
+          '<span class="docs-footer-item">' +
+            '<a href="https://curbsoftware.com" target="_blank" rel="noopener">curbsoftware.com</a>' +
+          '</span>' +
+          '<span class="docs-footer-sep">|</span>' +
+          '<span class="docs-footer-item">' +
+            '<a href="https://github.com/CurbSoftware/vscode-buttons" target="_blank" rel="noopener">Buttons</a>' +
+          '</span>';
 
         content.appendChild(footer);
       });
