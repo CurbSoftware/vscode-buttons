@@ -63,3 +63,4 @@ Use it when your team wants a curated set of Git actions with warnings on the ri
 2. Rename groups and labels to match the project vocabulary.
 3. Replace ports, URLs, and script names.
 4. Add `danger = true` to any command that should require confirmation.
+5. 
