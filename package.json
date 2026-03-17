@@ -1,0 +1,116 @@
+{
+  "name": "buttons-vscode",
+  "displayName": "Buttons",
+  "description": "Run shared project commands from a repo-root .buttons TOML file.",
+  "version": "0.0.1",
+  "publisher": "buttons-dev",
+  "license": "UNLICENSED",
+  "engines": {
+    "vscode": "^1.97.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "workspaceContains:.buttons"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "buttons.openPanel",
+        "title": "Buttons: Open Panel"
+      },
+      {
+        "command": "buttons.reloadConfig",
+        "title": "Buttons: Reload Config"
+      },
+      {
+        "command": "buttons.openButtonsFile",
+        "title": "Buttons: Open .buttons File"
+      },
+      {
+        "command": "buttons.createExampleButtons",
+        "title": "Buttons: Create Example .buttons"
+      },
+      {
+        "command": "buttons.runButton",
+        "title": "Buttons: Run Button"
+      },
+      {
+        "command": "buttons.runButtonInNewTerminal",
+        "title": "Buttons: Run Button In New Terminal"
+      },
+      {
+        "command": "buttons.copyButtonCommand",
+        "title": "Buttons: Copy Button Command"
+      },
+      {
+        "command": "buttons.openButtonUrl",
+        "title": "Buttons: Open Button URL"
+      },
+      {
+        "command": "buttons.openButtonPort",
+        "title": "Buttons: Open Button Port"
+      }
+    ],
+    "configuration": {
+      "title": "Buttons",
+      "properties": {
+        "buttons.defaultLayout": {
+          "type": "string",
+          "enum": [
+            "grid",
+            "rows"
+          ],
+          "default": "grid",
+          "description": "Fallback layout used when the .buttons file does not specify one."
+        },
+        "buttons.defaultTerminalMode": {
+          "type": "string",
+          "enum": [
+            "current",
+            "new"
+          ],
+          "default": "current",
+          "description": "Fallback terminal mode used when the .buttons file does not specify one."
+        },
+        "buttons.showCommandPreview": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show command preview text in the Buttons panel."
+        },
+        "buttons.watchConfigChanges": {
+          "type": "boolean",
+          "default": true,
+          "description": "Watch the .buttons file and refresh the panel when it changes."
+        },
+        "buttons.confirmDangerousCommands": {
+          "type": "boolean",
+          "default": true,
+          "description": "Prompt before running commands marked as dangerous or matched by danger heuristics."
+        },
+        "buttons.debugLogging": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable verbose log output in the Buttons extension output channel."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -w -p ./",
+    "lint": "tsc -p ./ --noEmit",
+    "package": "vsce package",
+    "vscode:prepublish": "npm run compile"
+  },
+  "dependencies": {
+    "@iarna/toml": "^2.2.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/vscode": "^1.97.0",
+    "typescript": "^5.8.2"
+  }
+}

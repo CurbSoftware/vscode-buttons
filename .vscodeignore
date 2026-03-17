@@ -1,0 +1,6 @@
+.vscode/**
+.git/**
+plans.md
+src/**
+tsconfig.json
+node_modules/**/.bin/**

@@ -1,0 +1,45 @@
+Please help me plan my VS Code extension, especially the configuration file.
+ It is called Buttons.  It's a vs-code extension.  Write a full plan and all phases and steps.  Buttons is a vs code extension that has a new editor tab that opens, the user can also create a file called .buttons in project root with commands/scripts.  Each command like pnpm run dev, as an example, will have a button to copy to clipboard, to run in current terminal or a new terminal.  I can create a .buttons file with things like the example .buttons file. Buttons file's should use TOML syntax and allow creating multiple buttons.  Please ask any clarification questions if required.
+
+# This is a Buttons TOML document
+
+title = "Buttons Example File"
+layout = grid # Grids or rows
+
+[pnpm] # Button Group Name
+enabled = true # Whether to show group in editor buttons extension tab
+name = "PNPM Commands"
+base = "pnpm"
+
+
+
+[pnpm.params] # Button Group Name
+base = "pnpm"
+delimiter = "&&"
+params = [ ["run"], ["dev","build","test"] ]
+new_terminal = [ true, #F54927],  ] true # 
+existing_terminal = true # 
+copy_to_clipboard = true # 
+show_command = true # show the command string
+show_labels = false # show command in button
+show_icons = true # show 
+show_
+ports = [ 8000, 8001, 8002 ]
+
+# That will result in a Group
+
+[database]
+enabled = true
+
+data = [ ["delta", "phi"], [3.14] ]
+temp_targets = { cpu = 79.5, case = 72.0 }
+
+[servers]
+
+[servers.alpha]
+ip = "10.0.0.1"
+role = "frontend"
+
+[servers.beta]
+ip = "10.0.0.2"
+role = "backend"
