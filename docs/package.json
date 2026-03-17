@@ -2,7 +2,7 @@
   "name": "buttons-docs",
   "private": true,
   "scripts": {
-    "start": "docsify serve . --port 3000"
+    "start": "docsify serve . --port 3000 --host 0.0.0.0"
   },
   "dependencies": {
     "docsify-cli": "^4.4.4"
