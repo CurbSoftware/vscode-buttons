@@ -1,7 +1,6 @@
 import {
   ButtonsButtonConfig,
   ButtonsDiagnostic,
-  ButtonsDisplayConfig,
   ButtonsDocument,
   ButtonsGenerateConfig,
   ButtonsGroupConfig,
@@ -46,7 +45,10 @@ export function validateDocument(document: ButtonsDocument): ButtonsDiagnostic[]
   }
 
   if (document.display) {
-    validateDisplayConfig(document.display, "Display", diagnostics);
+    diagnostics.push({
+      message: "The [display] block in .buttons files is deprecated. Display settings are now configured in VS Code Settings (Preferences > Settings > Buttons). This block will be ignored.",
+      severity: "warning",
+    });
   }
 
   for (const [groupId, group] of Object.entries(document.groups ?? {})) {
@@ -56,7 +58,10 @@ export function validateDocument(document: ButtonsDocument): ButtonsDiagnostic[]
     validateLinks(group.links, `Group '${groupId}'`, diagnostics);
 
     if (group.display) {
-      validateDisplayConfig(group.display, `Group '${groupId}' display`, diagnostics);
+      diagnostics.push({
+        message: `Group '${groupId}' [display] block is deprecated. Display settings are now configured in VS Code Settings. This block will be ignored.`,
+        severity: "warning",
+      });
     }
 
     for (const button of group.buttons ?? []) {
@@ -73,8 +78,7 @@ export function validateDocument(document: ButtonsDocument): ButtonsDiagnostic[]
 
 export function resolveDocument(
   document: ButtonsDocument,
-  showCommandPreviewFallback: boolean,
-  defaultLayout: LayoutMode,
+  displayDefaults: ResolvedGroupDisplay,
   defaultTerminal: TerminalMode,
   diagnostics: ButtonsDiagnostic[],
 ): ResolvedButtonsConfig {
@@ -82,40 +86,6 @@ export function resolveDocument(
   const macros = expandMacros(document.macros ?? {}, diagnostics);
   const groups: ResolvedButtonsGroup[] = [];
   const seenIds = new Set<string>();
-
-  const documentDisplay: ResolvedGroupDisplay = {
-    layout: document.layout ?? defaultLayout,
-    showCommandPreview: document.display?.show_command ?? showCommandPreviewFallback,
-    showLabels: document.display?.show_labels ?? true,
-    showIcons: document.display?.show_icons ?? true,
-    compact: document.display?.compact ?? false,
-    buttonColor: document.display?.button_color,
-    groupBgColor: document.display?.group_bg_color,
-    showRun: document.display?.show_run ?? true,
-    showNewTerminal: document.display?.show_new_terminal ?? true,
-    showCopyToTerminal: document.display?.show_copy_to_terminal ?? true,
-    showCopyToNewTerminal: document.display?.show_copy_to_new_terminal ?? true,
-    showCopyToClipboard: document.display?.show_copy_to_clipboard ?? true,
-    runColor: document.display?.run_color,
-    newTerminalColor: document.display?.new_terminal_color,
-    copyToTerminalColor: document.display?.copy_to_terminal_color,
-    copyToNewTerminalColor: document.display?.copy_to_new_terminal_color,
-    copyToClipboardColor: document.display?.copy_to_clipboard_color,
-    runLabel: document.display?.run_label ?? "Run",
-    newTerminalLabel: document.display?.new_terminal_label ?? "New Terminal",
-    copyToTerminalLabel: document.display?.copy_to_terminal_label ?? "Copy to Terminal",
-    copyToNewTerminalLabel: document.display?.copy_to_new_terminal_label ?? "Copy to New Terminal",
-    copyToClipboardLabel: document.display?.copy_to_clipboard_label ?? "Copy",
-    runIcon: document.display?.run_icon,
-    newTerminalIcon: document.display?.new_terminal_icon,
-    copyToTerminalIcon: document.display?.copy_to_terminal_icon,
-    copyToNewTerminalIcon: document.display?.copy_to_new_terminal_icon,
-    copyToClipboardIcon: document.display?.copy_to_clipboard_icon,
-    commandClickToCopy: document.display?.command_click_to_copy ?? false,
-    labelSize: document.display?.label_size,
-    actionSize: document.display?.action_size,
-    actionBorderRadius: document.display?.action_border_radius,
-  };
 
   for (const [groupId, group] of Object.entries(document.groups ?? {})) {
     if (group.enabled === false) {
@@ -137,7 +107,9 @@ export function resolveDocument(
       deduplicatedButtons.push(button);
     }
 
-    const groupDisplay = resolveGroupDisplay(documentDisplay, group.display, group.layout);
+    const groupDisplay = group.layout
+      ? { ...displayDefaults, layout: group.layout }
+      : displayDefaults;
 
     groups.push({
       id: groupId,
@@ -155,7 +127,7 @@ export function resolveDocument(
   return {
     title: document.title ?? "Buttons",
     description: document.description,
-    ...documentDisplay,
+    ...displayDefaults,
     groups,
   };
 }
@@ -439,65 +411,6 @@ export function isDangerousCommand(command: string): boolean {
   return DANGER_PATTERNS.some((pattern) => padded.includes(pattern));
 }
 
-export function validateDisplayConfig(display: ButtonsDisplayConfig, scope: string, diagnostics: ButtonsDiagnostic[]): void {
-  validateColor(display.button_color, scope, diagnostics);
-  validateColor(display.group_bg_color, scope, diagnostics);
-  validateColor(display.run_color, scope, diagnostics);
-  validateColor(display.new_terminal_color, scope, diagnostics);
-  validateColor(display.copy_to_terminal_color, scope, diagnostics);
-  validateColor(display.copy_to_new_terminal_color, scope, diagnostics);
-  validateColor(display.copy_to_clipboard_color, scope, diagnostics);
-  validateCodicon(display.run_icon, `${scope} run_icon`, diagnostics);
-  validateCodicon(display.new_terminal_icon, `${scope} new_terminal_icon`, diagnostics);
-  validateCodicon(display.copy_to_terminal_icon, `${scope} copy_to_terminal_icon`, diagnostics);
-  validateCodicon(display.copy_to_new_terminal_icon, `${scope} copy_to_new_terminal_icon`, diagnostics);
-  validateCodicon(display.copy_to_clipboard_icon, `${scope} copy_to_clipboard_icon`, diagnostics);
-}
-
-export function resolveGroupDisplay(
-  base: ResolvedGroupDisplay,
-  groupDisplay: ButtonsDisplayConfig | undefined,
-  groupLayout: LayoutMode | undefined,
-): ResolvedGroupDisplay {
-  const result = { ...base };
-  if (groupLayout) {
-    result.layout = groupLayout;
-  }
-  if (!groupDisplay) {
-    return result;
-  }
-  if (groupDisplay.show_command !== undefined) result.showCommandPreview = groupDisplay.show_command;
-  if (groupDisplay.show_labels !== undefined) result.showLabels = groupDisplay.show_labels;
-  if (groupDisplay.show_icons !== undefined) result.showIcons = groupDisplay.show_icons;
-  if (groupDisplay.compact !== undefined) result.compact = groupDisplay.compact;
-  if (groupDisplay.button_color !== undefined) result.buttonColor = groupDisplay.button_color;
-  if (groupDisplay.group_bg_color !== undefined) result.groupBgColor = groupDisplay.group_bg_color;
-  if (groupDisplay.show_run !== undefined) result.showRun = groupDisplay.show_run;
-  if (groupDisplay.show_new_terminal !== undefined) result.showNewTerminal = groupDisplay.show_new_terminal;
-  if (groupDisplay.show_copy_to_terminal !== undefined) result.showCopyToTerminal = groupDisplay.show_copy_to_terminal;
-  if (groupDisplay.show_copy_to_new_terminal !== undefined) result.showCopyToNewTerminal = groupDisplay.show_copy_to_new_terminal;
-  if (groupDisplay.show_copy_to_clipboard !== undefined) result.showCopyToClipboard = groupDisplay.show_copy_to_clipboard;
-  if (groupDisplay.run_color !== undefined) result.runColor = groupDisplay.run_color;
-  if (groupDisplay.new_terminal_color !== undefined) result.newTerminalColor = groupDisplay.new_terminal_color;
-  if (groupDisplay.copy_to_terminal_color !== undefined) result.copyToTerminalColor = groupDisplay.copy_to_terminal_color;
-  if (groupDisplay.copy_to_new_terminal_color !== undefined) result.copyToNewTerminalColor = groupDisplay.copy_to_new_terminal_color;
-  if (groupDisplay.copy_to_clipboard_color !== undefined) result.copyToClipboardColor = groupDisplay.copy_to_clipboard_color;
-  if (groupDisplay.run_label !== undefined) result.runLabel = groupDisplay.run_label;
-  if (groupDisplay.new_terminal_label !== undefined) result.newTerminalLabel = groupDisplay.new_terminal_label;
-  if (groupDisplay.copy_to_terminal_label !== undefined) result.copyToTerminalLabel = groupDisplay.copy_to_terminal_label;
-  if (groupDisplay.copy_to_new_terminal_label !== undefined) result.copyToNewTerminalLabel = groupDisplay.copy_to_new_terminal_label;
-  if (groupDisplay.copy_to_clipboard_label !== undefined) result.copyToClipboardLabel = groupDisplay.copy_to_clipboard_label;
-  if (groupDisplay.run_icon !== undefined) result.runIcon = groupDisplay.run_icon;
-  if (groupDisplay.new_terminal_icon !== undefined) result.newTerminalIcon = groupDisplay.new_terminal_icon;
-  if (groupDisplay.copy_to_terminal_icon !== undefined) result.copyToTerminalIcon = groupDisplay.copy_to_terminal_icon;
-  if (groupDisplay.copy_to_new_terminal_icon !== undefined) result.copyToNewTerminalIcon = groupDisplay.copy_to_new_terminal_icon;
-  if (groupDisplay.copy_to_clipboard_icon !== undefined) result.copyToClipboardIcon = groupDisplay.copy_to_clipboard_icon;
-  if (groupDisplay.command_click_to_copy !== undefined) result.commandClickToCopy = groupDisplay.command_click_to_copy;
-  if (groupDisplay.label_size !== undefined) result.labelSize = groupDisplay.label_size;
-  if (groupDisplay.action_size !== undefined) result.actionSize = groupDisplay.action_size;
-  if (groupDisplay.action_border_radius !== undefined) result.actionBorderRadius = groupDisplay.action_border_radius;
-  return result;
-}
 
 export function mergeDocuments(root: ButtonsDocument, included: ButtonsDocument, sourcePath: string, diagnostics: ButtonsDiagnostic[]): void {
   // Merge groups: included groups are added; root groups win on ID collision

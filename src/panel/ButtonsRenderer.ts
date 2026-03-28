@@ -59,15 +59,6 @@ export function renderHtml(state: CombinedButtonsState, codiconUri: string, opti
       background: var(--vscode-button-hoverBackground);
     }
 
-    button.colored-action {
-      border-color: transparent;
-      color: #fff;
-    }
-
-    button.colored-action:hover {
-      filter: brightness(1.15);
-    }
-
     .shell {
       display: grid;
       gap: ${options.sidebar ? "14px" : "20px"};
@@ -719,92 +710,38 @@ function renderGroups(state: LoadedButtonsState, options: RenderOptions): string
     .join("")}</div>`;
 }
 
-function actionBtnStyleParts(color: string | undefined, group: ResolvedButtonsGroup): string {
+function actionBtnStyleParts(group: ResolvedButtonsGroup): string {
   const parts: string[] = [];
-  if (color) {
-    parts.push(`background:${escapeHtml(color)}`);
-    parts.push("border-color:transparent");
-    parts.push("color:#fff");
-  }
   if (group.actionSize) parts.push(`font-size:${escapeHtml(group.actionSize)}`);
   if (group.actionBorderRadius) parts.push(`border-radius:${escapeHtml(group.actionBorderRadius)}`);
   if (parts.length === 0) return "";
   return ` style="${parts.join(";")}"`;
 }
 
-function actionBtnClass(color: string | undefined, primary: boolean): string {
-  if (color) return "colored-action";
-  if (primary) return "primary";
-  return "";
-}
-
-function renderActionContent(label: string, icon: string | undefined): string {
-  if (icon && label) {
-    return `<span class="codicon codicon-${escapeHtml(icon)}"></span> ${escapeHtml(label)}`;
-  }
-  if (icon) {
-    return `<span class="codicon codicon-${escapeHtml(icon)}"></span>`;
-  }
-  return escapeHtml(label);
-}
-
 function renderActionButtons(group: ResolvedButtonsGroup, buttonId: string, compact: boolean): string {
   const gid = escapeHtml(group.id);
   const bid = escapeHtml(buttonId);
   const attrs = `data-group-id="${gid}" data-button-id="${bid}"`;
+  const style = actionBtnStyleParts(group);
   const parts: string[] = [];
 
   if (group.showRun) {
-    const cls = actionBtnClass(group.runColor, true);
-    const style = actionBtnStyleParts(group.runColor, group);
-    const content = group.runIcon
-      ? renderActionContent(group.runIcon ? "" : group.runLabel, group.runIcon)
-      : escapeHtml(compact && !group.runIcon ? group.runLabel : group.runLabel);
-    const titleAttr = group.runIcon ? ` title="${escapeHtml(group.runLabel)}"` : "";
-    if (group.runIcon) {
-      parts.push(`<button${cls ? ` class="${cls}"` : ""}${style}${titleAttr} data-action="run-current" ${attrs}>${renderActionContent("", group.runIcon)}</button>`);
-    } else {
-      parts.push(`<button${cls ? ` class="${cls}"` : ""}${style} data-action="run-current" ${attrs}>${escapeHtml(group.runLabel)}</button>`);
-    }
+    parts.push(`<button class="primary"${style} data-action="run-current" ${attrs}>${escapeHtml(group.runLabel)}</button>`);
   }
   if (group.showNewTerminal) {
-    const cls = actionBtnClass(group.newTerminalColor, false);
-    const style = actionBtnStyleParts(group.newTerminalColor, group);
     const label = compact ? group.newTerminalLabel.split(" ").pop() ?? group.newTerminalLabel : group.newTerminalLabel;
-    if (group.newTerminalIcon) {
-      parts.push(`<button${cls ? ` class="${cls}"` : ""}${style} title="${escapeHtml(group.newTerminalLabel)}" data-action="run-new" ${attrs}>${renderActionContent("", group.newTerminalIcon)}</button>`);
-    } else {
-      parts.push(`<button${cls ? ` class="${cls}"` : ""}${style} data-action="run-new" ${attrs}>${escapeHtml(label)}</button>`);
-    }
+    parts.push(`<button${style} data-action="run-new" ${attrs}>${escapeHtml(label)}</button>`);
   }
   if (group.showCopyToTerminal) {
-    const cls = actionBtnClass(group.copyToTerminalColor, false);
-    const style = actionBtnStyleParts(group.copyToTerminalColor, group);
     const label = compact ? "→Term" : group.copyToTerminalLabel;
-    if (group.copyToTerminalIcon) {
-      parts.push(`<button${cls ? ` class="${cls}"` : ""}${style} title="${escapeHtml(group.copyToTerminalLabel)}" data-action="copy-to-terminal" ${attrs}>${renderActionContent("", group.copyToTerminalIcon)}</button>`);
-    } else {
-      parts.push(`<button${cls ? ` class="${cls}"` : ""}${style} data-action="copy-to-terminal" ${attrs}>${escapeHtml(label)}</button>`);
-    }
+    parts.push(`<button${style} data-action="copy-to-terminal" ${attrs}>${escapeHtml(label)}</button>`);
   }
   if (group.showCopyToNewTerminal) {
-    const cls = actionBtnClass(group.copyToNewTerminalColor, false);
-    const style = actionBtnStyleParts(group.copyToNewTerminalColor, group);
     const label = compact ? "→New" : group.copyToNewTerminalLabel;
-    if (group.copyToNewTerminalIcon) {
-      parts.push(`<button${cls ? ` class="${cls}"` : ""}${style} title="${escapeHtml(group.copyToNewTerminalLabel)}" data-action="copy-to-new-terminal" ${attrs}>${renderActionContent("", group.copyToNewTerminalIcon)}</button>`);
-    } else {
-      parts.push(`<button${cls ? ` class="${cls}"` : ""}${style} data-action="copy-to-new-terminal" ${attrs}>${escapeHtml(label)}</button>`);
-    }
+    parts.push(`<button${style} data-action="copy-to-new-terminal" ${attrs}>${escapeHtml(label)}</button>`);
   }
   if (group.showCopyToClipboard) {
-    const cls = actionBtnClass(group.copyToClipboardColor, false);
-    const style = actionBtnStyleParts(group.copyToClipboardColor, group);
-    if (group.copyToClipboardIcon) {
-      parts.push(`<button${cls ? ` class="${cls}"` : ""}${style} title="${escapeHtml(group.copyToClipboardLabel)}" data-action="copy" ${attrs}>${renderActionContent("", group.copyToClipboardIcon)}</button>`);
-    } else {
-      parts.push(`<button${cls ? ` class="${cls}"` : ""}${style} data-action="copy" ${attrs}>${escapeHtml(group.copyToClipboardLabel)}</button>`);
-    }
+    parts.push(`<button${style} data-action="copy" ${attrs}>${escapeHtml(group.copyToClipboardLabel)}</button>`);
   }
 
   return parts.join("\n                ");

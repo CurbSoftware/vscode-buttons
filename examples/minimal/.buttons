@@ -1,9 +1,0 @@
-version = 1
-title = "Quick Commands"
-
-[groups.run]
-buttons = [
-  { id = "build", command = "npm run build" },
-  { id = "test", command = "npm test" },
-  { id = "start", command = "npm start" },
-]

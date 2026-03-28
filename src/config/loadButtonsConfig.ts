@@ -4,8 +4,8 @@ import {
   ButtonsDiagnostic,
   ButtonsDocument,
   CombinedButtonsState,
-  LayoutMode,
   LoadedButtonsState,
+  ResolvedGroupDisplay,
   TerminalMode,
 } from "../models/types";
 import { getButtonsFileUri, getUserButtonsFileUri } from "./findButtonsFile";
@@ -85,8 +85,7 @@ async function processIncludes(
 
 async function loadSingleButtonsState(
   fileUri: vscode.Uri | undefined,
-  showCommandPreviewFallback: boolean,
-  defaultLayout: LayoutMode,
+  displayDefaults: ResolvedGroupDisplay,
   defaultTerminal: TerminalMode,
 ): Promise<LoadedButtonsState> {
   if (!fileUri) {
@@ -110,7 +109,7 @@ async function loadSingleButtonsState(
     const diagnostics = [...includeDiagnostics, ...validateDocument(parsed)];
     const resolved = diagnostics.some((diagnostic) => diagnostic.severity === "error")
       ? undefined
-      : resolveDocument(parsed, showCommandPreviewFallback, defaultLayout, defaultTerminal, diagnostics);
+      : resolveDocument(parsed, displayDefaults, defaultTerminal, diagnostics);
 
     return {
       filePath: fileUri.fsPath,
@@ -130,16 +129,15 @@ async function loadSingleButtonsState(
 }
 
 export async function loadCombinedButtonsState(
-  showCommandPreviewFallback: boolean,
-  defaultLayout: LayoutMode,
+  displayDefaults: ResolvedGroupDisplay,
   defaultTerminal: TerminalMode,
 ): Promise<CombinedButtonsState> {
   const projectFileUri = getButtonsFileUri();
   const userFileUri = getUserButtonsFileUri();
 
   const [project, user] = await Promise.all([
-    loadSingleButtonsState(projectFileUri, showCommandPreviewFallback, defaultLayout, defaultTerminal),
-    loadSingleButtonsState(userFileUri, showCommandPreviewFallback, defaultLayout, defaultTerminal),
+    loadSingleButtonsState(projectFileUri, displayDefaults, defaultTerminal),
+    loadSingleButtonsState(userFileUri, displayDefaults, defaultTerminal),
   ]);
 
   const activeSource = project.resolved ? "project" : user.resolved ? "user" : "project";

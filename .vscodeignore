@@ -4,10 +4,7 @@
 .claude/**
 src/**
 dist/test/**
-docs/**
-examples/**
-test-configs/**
-scripts/**
+media/screenshots/**
 *.md
 !README.md
 !CHANGELOG.md
@@ -16,10 +13,7 @@ tsconfig.json
 .vscodeignore
 .buttons
 .node-version
-buttons-icon.svg
 buttons-vscode.code-workspace
-RELEASING.md
-CLAUDE.md
 **/*.map
 node_modules/@vscode/codicons/src/**
 node_modules/@vscode/codicons/.github/**

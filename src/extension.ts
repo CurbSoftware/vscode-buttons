@@ -1,9 +1,11 @@
 import * as fs from "fs";
 import * as vscode from "vscode";
 import { loadCombinedButtonsState } from "./config/loadButtonsConfig";
+import { buildDisplayFromSettings } from "./config/displaySettings";
 import { getButtonsFileUri, getUserButtonsFileUri } from "./config/findButtonsFile";
 import { copyButtonCommand, copyToTerminal, openButtonPort, openButtonUrl, runButton } from "./execution/actions";
-import { CombinedButtonsState, LayoutMode, PanelActionMessage, ResolvedButtonsButton, ResolvedButtonsGroup } from "./models/types";
+import { importScriptsCommand } from "./generator/buttonsGenerator";
+import { CombinedButtonsState, PanelActionMessage, ResolvedButtonsButton, ResolvedButtonsGroup } from "./models/types";
 import { ButtonsPanel } from "./panel/ButtonsPanel";
 import { ButtonsSidebarProvider } from "./panel/ButtonsSidebarProvider";
 
@@ -179,6 +181,12 @@ export function activate(context: vscode.ExtensionContext): void {
         await openButtonPort(port);
       }
     }),
+    vscode.commands.registerCommand("buttons.importScripts", async () => {
+      await importScriptsCommand();
+      await refreshState(true);
+      await panel.refresh();
+      await sidebarProvider.refresh();
+    }),
   );
 
   // Watch project .buttons file
@@ -249,6 +257,19 @@ export function activate(context: vscode.ExtensionContext): void {
     });
   }
 
+  // Refresh panels when settings change
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("buttons")) {
+        void (async () => {
+          await refreshState(true);
+          await panel.refresh();
+          await sidebarProvider.refresh();
+        })();
+      }
+    }),
+  );
+
   // Auto-open sidebar on first detection of .buttons file
   void autoRevealSidebar(context);
 }
@@ -306,12 +327,9 @@ async function refreshState(force = false): Promise<CombinedButtonsState> {
     return currentState;
   }
 
-  const configuration = vscode.workspace.getConfiguration("buttons");
-  currentState = await loadCombinedButtonsState(
-    configuration.get<boolean>("showCommandPreview", true),
-    configuration.get<LayoutMode>("defaultLayout", "grid"),
-    configuration.get<"current" | "new">("defaultTerminalMode", "current"),
-  );
+  const displayDefaults = buildDisplayFromSettings();
+  const defaultTerminal = vscode.workspace.getConfiguration("buttons").get<"current" | "new">("defaultTerminalMode", "current");
+  currentState = await loadCombinedButtonsState(displayDefaults, defaultTerminal);
   return currentState;
 }
 
@@ -389,61 +407,52 @@ async function createExampleButtonsFile(): Promise<void> {
   const example = `version = 1
 title = "Buttons Example"
 description = "Shared project commands"
-layout = "grid"
 terminal = "current"
 
-[display]
-show_command = true
-show_labels = true
-show_icons = true
-compact = false
-
-[defaults]
-enabled = true
-copy_to_clipboard = true
-run_in_current_terminal = true
-run_in_new_terminal = false
-confirm = false
-danger = false
-reveal_terminal = true
-
-[variables]
-workspace = "\${workspaceFolder}"
-
-[macros]
-pnpm_run = "pnpm run"
-
-[groups.pnpm]
-name = "PNPM"
+[groups.scripts]
+name = "Scripts"
 description = "Package workflows"
-base = "pnpm"
 icon = "package"
-color = "#F54927"
-ports = [3000]
 
-[[groups.pnpm.buttons]]
+[[groups.scripts.buttons]]
 id = "dev"
 label = "Dev"
-command = "{{pnpm_run}} dev"
+command = "npm run dev"
 icon = "play"
-open_ports = [3000]
 
-[[groups.pnpm.buttons]]
+[[groups.scripts.buttons]]
 id = "build"
 label = "Build"
-command = "{{pnpm_run}} build"
+command = "npm run build"
 icon = "package"
 
-[groups.pnpm.generate]
-mode = "cartesian"
-template = "{{pnpm_run}} {{arg1}}"
-label_template = "{{arg1}}"
-params = [["lint", "test"]]
+[[groups.scripts.buttons]]
+id = "test"
+label = "Test"
+command = "npm test"
+icon = "beaker"
 
-[[groups.pnpm.links]]
-label = "Local App"
-url = "http://localhost:3000"
-icon = "link-external"
+[[groups.scripts.buttons]]
+id = "lint"
+label = "Lint"
+command = "npm run lint"
+icon = "verified"
+
+[groups.git]
+name = "Git"
+description = "Common git commands"
+icon = "git-branch"
+
+[[groups.git.buttons]]
+id = "status"
+label = "Status"
+command = "git status"
+
+[[groups.git.buttons]]
+id = "log"
+label = "Log"
+command = "git log --oneline -10"
+icon = "history"
 `;
 
   let exists = true;
@@ -471,13 +480,6 @@ async function createUserExampleButtonsFile(): Promise<void> {
   const example = `version = 1
 title = "My Buttons"
 description = "Personal commands available across all projects"
-layout = "grid"
-
-[display]
-show_command = true
-show_labels = true
-show_icons = true
-compact = false
 
 [groups.tools]
 name = "Tools"

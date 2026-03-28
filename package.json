@@ -113,6 +113,10 @@
       {
         "command": "buttons.copyToNewTerminal",
         "title": "Buttons: Copy to New Terminal"
+      },
+      {
+        "command": "buttons.importScripts",
+        "title": "Buttons: Import Scripts"
       }
     ],
     "configuration": {
@@ -161,13 +165,108 @@
             "firstTime",
             "always"
           ],
-          "default": "firstTime",
+          "default": "never",
           "description": "Controls whether the Buttons sidebar opens automatically when a .buttons file exists."
         },
         "buttons.showToolbarIcon": {
           "type": "boolean",
           "default": true,
           "description": "Show the Buttons icon in the editor toolbar (top right)."
+        },
+        "buttons.appearance.showLabels": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show button labels in the Buttons panel."
+        },
+        "buttons.appearance.showIcons": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show button icons in the Buttons panel."
+        },
+        "buttons.appearance.compact": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use compact (dense) button layout."
+        },
+        "buttons.appearance.buttonColor": {
+          "type": "string",
+          "default": "",
+          "description": "Hex color for button card borders (e.g. #FF0000). Leave empty for theme default."
+        },
+        "buttons.appearance.groupBackgroundColor": {
+          "type": "string",
+          "default": "",
+          "description": "Hex color for group container backgrounds (e.g. #1a1a2e). Leave empty for theme default."
+        },
+        "buttons.appearance.labelSize": {
+          "type": "string",
+          "default": "",
+          "description": "CSS font size for button labels (e.g. 16px). Leave empty for default."
+        },
+        "buttons.appearance.commandClickToCopy": {
+          "type": "boolean",
+          "default": false,
+          "description": "Make command preview text clickable to copy to clipboard."
+        },
+        "buttons.actions.showRun": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the Run action button."
+        },
+        "buttons.actions.showNewTerminal": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the New Terminal action button."
+        },
+        "buttons.actions.showCopyToTerminal": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the Copy to Terminal action button."
+        },
+        "buttons.actions.showCopyToNewTerminal": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the Copy to New Terminal action button."
+        },
+        "buttons.actions.showCopyToClipboard": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the Copy to Clipboard action button."
+        },
+        "buttons.actions.runLabel": {
+          "type": "string",
+          "default": "Run",
+          "description": "Custom label for the Run action button."
+        },
+        "buttons.actions.newTerminalLabel": {
+          "type": "string",
+          "default": "New Terminal",
+          "description": "Custom label for the New Terminal action button."
+        },
+        "buttons.actions.copyToTerminalLabel": {
+          "type": "string",
+          "default": "Copy to Terminal",
+          "description": "Custom label for the Copy to Terminal action button."
+        },
+        "buttons.actions.copyToNewTerminalLabel": {
+          "type": "string",
+          "default": "Copy to New Terminal",
+          "description": "Custom label for the Copy to New Terminal action button."
+        },
+        "buttons.actions.copyToClipboardLabel": {
+          "type": "string",
+          "default": "Copy",
+          "description": "Custom label for the Copy to Clipboard action button."
+        },
+        "buttons.actions.actionSize": {
+          "type": "string",
+          "default": "",
+          "description": "CSS font size for action buttons (e.g. 14px). Leave empty for default."
+        },
+        "buttons.actions.actionBorderRadius": {
+          "type": "string",
+          "default": "",
+          "description": "CSS border radius for action buttons (e.g. 999px). Leave empty for default."
         }
       }
     },

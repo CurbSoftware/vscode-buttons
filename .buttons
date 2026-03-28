@@ -1,18 +1,11 @@
 version = 1
 title = "Buttons Extension"
 description = "Commands for developing, testing, and releasing the Buttons VS Code extension"
-layout = "grid"
 terminal = "current"
-
-[display]
-show_command = true
-show_labels = true
-show_icons = true
 
 [macros]
 npm_run = "npm run"
 compile = "npm run compile"
-tsc = "./node_modules/.bin/tsc"
 
 # ── Build & Quality ─────────────────────────────────────────
 [groups.build]
@@ -50,12 +43,9 @@ icon = "run-all"
 # ── Development ─────────────────────────────────────────────
 [groups.dev]
 name = "Development"
-description = "Long-running dev workflows — watch mode and docs preview"
+description = "Long-running dev workflows — watch mode"
 icon = "tools"
 color = "#2563EB"
-
-[groups.dev.display]
-command_click_to_copy = true
 
 [[groups.dev.buttons]]
 id = "watch"
@@ -65,19 +55,10 @@ icon = "sync"
 description = "Continuous compilation on file change"
 run_in_new_terminal = true
 
-[[groups.dev.buttons]]
-id = "docs-server"
-label = "Docs Server"
-command = "cd docs && node server.js"
-icon = "book"
-description = "Serve documentation site locally"
-run_in_new_terminal = true
-port = 3001
-
 # ── Testing ─────────────────────────────────────────────────
 [groups.test]
 name = "Testing"
-description = "Run unit tests and validate config files"
+description = "Run unit tests"
 icon = "beaker"
 color = "#9333EA"
 
@@ -100,11 +81,10 @@ command = "{{compile}} && node --test dist/test/includesMerge.test.js"
 icon = "beaker"
 
 [[groups.test.buttons]]
-id = "validate-examples"
-label = "Validate All Examples"
-command = "node scripts/validate-examples.js"
-icon = "checklist"
-description = "Parse and validate every .buttons file in examples/ and test-configs/"
+id = "test-generator"
+label = "Test buttonsGenerator"
+command = "{{compile}} && node --test dist/test/buttonsGenerator.test.js"
+icon = "beaker"
 
 # ── Git ─────────────────────────────────────────────────────
 [groups.git]
@@ -113,10 +93,6 @@ description = "Quick git commands"
 icon = "git-branch"
 color = "#D97706"
 layout = "flow"
-
-[groups.git.display]
-compact = true
-show_command = false
 
 [[groups.git.buttons]]
 id = "git-status"
@@ -155,12 +131,6 @@ description = "Package and publish the extension"
 icon = "rocket"
 color = "#DC2626"
 
-[groups.release.display]
-group_bg_color = "#1C1012"
-run_label = "Publish"
-show_copy_to_terminal = false
-show_copy_to_new_terminal = false
-
 [[groups.release.buttons]]
 id = "package"
 label = "Package .vsix"
@@ -192,63 +162,3 @@ icon = "globe"
 danger = true
 confirm = true
 description = "Publish to Open VSX Registry"
-
-# ── Try Examples ────────────────────────────────────────────
-[groups.examples]
-name = "Try Examples"
-description = "Copy an example .buttons file to the workspace root to preview it"
-icon = "library"
-color = "#0D9488"
-layout = "table"
-
-[groups.examples.display]
-show_new_terminal = false
-show_copy_to_clipboard = false
-run_label = "Load"
-run_icon = "arrow-right"
-
-[groups.examples.generate]
-mode = "cartesian"
-template = "cp examples/{{arg1}}/.buttons .buttons"
-label_template = "{{arg1}}"
-params = [["node", "docker", "python", "git", "devops-ci", "fullstack-nextjs", "monorepo", "database", "aws", "kubernetes"]]
-
-# ── Config Files ────────────────────────────────────────────
-[groups.config]
-name = "Config Files"
-description = "Open project configuration files"
-icon = "settings-gear"
-color = "#64748B"
-layout = "flow"
-
-[groups.config.display]
-compact = true
-show_command = false
-show_run = false
-show_new_terminal = false
-show_copy_to_terminal = false
-show_copy_to_new_terminal = false
-
-[[groups.config.buttons]]
-id = "open-buttons"
-label = ".buttons"
-command = "code .buttons"
-icon = "file-code"
-
-[[groups.config.buttons]]
-id = "open-package"
-label = "package.json"
-command = "code package.json"
-icon = "json"
-
-[[groups.config.buttons]]
-id = "open-tsconfig"
-label = "tsconfig.json"
-command = "code tsconfig.json"
-icon = "symbol-interface"
-
-[[groups.config.buttons]]
-id = "open-claude"
-label = "CLAUDE.md"
-command = "code CLAUDE.md"
-icon = "markdown"

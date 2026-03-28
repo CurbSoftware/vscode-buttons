@@ -4,7 +4,7 @@ Buttons is an extension for VS Code and VS Codium that turns `.buttons` TOML fil
 
 **Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=buttons-dev.buttons-vscode) or [Open VSX Registry](https://open-vsx.org/extension/buttons-dev/buttons-vscode) (VS Codium).**
 
-![Basic panel and sidebar](docs/screenshots/buttons-screenshot-basic-panel-and-sidebar.webp)
+![Basic panel and sidebar](media/screenshots/buttons-screenshot-basic-panel-and-sidebar.webp)
 
 ## What It Solves
 
@@ -16,11 +16,11 @@ Projects usually keep important commands scattered across `package.json`, Docker
 
 ### Run commands from a visual panel
 
-![Running buttons to terminal](docs/screenshots/buttons-screen-record-buttons-to-terminal.webp)
+![Running buttons to terminal](media/screenshots/buttons-screen-record-buttons-to-terminal.webp)
 
 ### Customize with a simple TOML file
 
-![Changing settings file](docs/screenshots/buttons-screen-record-buttons-change-settings-file.webp)
+![Changing settings file](media/screenshots/buttons-screen-record-buttons-change-settings-file.webp)
 
 ## Features
 
@@ -29,7 +29,7 @@ Projects usually keep important commands scattered across `package.json`, Docker
 - **Source tabs** — toggle between project and user buttons in the panel
 - **5 layout modes** — grid, rows, columns, table, and flow
 
-![Layout modes](docs/screenshots/buttons-screenshot-layouts-screens-panel.webp)
+![Layout modes](media/screenshots/buttons-screenshot-layouts-screens-panel.webp)
 
 - **Accordion groups** — collapse and expand groups with persistent state
 - **Eye toggle** — hide individual buttons from the panel
@@ -44,7 +44,7 @@ Projects usually keep important commands scattered across `package.json`, Docker
 - **Toolbar icon** — quick-access button in the editor title bar
 - **Compact mode** — dense layout option for large configs
 
-![Kitchen sink example](docs/screenshots/buttons-screenshot-kitchen-sink-example-panel-and-sidebar.webp)
+![Kitchen sink example](media/screenshots/buttons-screenshot-kitchen-sink-example-panel-and-sidebar.webp)
 
 ## Quick Start
 
@@ -78,17 +78,6 @@ label = "Build"
 command = "npm run build"
 icon = "package"
 ```
-
-## Documentation
-
-- [Getting Started](docs/GETTING-STARTED.md) — first-use walkthrough
-- [.buttons File Reference](docs/BUTTONS-FILE.md) — complete TOML schema
-- [Layouts](docs/LAYOUTS.md) — grid, rows, columns, table, and flow
-- [UI Features](docs/UI-FEATURES.md) — accordion, eye toggle, colors, and more
-- [User Profile](docs/USER-PROFILE.md) — personal `~/.buttons` file
-- [Settings & Commands](docs/SETTINGS.md) — VS Code settings and commands
-- [Examples](docs/EXAMPLES.md) — 29 example packs for every stack
-- [Troubleshooting](docs/TROUBLESHOOTING.md) — common issues and fixes
 
 ## Safety
 

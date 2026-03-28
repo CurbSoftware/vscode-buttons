@@ -1,8 +1,0 @@
-[phases.setup]
-nixPkgs = ["nodejs_24", "npm-9_x"]
-
-[phases.install]
-cmds = ["echo 'No dependencies to install'"]
-
-[start]
-cmd = "node server.js"
