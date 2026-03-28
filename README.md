@@ -101,3 +101,19 @@ Press F5 in VS Code to launch the Extension Development Host. See [CLAUDE.md](CL
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+How do i install and build the new plugin version locally?
+Run these commands:
+
+
+# Install dependencies & compile
+npm install && npm run compile
+
+# Package as .vsix
+npm run package
+
+# Install the .vsix into VS Code
+code --install-extension buttons-vscode-*.vsix
+Then reload VS Code (Ctrl+Shift+P → "Developer: Reload Window") to pick up the new version.
+
+To test without packaging, press F5 in this project to launch the Extension Development Host with the latest code.

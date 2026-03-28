@@ -346,6 +346,9 @@ async function handlePanelMessage(message: PanelActionMessage, panel: ButtonsPan
     case "open-panel":
       await vscode.commands.executeCommand("buttons.openPanel");
       return;
+    case "open-settings":
+      await vscode.commands.executeCommand("workbench.action.openSettings", "@ext:buttons-dev.buttons-vscode");
+      return;
     case "toggle-source":
       if (currentState && message.source) {
         currentState = { ...currentState, activeSource: message.source };

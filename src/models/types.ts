@@ -187,7 +187,7 @@ export interface CombinedButtonsState {
 }
 
 export interface PanelActionMessage {
-  type: "ready" | "reload" | "open-file" | "open-panel" | "run-current" | "run-new"
+  type: "ready" | "reload" | "open-file" | "open-panel" | "open-settings" | "run-current" | "run-new"
     | "copy-to-terminal" | "copy-to-new-terminal" | "copy"
     | "open-url" | "open-port"
     | "toggle-source" | "toggle-group" | "toggle-button-visibility";

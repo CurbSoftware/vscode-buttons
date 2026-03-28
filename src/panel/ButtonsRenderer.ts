@@ -605,6 +605,7 @@ function renderApp(state: CombinedButtonsState, options: RenderOptions): string 
             <button class="btn-sm primary" data-action="open-panel"><span class="codicon codicon-link-external"></span> Panel</button>
             <button class="btn-sm" data-action="reload"><span class="codicon codicon-refresh"></span> Reload</button>
             <button class="btn-sm" data-action="open-file"><span class="codicon codicon-file"></span> Config</button>
+            <button class="btn-sm" data-action="open-settings"><span class="codicon codicon-settings-gear"></span> Settings</button>
           </div>
         </header>
         ${showTabs ? renderSourceTabs(state.activeSource) : ""}
@@ -625,6 +626,7 @@ function renderApp(state: CombinedButtonsState, options: RenderOptions): string 
         <div class="actions">
           <button data-action="reload">Reload</button>
           <button data-action="open-file">Open .buttons</button>
+          <button data-action="open-settings"><span class="codicon codicon-settings-gear"></span> Settings</button>
         </div>
       </header>
       ${showTabs ? renderSourceTabs(state.activeSource) : ""}
