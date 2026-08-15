@@ -8,6 +8,10 @@ Run any command in the current or a new integrated terminal, copy it to the clip
 - **VS Codium:** [Install from Open VSX](https://open-vsx.org/extension/buttons-dev/buttons-vscode)
 - **Source / issues:** [github.com/CurbSoftware/vscode-buttons](https://github.com/CurbSoftware/vscode-buttons)
 
+## Screenshots
+
+![Buttons scanning scripts into a clickable launcher](media/screenshots/btn-btns-animate.webp)
+
 ---
 
 ## Documentation

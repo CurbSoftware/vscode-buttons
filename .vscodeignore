@@ -5,6 +5,7 @@
 src/**
 dist/test/**
 media/screenshots/**
+!media/screenshots/btn-btns-animate.webp
 *.md
 !README.md
 !CHANGELOG.md
