@@ -81,6 +81,7 @@ export type PanelActionMessage =
   | { type: "ready" }
   | { type: "rescan" }
   | { type: "toggle-script"; file: string; script: string; checked: boolean }
+  | { type: "toggle-file"; file: string; checked: boolean }
   | { type: "run-current"; source: ButtonsSource; index: number }
   | { type: "run-new"; source: ButtonsSource; index: number }
   | { type: "copy"; source: ButtonsSource; index: number }

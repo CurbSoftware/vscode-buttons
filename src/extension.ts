@@ -4,11 +4,13 @@ import * as vscode from "vscode";
 import {
   addCommandButton,
   addScriptButton,
+  addScriptFile,
   buttonId,
   emptyButtonsFile,
   generateButtonsFile,
   removeButton,
   removeScriptButton,
+  removeScriptFile,
   setButtonNote,
   updateCommandButton,
 } from "./config/buttonsFile";
@@ -284,6 +286,28 @@ async function handlePanelMessage(panelId: PanelId, message: PanelActionMessage)
       } else {
         next = removeScriptButton(state.projectFile, key);
       }
+      await writeButtonsFile(fileUri, next);
+      await refreshState(true);
+      await refreshWebview();
+      return;
+    }
+
+    case "toggle-file": {
+      const fileUri = getProjectButtonsFileUri();
+      if (!fileUri) {
+        return;
+      }
+      const state = await refreshState();
+      if (!state.projectFileExists) {
+        return;
+      }
+      const inFile = state.discovered.filter((d) => d.file === message.file);
+      if (inFile.length === 0) {
+        return;
+      }
+      const next = message.checked
+        ? addScriptFile(state.projectFile, inFile)
+        : removeScriptFile(state.projectFile, message.file);
       await writeButtonsFile(fileUri, next);
       await refreshState(true);
       await refreshWebview();

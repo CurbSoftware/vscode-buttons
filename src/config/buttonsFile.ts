@@ -113,6 +113,26 @@ export function removeScriptButton(file: ButtonsFile, key: string): ButtonsFile 
   return { ...file, buttons: file.buttons.filter((b) => !(b.type === "script" && scriptKey(b) === key)) };
 }
 
+/** Add every script in `scripts` as individual script entries, skipping keys already present. */
+export function addScriptFile(file: ButtonsFile, scripts: DiscoveredScript[]): ButtonsFile {
+  const existing = new Set(file.buttons.filter((b) => b.type === "script").map((b) => scriptKey(b)));
+  const additions: ButtonEntry[] = [];
+  for (const s of scripts) {
+    const key = scriptKey(s);
+    if (!existing.has(key)) {
+      existing.add(key);
+      additions.push(toScriptButton(s));
+    }
+  }
+  return additions.length === 0 ? file : { ...file, buttons: [...file.buttons, ...additions] };
+}
+
+/** Remove every script entry whose `file` equals `filePath`. */
+export function removeScriptFile(file: ButtonsFile, filePath: string): ButtonsFile {
+  const buttons = file.buttons.filter((b) => !(b.type === "script" && b.file === filePath));
+  return buttons.length === file.buttons.length ? file : { ...file, buttons };
+}
+
 export function addCommandButton(file: ButtonsFile, command: string, note?: string): ButtonsFile {
   return { ...file, buttons: [...file.buttons, { type: "command", command, ...(note !== undefined ? { note } : {}) }] };
 }

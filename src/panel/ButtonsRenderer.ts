@@ -1,5 +1,6 @@
 import type { ButtonsSource, ResolvedButton, WebviewState } from "../models/types";
 import { scriptKey, type DiscoveredScript } from "../scanner/types";
+import { groupScriptsByFile, type ScriptGroup } from "./scanGrouping";
 
 function escapeHtml(value: string): string {
   return value
@@ -73,8 +74,10 @@ function renderScanSection(state: WebviewState): string {
     ? `<div class="generate-cta"><button class="btn primary" data-action="generate"><span class="codicon codicon-wand"></span> Generate buttons file</button><span class="muted">Include all ${state.discovered.length} scripts as project buttons.</span></div>`
     : "";
 
-  const rows = state.discovered
-    .map((s) => renderScanRow(s, state.selectedKeys.includes(scriptKey(s)), !state.projectFileExists))
+  const selectedKeys = new Set(state.selectedKeys);
+  const groups = groupScriptsByFile(state.discovered, state.selectedKeys);
+  const rows = groups
+    .map((group) => renderScanGroup(group, selectedKeys, !state.projectFileExists))
     .join("");
 
   return `<section class="scan">${title}${generateCta}<div class="scan-list">${rows}</div></section>`;
@@ -90,8 +93,32 @@ function renderScanRow(script: DiscoveredScript, checked: boolean, disabled: boo
   ${icon}
   <span class="scan-name">${name}</span>
   <code class="scan-cmd">${command}</code>
-  <span class="scan-file">${file}</span>
 </label>`;
+}
+
+function renderScanGroup(group: ScriptGroup, selectedKeys: ReadonlySet<string>, projectDisabled: boolean): string {
+  const file = escapeHtml(group.file);
+  const fileChecked = group.fileChecked ? " checked" : "";
+  const fileDisabled = projectDisabled ? " disabled" : "";
+  const scriptDisabled = projectDisabled || group.fileChecked;
+
+  const rows = group.scripts
+    .map((s) => renderScanRow(s, selectedKeys.has(scriptKey(s)), scriptDisabled))
+    .join("");
+
+  return `<div class="scan-group collapsed" data-file="${file}">
+  <div class="scan-group-header">
+    <label class="scan-group-check" title="${file}">
+      <input type="checkbox" data-action="toggle-file" data-file="${file}" data-selected-count="${group.selectedCount}" data-total="${group.scripts.length}"${fileChecked}${fileDisabled} />
+    </label>
+    <button type="button" class="scan-group-toggle" data-action="toggle-group" aria-expanded="false">
+      <span class="codicon codicon-chevron-right scan-group-caret"></span>
+      <span class="scan-group-title">${file}</span>
+      <span class="scan-group-count">${group.scripts.length}</span>
+    </button>
+  </div>
+  <div class="scan-group-body">${rows}</div>
+</div>`;
 }
 
 function renderButtonsPage(state: WebviewState, variant: RenderVariant): string {
@@ -386,20 +413,51 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.scan-file {
-  font-size: 0.8em;
-  color: var(--muted);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  padding: 0 4px;
-  white-space: nowrap;
-}
 .generate-cta {
   display: flex;
   align-items: center;
   gap: 8px;
   margin: 8px 0;
 }
+.scan-group { display: flex; flex-direction: column; }
+.scan-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+}
+.scan-group-check { display: flex; align-items: center; flex-shrink: 0; }
+.scan-group-check input[type="checkbox"] { margin: 0; }
+.scan-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 1em;
+  padding: 0;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+.scan-group-toggle:hover { color: var(--vscode-focusBorder, var(--fg)); }
+.scan-group-caret { transition: transform 0.1s ease; flex-shrink: 0; }
+.scan-group.collapsed .scan-group-caret { transform: rotate(-90deg); }
+.scan-group-title {
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scan-group-count { color: var(--muted); font-size: 0.8em; flex-shrink: 0; }
+.scan-group-body { display: flex; flex-direction: column; padding-left: 18px; }
+.scan-group.collapsed .scan-group-body { display: none; }
 .buttons-table { width: 100%; border-collapse: collapse; }
 .buttons-table th {
   text-align: left;
@@ -472,13 +530,16 @@ function post(message) { vscode.postMessage(message); }
 
 document.addEventListener("change", (event) => {
   const el = event.target;
-  if (el && el.matches && el.matches('input[data-action="toggle-script"]')) {
+  if (!el || !el.matches) { return; }
+  if (el.matches('input[data-action="toggle-script"]')) {
     post({
       type: "toggle-script",
       file: el.dataset.file,
       script: el.dataset.script,
       checked: el.checked,
     });
+  } else if (el.matches('input[data-action="toggle-file"]')) {
+    post({ type: "toggle-file", file: el.dataset.file, checked: el.checked });
   }
 });
 
@@ -491,6 +552,15 @@ document.addEventListener("click", (event) => {
   const index = el.dataset.index !== undefined ? Number(el.dataset.index) : undefined;
 
   switch (action) {
+    case "toggle-group": {
+      const group = el.closest(".scan-group");
+      if (!group) { break; }
+      const nowCollapsed = group.classList.toggle("collapsed");
+      const btn = group.querySelector(".scan-group-toggle");
+      if (btn) { btn.setAttribute("aria-expanded", String(!nowCollapsed)); }
+      persistScanGroupState();
+      break;
+    }
     case "rescan": post({ type: "rescan" }); break;
     case "generate": post({ type: "generate" }); break;
     case "set-tab": post({ type: "set-tab", tab: el.dataset.tab }); break;
@@ -528,6 +598,34 @@ document.addEventListener("click", (event) => {
       });
       break;
     }
+  }
+});
+
+function collectExpandedFiles() {
+  const expanded = [];
+  document.querySelectorAll(".scan-group").forEach((group) => {
+    if (!group.classList.contains("collapsed")) { expanded.push(group.dataset.file); }
+  });
+  return expanded;
+}
+
+function persistScanGroupState() {
+  vscode.setState({ ...(vscode.getState() || {}), expandedFiles: collectExpandedFiles() });
+}
+
+document.querySelectorAll('input[data-action="toggle-file"]').forEach((el) => {
+  const selected = Number(el.dataset.selectedCount || "0");
+  const total = Number(el.dataset.total || "0");
+  el.indeterminate = selected > 0 && selected < total;
+});
+
+const savedState = vscode.getState() || {};
+const expandedFiles = new Set(Array.isArray(savedState.expandedFiles) ? savedState.expandedFiles : []);
+document.querySelectorAll(".scan-group").forEach((group) => {
+  if (expandedFiles.has(group.dataset.file)) {
+    group.classList.remove("collapsed");
+    const btn = group.querySelector(".scan-group-toggle");
+    if (btn) { btn.setAttribute("aria-expanded", "true"); }
   }
 });
 `;

@@ -3,12 +3,14 @@ import assert from "node:assert/strict";
 import {
   addCommandButton,
   addScriptButton,
+  addScriptFile,
   emptyButtonsFile,
   generateButtonsFile,
   hasScriptButton,
   parseButtonsFile,
   removeButton,
   removeScriptButton,
+  removeScriptFile,
   serializeButtonsFile,
   setButtonNote,
   updateCommandButton,
@@ -180,5 +182,69 @@ describe("command mutations", () => {
     const base = addCommandButton(addCommandButton(emptyButtonsFile(), "a"), "b");
     const next = removeButton(base, 0);
     assert.deepEqual(next.buttons, [{ type: "command", command: "b" }]);
+  });
+});
+
+describe("addScriptFile", () => {
+  it("appends all scripts of a file not already present", () => {
+    const next = addScriptFile(emptyButtonsFile(), [
+      script({ file: "package.json", script: "dev" }),
+      script({ file: "package.json", script: "build" }),
+    ]);
+    assert.deepEqual(next.buttons, [
+      { type: "script", file: "package.json", script: "dev", packageDir: "", packageManager: "pnpm" },
+      { type: "script", file: "package.json", script: "build", packageDir: "", packageManager: "pnpm" },
+    ]);
+  });
+
+  it("is idempotent for already-selected scripts", () => {
+    const base = addScriptButton(emptyButtonsFile(), script());
+    assert.equal(addScriptFile(base, [script()]), base);
+  });
+
+  it("leaves command entries and entries of other files untouched", () => {
+    const base = addScriptButton(
+      addScriptButton(
+        addCommandButton(emptyButtonsFile(), "echo hi"),
+        script({ file: "Makefile", script: "build", command: "make build", packageManager: "make", packageDir: "" }),
+      ),
+      script({ file: "package.json", script: "dev" }),
+    );
+    const next = addScriptFile(base, [script({ file: "package.json", script: "build" })]);
+    assert.equal(next.buttons.length, 4);
+    assert.deepEqual(next.buttons[0], { type: "command", command: "echo hi" });
+    assert.deepEqual(next.buttons[1], { type: "script", file: "Makefile", script: "build", packageDir: "", packageManager: "make" });
+  });
+
+  it("returns the same object when given an empty script list", () => {
+    const base = addScriptButton(emptyButtonsFile(), script());
+    assert.equal(addScriptFile(base, []), base);
+  });
+});
+
+describe("removeScriptFile", () => {
+  it("removes every script entry with that file", () => {
+    const base = addScriptButton(addScriptButton(emptyButtonsFile(), script({ script: "dev" })), script({ script: "build" }));
+    const next = removeScriptFile(base, "package.json");
+    assert.equal(next.buttons.length, 0);
+  });
+
+  it("leaves command entries and entries of other files", () => {
+    const base = addScriptButton(
+      addScriptButton(
+        addCommandButton(emptyButtonsFile(), "echo hi"),
+        script({ file: "Makefile", script: "build", command: "make build", packageManager: "make", packageDir: "" }),
+      ),
+      script({ file: "package.json", script: "dev" }),
+    );
+    const next = removeScriptFile(base, "package.json");
+    assert.equal(next.buttons.length, 2);
+    assert.deepEqual(next.buttons[0], { type: "command", command: "echo hi" });
+    assert.deepEqual(next.buttons[1], { type: "script", file: "Makefile", script: "build", packageDir: "", packageManager: "make" });
+  });
+
+  it("returns the same object when no entries match", () => {
+    const base = addScriptButton(emptyButtonsFile(), script());
+    assert.equal(removeScriptFile(base, "Makefile"), base);
   });
 });
