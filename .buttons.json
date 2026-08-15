@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "buttons": [
+    {
+      "type": "script",
+      "file": "package.json",
+      "script": "publish:ovsx",
+      "packageDir": "",
+      "packageManager": "npm"
+    },
+    {
+      "type": "script",
+      "file": "package.json",
+      "script": "clean",
+      "packageDir": "",
+      "packageManager": "npm"
+    },
+    {
+      "type": "script",
+      "file": "package.json",
+      "script": "compile",
+      "packageDir": "",
+      "packageManager": "npm"
+    }
+  ]
+}

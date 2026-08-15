@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { CombinedButtonsState, PanelActionMessage } from "../models/types";
+import type { PanelActionMessage, WebviewState } from "../models/types";
 import { renderHtml } from "./ButtonsRenderer";
 
 export class ButtonsSidebarProvider implements vscode.WebviewViewProvider {
@@ -7,7 +7,7 @@ export class ButtonsSidebarProvider implements vscode.WebviewViewProvider {
 
   public constructor(
     private readonly extensionUri: vscode.Uri,
-    private readonly getState: () => Promise<CombinedButtonsState>,
+    private readonly getState: () => Promise<WebviewState>,
     private readonly onMessage: (message: PanelActionMessage) => Promise<void>,
   ) {}
 
@@ -39,6 +39,6 @@ export class ButtonsSidebarProvider implements vscode.WebviewViewProvider {
     const codiconUri = this.view.webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, "node_modules", "@vscode", "codicons", "dist", "codicon.css"),
     ).toString();
-    this.view.webview.html = renderHtml(state, codiconUri, { sidebar: true });
+    this.view.webview.html = renderHtml(state, codiconUri);
   }
 }

@@ -8,10 +8,12 @@ media/screenshots/**
 *.md
 !README.md
 !CHANGELOG.md
+docs/**
 tsconfig.json
 .gitignore
 .vscodeignore
 .buttons
+.buttons.json
 .node-version
 buttons-vscode.code-workspace
 **/*.map

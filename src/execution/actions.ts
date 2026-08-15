@@ -1,91 +1,9 @@
 import * as vscode from "vscode";
-import { ResolvedButtonsButton, ResolvedButtonsConfig } from "../models/types";
 
 const BUTTONS_TERMINAL_NAME = "Buttons";
 
-export async function runButton(
-  resolved: ResolvedButtonsConfig | undefined,
-  groupId: string,
-  buttonId: string,
-  terminalMode: "current" | "new",
-  confirmDangerousCommands: boolean,
-): Promise<void> {
-  const button = findButton(resolved, groupId, buttonId);
-  if (!button) {
-    void vscode.window.showErrorMessage("Button not found in the current Buttons config.");
-    return;
-  }
-
-  if (confirmDangerousCommands && (button.confirm || button.danger)) {
-    const answer = await vscode.window.showWarningMessage(
-      `Run '${button.label}'?`,
-      { modal: true, detail: button.command },
-      "Run",
-    );
-
-    if (answer !== "Run") {
-      return;
-    }
-  }
-
-  const terminal = terminalMode === "new" ? createNewTerminal(button) : getOrCreateCurrentTerminal(button);
-  terminal.show(Boolean(button.reveal_terminal));
-  terminal.sendText(button.command, true);
-}
-
-export async function copyToTerminal(
-  resolved: ResolvedButtonsConfig | undefined,
-  groupId: string,
-  buttonId: string,
-  terminalMode: "current" | "new",
-): Promise<void> {
-  const button = findButton(resolved, groupId, buttonId);
-  if (!button) {
-    void vscode.window.showErrorMessage("Button not found in the current Buttons config.");
-    return;
-  }
-
-  const terminal = terminalMode === "new" ? createNewTerminal(button) : getOrCreateCurrentTerminal(button);
-  terminal.show(Boolean(button.reveal_terminal));
-  terminal.sendText(button.command, false);
-}
-
-export async function copyButtonCommand(resolved: ResolvedButtonsConfig | undefined, groupId: string, buttonId: string): Promise<void> {
-  const button = findButton(resolved, groupId, buttonId);
-  if (!button) {
-    void vscode.window.showErrorMessage("Button not found in the current Buttons config.");
-    return;
-  }
-
-  try {
-    await vscode.env.clipboard.writeText(button.command);
-    void vscode.window.showInformationMessage(`Copied '${button.label}' command.`);
-  } catch {
-    void vscode.window.showErrorMessage("Failed to copy command to clipboard.");
-  }
-}
-
-export async function openButtonUrl(url: string): Promise<void> {
-  try {
-    await vscode.env.openExternal(vscode.Uri.parse(url));
-  } catch {
-    void vscode.window.showErrorMessage(`Failed to open URL: ${url}`);
-  }
-}
-
-export async function openButtonPort(port: number): Promise<void> {
-  try {
-    await vscode.env.openExternal(vscode.Uri.parse(`http://localhost:${port}`));
-  } catch {
-    void vscode.window.showErrorMessage(`Failed to open port ${port}.`);
-  }
-}
-
-function findButton(resolved: ResolvedButtonsConfig | undefined, groupId: string, buttonId: string): ResolvedButtonsButton | undefined {
-  return resolved?.groups.find((group) => group.id === groupId)?.buttons.find((button) => button.id === buttonId);
-}
-
-function getOrCreateCurrentTerminal(button: ResolvedButtonsButton): vscode.Terminal {
+/** Reuse the active terminal, else a named "Buttons" terminal, else create one. */
+function getOrCreateCurrentTerminal(cwd?: string): vscode.Terminal {
   const activeTerminal = vscode.window.activeTerminal;
   if (activeTerminal) {
     return activeTerminal;
@@ -96,17 +14,31 @@ function getOrCreateCurrentTerminal(button: ResolvedButtonsButton): vscode.Termi
     return buttonsTerminal;
   }
 
-  return vscode.window.createTerminal({
-    name: BUTTONS_TERMINAL_NAME,
-    cwd: button.cwd,
-    env: button.env,
-  });
+  return vscode.window.createTerminal({ name: BUTTONS_TERMINAL_NAME, cwd });
 }
 
-function createNewTerminal(button: ResolvedButtonsButton): vscode.Terminal {
-  return vscode.window.createTerminal({
-    name: `Buttons: ${button.label}`,
-    cwd: button.cwd,
-    env: button.env,
-  });
+/** Run a command in the current integrated terminal (reusing an open one if present). */
+export function runInCurrentTerminal(command: string, cwd?: string): void {
+  const terminal = getOrCreateCurrentTerminal(cwd);
+  terminal.show(true);
+  terminal.sendText(command, true);
+}
+
+/** Run a command in a fresh integrated terminal instance. */
+export function runInNewTerminal(command: string, cwd?: string, label?: string): void {
+  const firstToken = command.trim().split(/\s+/)[0];
+  const name = label ? `Buttons: ${label}` : firstToken ? `Buttons: ${firstToken}` : BUTTONS_TERMINAL_NAME;
+  const terminal = vscode.window.createTerminal({ name, cwd });
+  terminal.show(true);
+  terminal.sendText(command, true);
+}
+
+/** Copy a command string to the system clipboard. */
+export async function copyToClipboard(command: string): Promise<void> {
+  try {
+    await vscode.env.clipboard.writeText(command);
+    void vscode.window.showInformationMessage("Copied command to clipboard.");
+  } catch {
+    void vscode.window.showErrorMessage("Failed to copy command to clipboard.");
+  }
 }

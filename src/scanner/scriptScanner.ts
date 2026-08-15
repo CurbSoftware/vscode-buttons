@@ -1,34 +1,51 @@
+import * as path from "path";
 import * as vscode from "vscode";
-import { DiscoveredScript } from "./types";
+import {
+  EXCLUDE_DIRS,
+  SCRIPT_FILE_TYPES,
+  parseJustfileText,
+  parseMakefileText,
+  parsePackageJsonText,
+  scriptKey,
+  type DiscoveredScript,
+  type PackageManager,
+} from "./types";
 
-export type { DiscoveredScript } from "./types";
+const MAX_SCRIPT_FILES = 5000;
 
-const SCRIPT_ICON_MAP: Record<string, string> = {
-  build: "package",
-  test: "beaker",
-  dev: "play",
-  start: "play",
-  serve: "play",
-  lint: "verified",
-  watch: "sync",
-  clean: "trash",
-  format: "code",
-  deploy: "cloud-upload",
-  preview: "eye",
-};
-
-function iconForScript(name: string): string | undefined {
-  const lower = name.toLowerCase();
-  for (const [key, icon] of Object.entries(SCRIPT_ICON_MAP)) {
-    if (lower === key || lower.startsWith(`${key}:`) || lower.startsWith(`${key}-`)) {
-      return icon;
-    }
-  }
-  return undefined;
+/** Convert an absolute fs path to a posix path relative to the workspace root. */
+function toPosixRelative(workspaceFsPath: string, fileFsPath: string): string {
+  return path.relative(workspaceFsPath, fileFsPath).split(path.sep).join("/");
 }
 
-async function detectPackageManager(workspaceUri: vscode.Uri): Promise<string> {
-  const lockfiles: [string, string][] = [
+function dirOf(posixPath: string): string {
+  const idx = posixPath.lastIndexOf("/");
+  return idx === -1 ? "" : posixPath.slice(0, idx);
+}
+
+/** Parse a script file's contents based on its basename. */
+function parseScriptFile(
+  base: string,
+  text: string,
+  relative: string,
+  packageDir: string,
+  packageManager: PackageManager,
+): DiscoveredScript[] {
+  switch (base) {
+    case "Makefile":
+      return parseMakefileText(text, relative, packageDir);
+    case "justfile":
+      return parseJustfileText(text, relative, packageDir);
+    case "composer.json":
+      return parsePackageJsonText(text, relative, packageDir, "composer");
+    default:
+      return parsePackageJsonText(text, relative, packageDir, packageManager);
+  }
+}
+
+/** Detect the package manager from root lockfiles. */
+async function detectPackageManager(workspaceUri: vscode.Uri): Promise<PackageManager> {
+  const lockfiles: [string, PackageManager][] = [
     ["pnpm-lock.yaml", "pnpm"],
     ["yarn.lock", "yarn"],
     ["bun.lockb", "bun"],
@@ -39,96 +56,52 @@ async function detectPackageManager(workspaceUri: vscode.Uri): Promise<string> {
     try {
       await vscode.workspace.fs.stat(vscode.Uri.joinPath(workspaceUri, file));
       return manager;
-    } catch { /* not found */ }
+    } catch {
+      // not found; try the next lockfile
+    }
   }
 
   return "npm";
 }
 
-async function scanPackageJson(workspaceUri: vscode.Uri): Promise<DiscoveredScript[]> {
-  const fileUri = vscode.Uri.joinPath(workspaceUri, "package.json");
+/**
+ * Recursively scan the workspace for package.json and Makefile scripts, excluding
+ * installed packages, VCS, and build/cache directories.
+ */
+export async function scanWorkspaceScripts(workspaceUri: vscode.Uri): Promise<DiscoveredScript[]> {
+  const excludeGlob = `**/{${EXCLUDE_DIRS.join(",")}}/**`;
+  const pattern = new vscode.RelativePattern(workspaceUri, `**/{${SCRIPT_FILE_TYPES.join(",")}}`);
+  const uris = await vscode.workspace.findFiles(pattern, excludeGlob, MAX_SCRIPT_FILES);
 
-  try {
-    await vscode.workspace.fs.stat(fileUri);
-  } catch {
-    return [];
-  }
+  const packageManager = await detectPackageManager(workspaceUri);
+  const workspaceFsPath = workspaceUri.fsPath;
 
-  const rawBytes = await vscode.workspace.fs.readFile(fileUri);
-  const rawText = Buffer.from(rawBytes).toString("utf8");
-  const pkg = JSON.parse(rawText);
+  const result: DiscoveredScript[] = [];
+  const seen = new Set<string>();
 
-  if (!pkg.scripts || typeof pkg.scripts !== "object") {
-    return [];
-  }
+  for (const uri of uris) {
+    const relative = toPosixRelative(workspaceFsPath, uri.fsPath);
+    const packageDir = dirOf(relative);
+    const base = path.basename(uri.fsPath);
 
-  const manager = await detectPackageManager(workspaceUri);
-  const scripts: DiscoveredScript[] = [];
-
-  for (const [name, value] of Object.entries(pkg.scripts)) {
-    if (typeof value !== "string") continue;
-    scripts.push({
-      label: name,
-      command: `${manager} run ${name}`,
-      description: value,
-      source: "package.json",
-      group: manager,
-      icon: iconForScript(name),
-    });
-  }
-
-  return scripts;
-}
-
-async function scanMakefile(workspaceUri: vscode.Uri): Promise<DiscoveredScript[]> {
-  const fileUri = vscode.Uri.joinPath(workspaceUri, "Makefile");
-
-  try {
-    await vscode.workspace.fs.stat(fileUri);
-  } catch {
-    return [];
-  }
-
-  const rawBytes = await vscode.workspace.fs.readFile(fileUri);
-  const rawText = Buffer.from(rawBytes).toString("utf8");
-  const lines = rawText.split("\n");
-  const scripts: DiscoveredScript[] = [];
-  const targetPattern = /^([a-zA-Z_][a-zA-Z0-9_-]*)\s*:/;
-
-  for (let i = 0; i < lines.length; i++) {
-    const match = targetPattern.exec(lines[i]);
-    if (!match) continue;
-
-    const name = match[1];
-    if (name.startsWith(".")) continue;
-
-    // Look for preceding comment as description
-    let description: string | undefined;
-    if (i > 0 && lines[i - 1].startsWith("#")) {
-      description = lines[i - 1].replace(/^#\s*/, "").trim();
+    let scripts: DiscoveredScript[];
+    try {
+      const rawBytes = await vscode.workspace.fs.readFile(uri);
+      const text = Buffer.from(rawBytes).toString("utf8");
+      scripts = parseScriptFile(base, text, relative, packageDir, packageManager);
+    } catch {
+      continue;
     }
 
-    scripts.push({
-      label: name,
-      command: `make ${name}`,
-      description,
-      source: "Makefile",
-      group: "make",
-      icon: iconForScript(name),
-    });
+    for (const s of scripts) {
+      const key = scriptKey(s);
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      result.push(s);
+    }
   }
 
-  return scripts;
+  return result;
 }
-
-export async function scanWorkspaceScripts(workspaceUri: vscode.Uri): Promise<DiscoveredScript[]> {
-  const results = await Promise.all([
-    scanPackageJson(workspaceUri),
-    scanMakefile(workspaceUri),
-  ]);
-
-  return results.flat();
-}
-
-// Exported for testing
-export { scanPackageJson, scanMakefile, detectPackageManager, iconForScript };

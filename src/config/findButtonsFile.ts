@@ -7,15 +7,20 @@ function getWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
   return firstFolder;
 }
 
-export function getButtonsFileUri(): vscode.Uri | undefined {
+export function getWorkspaceFolderUri(): vscode.Uri | undefined {
+  return getWorkspaceFolder()?.uri;
+}
+
+/** `<workspace root>/.buttons.json`, or undefined when no workspace folder is open. */
+export function getProjectButtonsFileUri(): vscode.Uri | undefined {
   const workspaceFolder = getWorkspaceFolder();
   if (!workspaceFolder) {
     return undefined;
   }
-
-  return vscode.Uri.joinPath(workspaceFolder.uri, ".buttons");
+  return vscode.Uri.joinPath(workspaceFolder.uri, ".buttons.json");
 }
 
-export function getUserButtonsFileUri(): vscode.Uri {
-  return vscode.Uri.file(path.join(os.homedir(), ".buttons"));
+/** `~/.buttons.json` — the global profile that applies to every project. */
+export function getGlobalButtonsFileUri(): vscode.Uri {
+  return vscode.Uri.file(path.join(os.homedir(), ".buttons.json"));
 }

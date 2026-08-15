@@ -1,566 +1,458 @@
 import * as fs from "fs";
+import * as path from "path";
 import * as vscode from "vscode";
-import { loadCombinedButtonsState } from "./config/loadButtonsConfig";
-import { buildDisplayFromSettings } from "./config/displaySettings";
-import { getButtonsFileUri, getUserButtonsFileUri } from "./config/findButtonsFile";
-import { copyButtonCommand, copyToTerminal, openButtonPort, openButtonUrl, runButton } from "./execution/actions";
-import { importScriptsCommand } from "./generator/buttonsGenerator";
-import { CombinedButtonsState, PanelActionMessage, ResolvedButtonsButton, ResolvedButtonsGroup } from "./models/types";
+import {
+  addCommandButton,
+  addScriptButton,
+  buttonId,
+  emptyButtonsFile,
+  generateButtonsFile,
+  removeButton,
+  removeScriptButton,
+  setButtonNote,
+  updateCommandButton,
+} from "./config/buttonsFile";
+import { loadRuntimeState, writeButtonsFile } from "./config/buttonsStore";
+import { getGlobalButtonsFileUri, getProjectButtonsFileUri, getWorkspaceFolderUri } from "./config/findButtonsFile";
+import { copyToClipboard, runInCurrentTerminal, runInNewTerminal } from "./execution/actions";
 import { ButtonsPanel } from "./panel/ButtonsPanel";
 import { ButtonsSidebarProvider } from "./panel/ButtonsSidebarProvider";
+import { SCRIPT_FILE_TYPES, scriptKey, shouldIgnoreDir } from "./scanner/types";
+import type { ButtonsFile, ButtonsSource, ButtonsTab, PanelActionMessage, ResolvedButton, RuntimeState, WebviewState } from "./models/types";
 
-let currentState: CombinedButtonsState | undefined;
+type PanelId = "sidebar" | "editor";
+
+let currentState: RuntimeState | undefined;
+let sidebarProvider: ButtonsSidebarProvider | undefined;
+let mainPanel: ButtonsPanel | undefined;
+const editingByPanel = new Map<PanelId, { source: ButtonsSource; id: string }>();
+const addingByPanel = new Map<PanelId, ButtonsSource>();
+const activeTabByPanel = new Map<PanelId, ButtonsTab>();
 
 export function activate(context: vscode.ExtensionContext): void {
-  const panel = new ButtonsPanel(
+  sidebarProvider = new ButtonsSidebarProvider(
     context.extensionUri,
-    async () => refreshState(),
-    async (message: PanelActionMessage): Promise<void> => handlePanelMessage(message, panel, sidebarProvider),
+    async () => buildWebviewState("sidebar"),
+    async (message: PanelActionMessage) => handlePanelMessage("sidebar", message),
   );
 
-  const sidebarProvider = new ButtonsSidebarProvider(
+  mainPanel = new ButtonsPanel(
     context.extensionUri,
-    async () => refreshState(),
-    async (message: PanelActionMessage): Promise<void> => handlePanelMessage(message, panel, sidebarProvider),
+    async () => buildWebviewState("editor"),
+    async (message: PanelActionMessage) => handlePanelMessage("editor", message),
   );
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("buttons.sidebarView", sidebarProvider),
   );
 
-  // Status bar item
-  const statusBarItem = vscode.window.createStatusBarItem("buttons.status", vscode.StatusBarAlignment.Left, 50);
-  statusBarItem.text = "$(list-selection) Buttons";
-  statusBarItem.tooltip = "Open Buttons";
-  statusBarItem.command = "buttons.openPanel";
-  context.subscriptions.push(statusBarItem);
-
-  // Show/hide status bar based on .buttons file existence (either user or project)
-  const updateStatusBar = async (): Promise<void> => {
-    const projectUri = getButtonsFileUri();
-    const userUri = getUserButtonsFileUri();
-
-    let hasAnyFile = false;
-
-    if (projectUri) {
-      try {
-        await vscode.workspace.fs.stat(projectUri);
-        hasAnyFile = true;
-      } catch { /* not found */ }
-    }
-
-    if (!hasAnyFile) {
-      try {
-        await vscode.workspace.fs.stat(userUri);
-        hasAnyFile = true;
-      } catch { /* not found */ }
-    }
-
-    if (hasAnyFile) {
-      statusBarItem.show();
-    } else {
-      statusBarItem.hide();
-    }
-  };
-
-  void updateStatusBar();
-
   context.subscriptions.push(
     vscode.commands.registerCommand("buttons.openPanel", async () => {
-      await panel.show();
+      await vscode.commands.executeCommand("buttons.sidebarView.focus");
     }),
-    vscode.commands.registerCommand("buttons.reloadConfig", async () => {
+    vscode.commands.registerCommand("buttons.openMainPanel", async () => {
+      await mainPanel?.createOrShow();
+    }),
+    vscode.commands.registerCommand("buttons.rescan", async () => {
+      editingByPanel.clear();
+      addingByPanel.clear();
       await refreshState(true);
-      await panel.refresh();
-      await sidebarProvider.refresh();
-      void vscode.window.showInformationMessage("Buttons config reloaded.");
+      await refreshWebview();
     }),
-    vscode.commands.registerCommand("buttons.openButtonsFile", async () => {
-      const fileUri = getButtonsFileUri();
-      if (!fileUri) {
+    vscode.commands.registerCommand("buttons.openProjectButtons", async () => {
+      const uri = getProjectButtonsFileUri();
+      if (!uri) {
         void vscode.window.showErrorMessage("No workspace folder is open.");
         return;
       }
-
-      try {
-        await vscode.workspace.fs.stat(fileUri);
-      } catch {
-        const createFile = await vscode.window.showInformationMessage("No .buttons file exists yet.", "Create Example");
-        if (createFile === "Create Example") {
-          await createExampleButtonsFile();
-        }
-        return;
-      }
-
-      const document = await vscode.workspace.openTextDocument(fileUri);
-      await vscode.window.showTextDocument(document);
+      await openOrCreateFile(uri);
     }),
-    vscode.commands.registerCommand("buttons.openUserButtonsFile", async () => {
-      const fileUri = getUserButtonsFileUri();
-
-      try {
-        await vscode.workspace.fs.stat(fileUri);
-      } catch {
-        const createFile = await vscode.window.showInformationMessage("No user .buttons file exists yet.", "Create Example");
-        if (createFile === "Create Example") {
-          await createUserExampleButtonsFile();
-        }
-        return;
-      }
-
-      const document = await vscode.workspace.openTextDocument(fileUri);
-      await vscode.window.showTextDocument(document);
-    }),
-    vscode.commands.registerCommand("buttons.createExampleButtons", async () => {
-      await createExampleButtonsFile();
-      await refreshState(true);
-      await panel.refresh();
-      await sidebarProvider.refresh();
-    }),
-    vscode.commands.registerCommand("buttons.runButton", async (payload?: { groupId: string; buttonId: string }) => {
-      const target = payload ?? (await pickButtonTarget("Select a button to run"));
-      if (!target) {
-        return;
-      }
-
-      const state = await refreshState();
-      const activeResolved = getActiveResolved(state);
-      await runButton(activeResolved, target.groupId, target.buttonId, "current", getConfirmDangerousCommands());
-      await panel.refresh();
-      await sidebarProvider.refresh();
-    }),
-    vscode.commands.registerCommand("buttons.runButtonInNewTerminal", async (payload?: { groupId: string; buttonId: string }) => {
-      const target = payload ?? (await pickButtonTarget("Select a button to run in a new terminal"));
-      if (!target) {
-        return;
-      }
-
-      const state = await refreshState();
-      const activeResolved = getActiveResolved(state);
-      await runButton(activeResolved, target.groupId, target.buttonId, "new", getConfirmDangerousCommands());
-      await panel.refresh();
-      await sidebarProvider.refresh();
-    }),
-    vscode.commands.registerCommand("buttons.copyButtonCommand", async (payload?: { groupId: string; buttonId: string }) => {
-      const target = payload ?? (await pickButtonTarget("Select a button command to copy"));
-      if (!target) {
-        return;
-      }
-
-      const state = await refreshState();
-      const activeResolved = getActiveResolved(state);
-      await copyButtonCommand(activeResolved, target.groupId, target.buttonId);
-    }),
-    vscode.commands.registerCommand("buttons.copyToTerminal", async (payload?: { groupId: string; buttonId: string }) => {
-      const target = payload ?? (await pickButtonTarget("Select a button to copy to terminal"));
-      if (!target) {
-        return;
-      }
-
-      const state = await refreshState();
-      const activeResolved = getActiveResolved(state);
-      await copyToTerminal(activeResolved, target.groupId, target.buttonId, "current");
-    }),
-    vscode.commands.registerCommand("buttons.copyToNewTerminal", async (payload?: { groupId: string; buttonId: string }) => {
-      const target = payload ?? (await pickButtonTarget("Select a button to copy to new terminal"));
-      if (!target) {
-        return;
-      }
-
-      const state = await refreshState();
-      const activeResolved = getActiveResolved(state);
-      await copyToTerminal(activeResolved, target.groupId, target.buttonId, "new");
-    }),
-    vscode.commands.registerCommand("buttons.openButtonUrl", async (url?: string) => {
-      if (url) {
-        await openButtonUrl(url);
-      }
-    }),
-    vscode.commands.registerCommand("buttons.openButtonPort", async (port?: number) => {
-      if (typeof port === "number") {
-        await openButtonPort(port);
-      }
-    }),
-    vscode.commands.registerCommand("buttons.importScripts", async () => {
-      await importScriptsCommand();
-      await refreshState(true);
-      await panel.refresh();
-      await sidebarProvider.refresh();
+    vscode.commands.registerCommand("buttons.openGlobalButtons", async () => {
+      await openOrCreateFile(getGlobalButtonsFileUri());
     }),
   );
 
-  // Watch project .buttons file
-  if (vscode.workspace.getConfiguration("buttons").get<boolean>("watchConfigChanges", true)) {
-    const watcher = vscode.workspace.createFileSystemWatcher("**/.buttons");
-    let debounceTimer: ReturnType<typeof setTimeout> | undefined;
-    const refreshAll = (): void => {
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-      }
-      debounceTimer = setTimeout(() => {
-        void (async () => {
-          await refreshState(true);
-          await panel.refresh();
-          await sidebarProvider.refresh();
-          await updateStatusBar();
-        })();
-      }, 300);
-    };
+  const refreshAll = debounce(() => {
+    void (async () => {
+      editingByPanel.clear();
+      addingByPanel.clear();
+      await refreshState(true);
+      await refreshWebview();
+    })();
+  }, 300);
 
-    watcher.onDidChange(refreshAll, undefined, context.subscriptions);
-    watcher.onDidCreate(refreshAll, undefined, context.subscriptions);
-    watcher.onDidDelete(refreshAll, undefined, context.subscriptions);
-    context.subscriptions.push(watcher);
+  // Watch the project .buttons.json file.
+  const fileWatcher = vscode.workspace.createFileSystemWatcher("**/.buttons.json");
+  fileWatcher.onDidChange(refreshAll, undefined, context.subscriptions);
+  fileWatcher.onDidCreate(refreshAll, undefined, context.subscriptions);
+  fileWatcher.onDidDelete(refreshAll, undefined, context.subscriptions);
+  context.subscriptions.push(fileWatcher);
 
-    // Watch user ~/.buttons file using Node.js fs.watch (workspace watcher is workspace-scoped)
-    const userFileUri = getUserButtonsFileUri();
-    const userFilePath = userFileUri.fsPath;
-    let userWatcher: fs.FSWatcher | undefined;
-    try {
-      userWatcher = fs.watch(userFilePath, { persistent: false }, () => {
-        refreshAll();
-      });
-    } catch {
-      // User file may not exist yet; that's fine
+  // Watch script files so commands stay current.
+  const scriptWatcher = vscode.workspace.createFileSystemWatcher(`**/{${SCRIPT_FILE_TYPES.join(",")}}`);
+  const onScriptChange = (uri: vscode.Uri): void => {
+    if (isIgnoredScriptPath(uri)) {
+      return;
     }
+    refreshAll();
+  };
+  scriptWatcher.onDidChange(onScriptChange, undefined, context.subscriptions);
+  scriptWatcher.onDidCreate(onScriptChange, undefined, context.subscriptions);
+  scriptWatcher.onDidDelete(onScriptChange, undefined, context.subscriptions);
+  context.subscriptions.push(scriptWatcher);
 
-    // If user file doesn't exist yet, poll periodically to detect creation
-    let userFileCheckInterval: ReturnType<typeof setInterval> | undefined;
-    if (!userWatcher) {
-      userFileCheckInterval = setInterval(() => {
-        try {
-          fs.accessSync(userFilePath);
-          // File now exists, start watching
-          if (!userWatcher) {
-            userWatcher = fs.watch(userFilePath, { persistent: false }, () => {
-              refreshAll();
-            });
-          }
-          if (userFileCheckInterval) {
-            clearInterval(userFileCheckInterval);
-            userFileCheckInterval = undefined;
-          }
-          refreshAll();
-        } catch {
-          // Still doesn't exist
-        }
-      }, 5000);
-    }
-
-    context.subscriptions.push({
-      dispose: () => {
-        userWatcher?.close();
-        if (userFileCheckInterval) {
-          clearInterval(userFileCheckInterval);
-        }
-      },
-    });
+  // Watch the global ~/.buttons.json file with Node fs.watch (workspace-scoped watcher can't see it).
+  const globalPath = getGlobalButtonsFileUri().fsPath;
+  let globalWatcher: fs.FSWatcher | undefined;
+  try {
+    globalWatcher = fs.watch(globalPath, { persistent: false }, () => refreshAll());
+  } catch {
+    // File may not exist yet; poll below.
   }
 
-  // Refresh panels when settings change
+  let globalPoll: ReturnType<typeof setInterval> | undefined;
+  if (!globalWatcher) {
+    globalPoll = setInterval(() => {
+      try {
+        fs.accessSync(globalPath);
+        if (!globalWatcher) {
+          globalWatcher = fs.watch(globalPath, { persistent: false }, () => refreshAll());
+        }
+        if (globalPoll) {
+          clearInterval(globalPoll);
+          globalPoll = undefined;
+        }
+        refreshAll();
+      } catch {
+        // Still does not exist.
+      }
+    }, 5000);
+  }
+
+  context.subscriptions.push({
+    dispose: () => {
+      globalWatcher?.close();
+      if (globalPoll) {
+        clearInterval(globalPoll);
+      }
+    },
+  });
+
+  context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(() => refreshAll()));
+
+  // React to settings changes: text size re-renders, script-file types re-scan.
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration("buttons")) {
-        void (async () => {
-          await refreshState(true);
-          await panel.refresh();
-          await sidebarProvider.refresh();
-        })();
+      if (e.affectsConfiguration("buttons.textSize")) {
+        void refreshWebview();
+      }
+      if (e.affectsConfiguration("buttons.scriptFiles")) {
+        refreshAll();
       }
     }),
   );
-
-  // Auto-open sidebar on first detection of .buttons file
-  void autoRevealSidebar(context);
 }
 
 export function deactivate(): void {
   currentState = undefined;
+  sidebarProvider = undefined;
+  mainPanel = undefined;
+  editingByPanel.clear();
+  addingByPanel.clear();
+  activeTabByPanel.clear();
 }
 
-function getActiveResolved(state: CombinedButtonsState) {
-  return state.activeSource === "user" ? state.user.resolved : state.project.resolved;
-}
-
-async function autoRevealSidebar(context: vscode.ExtensionContext): Promise<void> {
-  const autoOpen = vscode.workspace.getConfiguration("buttons").get<string>("autoOpen", "firstTime");
-  if (autoOpen === "never") {
-    return;
-  }
-
-  // Check if any buttons file exists (project or user)
-  const projectUri = getButtonsFileUri();
-  const userUri = getUserButtonsFileUri();
-  let hasAnyFile = false;
-
-  if (projectUri) {
-    try {
-      await vscode.workspace.fs.stat(projectUri);
-      hasAnyFile = true;
-    } catch { /* not found */ }
-  }
-
-  if (!hasAnyFile) {
-    try {
-      await vscode.workspace.fs.stat(userUri);
-      hasAnyFile = true;
-    } catch { /* not found */ }
-  }
-
-  if (!hasAnyFile) {
-    return;
-  }
-
-  if (autoOpen === "firstTime") {
-    const hasAutoOpened = context.workspaceState.get<boolean>("buttons.hasAutoOpened");
-    if (hasAutoOpened) {
-      return;
-    }
-    await context.workspaceState.update("buttons.hasAutoOpened", true);
-  }
-
-  await vscode.commands.executeCommand("buttons.sidebarView.focus");
-}
-
-async function refreshState(force = false): Promise<CombinedButtonsState> {
+async function refreshState(force = false): Promise<RuntimeState> {
   if (!force && currentState) {
     return currentState;
   }
-
-  const displayDefaults = buildDisplayFromSettings();
-  const defaultTerminal = vscode.workspace.getConfiguration("buttons").get<"current" | "new">("defaultTerminalMode", "current");
-  currentState = await loadCombinedButtonsState(displayDefaults, defaultTerminal);
+  currentState = await loadRuntimeState();
   return currentState;
 }
 
-async function handlePanelMessage(message: PanelActionMessage, panel: ButtonsPanel, sidebar: ButtonsSidebarProvider): Promise<void> {
-  switch (message.type) {
-    case "reload":
-      await refreshState(true);
-      await panel.refresh();
-      await sidebar.refresh();
-      return;
-    case "open-file":
-      await vscode.commands.executeCommand("buttons.openButtonsFile");
-      return;
-    case "open-panel":
-      await vscode.commands.executeCommand("buttons.openPanel");
-      return;
-    case "open-settings":
-      await vscode.commands.executeCommand("workbench.action.openSettings", "@ext:buttons-dev.buttons-vscode");
-      return;
-    case "toggle-source":
-      if (currentState && message.source) {
-        currentState = { ...currentState, activeSource: message.source };
-        await panel.refresh();
-        await sidebar.refresh();
-      }
-      return;
-    case "toggle-group":
-    case "toggle-button-visibility":
-      // Managed client-side in webview JS via vscode.getState/setState
-      return;
-    case "run-current":
-      if (message.groupId && message.buttonId) {
-        await vscode.commands.executeCommand("buttons.runButton", { groupId: message.groupId, buttonId: message.buttonId });
-      }
-      return;
-    case "run-new":
-      if (message.groupId && message.buttonId) {
-        await vscode.commands.executeCommand("buttons.runButtonInNewTerminal", { groupId: message.groupId, buttonId: message.buttonId });
-      }
-      return;
-    case "copy-to-terminal":
-      if (message.groupId && message.buttonId) {
-        await vscode.commands.executeCommand("buttons.copyToTerminal", { groupId: message.groupId, buttonId: message.buttonId });
-      }
-      return;
-    case "copy-to-new-terminal":
-      if (message.groupId && message.buttonId) {
-        await vscode.commands.executeCommand("buttons.copyToNewTerminal", { groupId: message.groupId, buttonId: message.buttonId });
-      }
-      return;
-    case "copy":
-      if (message.groupId && message.buttonId) {
-        await vscode.commands.executeCommand("buttons.copyButtonCommand", { groupId: message.groupId, buttonId: message.buttonId });
-      }
-      return;
-    case "open-url":
-      if (message.url) {
-        await vscode.commands.executeCommand("buttons.openButtonUrl", message.url);
-      }
-      return;
-    case "open-port":
-      if (typeof message.port === "number") {
-        await vscode.commands.executeCommand("buttons.openButtonPort", message.port);
-      }
-      return;
-    default:
-      return;
-  }
+async function refreshWebview(): Promise<void> {
+  await sidebarProvider?.refresh();
+  await mainPanel?.refresh();
 }
 
-async function createExampleButtonsFile(): Promise<void> {
-  const fileUri = getButtonsFileUri();
-  if (!fileUri) {
-    void vscode.window.showErrorMessage("No workspace folder is open.");
-    return;
-  }
-
-  const example = `version = 1
-title = "Buttons Example"
-description = "Shared project commands"
-terminal = "current"
-
-[groups.scripts]
-name = "Scripts"
-description = "Package workflows"
-icon = "package"
-
-[[groups.scripts.buttons]]
-id = "dev"
-label = "Dev"
-command = "npm run dev"
-icon = "play"
-
-[[groups.scripts.buttons]]
-id = "build"
-label = "Build"
-command = "npm run build"
-icon = "package"
-
-[[groups.scripts.buttons]]
-id = "test"
-label = "Test"
-command = "npm test"
-icon = "beaker"
-
-[[groups.scripts.buttons]]
-id = "lint"
-label = "Lint"
-command = "npm run lint"
-icon = "verified"
-
-[groups.git]
-name = "Git"
-description = "Common git commands"
-icon = "git-branch"
-
-[[groups.git.buttons]]
-id = "status"
-label = "Status"
-command = "git status"
-
-[[groups.git.buttons]]
-id = "log"
-label = "Log"
-command = "git log --oneline -10"
-icon = "history"
-`;
-
-  let exists = true;
-  try {
-    await vscode.workspace.fs.stat(fileUri);
-  } catch {
-    exists = false;
-  }
-
-  if (exists) {
-    const answer = await vscode.window.showWarningMessage("A .buttons file already exists. Replace it with the example file?", { modal: true }, "Replace");
-    if (answer !== "Replace") {
-      return;
-    }
-  }
-
-  await vscode.workspace.fs.writeFile(fileUri, Buffer.from(example, "utf8"));
-  const document = await vscode.workspace.openTextDocument(fileUri);
-  await vscode.window.showTextDocument(document);
-}
-
-async function createUserExampleButtonsFile(): Promise<void> {
-  const fileUri = getUserButtonsFileUri();
-
-  const example = `version = 1
-title = "My Buttons"
-description = "Personal commands available across all projects"
-
-[groups.tools]
-name = "Tools"
-description = "Common developer tools"
-icon = "tools"
-
-[[groups.tools.buttons]]
-id = "git-status"
-label = "Git Status"
-command = "git status"
-icon = "git-branch"
-
-[[groups.tools.buttons]]
-id = "git-log"
-label = "Git Log"
-command = "git log --oneline -10"
-icon = "history"
-`;
-
-  await vscode.workspace.fs.writeFile(fileUri, Buffer.from(example, "utf8"));
-  const document = await vscode.workspace.openTextDocument(fileUri);
-  await vscode.window.showTextDocument(document);
-}
-
-function getConfirmDangerousCommands(): boolean {
-  return vscode.workspace.getConfiguration("buttons").get<boolean>("confirmDangerousCommands", true);
-}
-
-async function pickButtonTarget(placeHolder: string): Promise<{ groupId: string; buttonId: string } | undefined> {
-  const state = await refreshState(true);
-  const activeResolved = getActiveResolved(state);
-  if (!activeResolved) {
-    const allDiagnostics = [...state.project.diagnostics, ...state.user.diagnostics];
-    const firstError = allDiagnostics.find((diagnostic) => diagnostic.severity === "error");
-    void vscode.window.showErrorMessage(firstError?.message ?? "Buttons config is not available.");
-    return undefined;
-  }
-
-  const items = activeResolved.groups.flatMap((group) =>
-    group.buttons.map((button) => toQuickPickItem(group, button, activeResolved.showCommandPreview)),
-  );
-
-  if (items.length === 0) {
-    void vscode.window.showInformationMessage("No buttons are defined in the current .buttons file.");
-    return undefined;
-  }
-
-  const selection = await vscode.window.showQuickPick(items, {
-    placeHolder,
-    matchOnDescription: true,
-    matchOnDetail: true,
-  });
-
-  if (!selection) {
-    return undefined;
-  }
-
+async function buildWebviewState(panelId: PanelId): Promise<WebviewState> {
+  const state = await refreshState();
   return {
-    groupId: selection.groupId,
-    buttonId: selection.buttonId,
+    projectButtons: state.projectButtons,
+    globalButtons: state.globalButtons,
+    discovered: state.discovered,
+    selectedKeys: selectedScriptKeys(state),
+    hasWorkspace: Boolean(getWorkspaceFolderUri()),
+    parseError: state.parseError,
+    editing: editingByPanel.get(panelId),
+    addingSource: addingByPanel.get(panelId),
+    textSizePx: textSizePx(),
+    projectFileExists: state.projectFileExists,
+    activeTab: activeTabByPanel.get(panelId) ?? "buttons",
   };
 }
 
-function toQuickPickItem(
-  group: ResolvedButtonsGroup,
-  button: ResolvedButtonsButton,
-  showCommandPreview: boolean,
-): vscode.QuickPickItem & { groupId: string; buttonId: string } {
-  const descriptionParts = [group.name];
-  if (button.danger) {
-    descriptionParts.push("Danger");
+function textSizePx(): number {
+  const value = vscode.workspace.getConfiguration("buttons").get<string>("textSize");
+  if (value === "plus2") {
+    return 2;
   }
+  if (value === "plus4") {
+    return 4;
+  }
+  return 0;
+}
 
-  return {
-    label: button.label,
-    description: descriptionParts.join(" • "),
-    detail: showCommandPreview ? button.command : button.description,
-    groupId: group.id,
-    buttonId: button.id,
+function selectedScriptKeys(state: RuntimeState): string[] {
+  return state.projectFile.buttons.filter((b) => b.type === "script").map((b) => scriptKey(b));
+}
+
+function findButton(state: RuntimeState, source: ButtonsSource, index: number): ResolvedButton | undefined {
+  const list = source === "project" ? state.projectButtons : state.globalButtons;
+  return list.find((b) => b.index === index);
+}
+
+function buttonCwd(button: ResolvedButton): string | undefined {
+  const root = getWorkspaceFolderUri();
+  if (!root) {
+    return undefined;
+  }
+  if (button.entry.type === "script" && button.entry.packageDir) {
+    return path.join(root.fsPath, ...button.entry.packageDir.split("/"));
+  }
+  return root.fsPath;
+}
+
+function buttonLabel(button: ResolvedButton): string | undefined {
+  return button.entry.type === "script" ? button.entry.script : undefined;
+}
+
+function fileUriFor(source: ButtonsSource): vscode.Uri | undefined {
+  return source === "project" ? getProjectButtonsFileUri() : getGlobalButtonsFileUri();
+}
+
+async function handlePanelMessage(panelId: PanelId, message: PanelActionMessage): Promise<void> {
+  switch (message.type) {
+    case "ready":
+      return;
+
+    case "rescan": {
+      editingByPanel.clear();
+      addingByPanel.clear();
+      await refreshState(true);
+      await refreshWebview();
+      return;
+    }
+
+    case "set-tab":
+      activeTabByPanel.set(panelId, message.tab);
+      await refreshWebview();
+      return;
+
+    case "generate": {
+      const fileUri = getProjectButtonsFileUri();
+      if (!fileUri) {
+        void vscode.window.showErrorMessage("No workspace folder is open.");
+        return;
+      }
+      const state = await refreshState();
+      await writeButtonsFile(fileUri, generateButtonsFile(state.discovered));
+      editingByPanel.clear();
+      addingByPanel.clear();
+      await refreshState(true);
+      await refreshWebview();
+      return;
+    }
+
+    case "toggle-script": {
+      const fileUri = getProjectButtonsFileUri();
+      if (!fileUri) {
+        return;
+      }
+      const key = scriptKey({ file: message.file, script: message.script });
+      const state = await refreshState();
+      if (!state.projectFileExists) {
+        return;
+      }
+      let next: ButtonsFile;
+      if (message.checked) {
+        const discovered = state.discovered.find((d) => scriptKey(d) === key);
+        if (!discovered) {
+          return;
+        }
+        next = addScriptButton(state.projectFile, discovered);
+      } else {
+        next = removeScriptButton(state.projectFile, key);
+      }
+      await writeButtonsFile(fileUri, next);
+      await refreshState(true);
+      await refreshWebview();
+      return;
+    }
+
+    case "run-current":
+    case "run-new": {
+      const state = await refreshState();
+      const button = findButton(state, message.source, message.index);
+      if (!button || button.missing) {
+        return;
+      }
+      const cwd = buttonCwd(button);
+      if (message.type === "run-current") {
+        runInCurrentTerminal(button.command, cwd);
+      } else {
+        runInNewTerminal(button.command, cwd, buttonLabel(button));
+      }
+      return;
+    }
+
+    case "copy": {
+      const state = await refreshState();
+      const button = findButton(state, message.source, message.index);
+      if (!button || button.missing) {
+        return;
+      }
+      await copyToClipboard(button.command);
+      return;
+    }
+
+    case "start-edit": {
+      const state = await refreshState();
+      const button = findButton(state, message.source, message.index);
+      if (!button) {
+        return;
+      }
+      editingByPanel.set(panelId, { source: message.source, id: button.id });
+      await refreshWebview();
+      return;
+    }
+
+    case "cancel-edit":
+      editingByPanel.delete(panelId);
+      await refreshWebview();
+      return;
+
+    case "save-edit": {
+      const fileUri = fileUriFor(message.source);
+      if (!fileUri) {
+        return;
+      }
+      const state = await refreshState();
+      const file = message.source === "project" ? state.projectFile : state.globalFile;
+      const index = file.buttons.findIndex((entry) => buttonId(entry) === message.id);
+      if (index < 0) {
+        return;
+      }
+      const entry = file.buttons[index];
+      let next: ButtonsFile;
+      if (entry.type === "command") {
+        next = updateCommandButton(file, index, {
+          command: message.command?.trim() || entry.command,
+          note: message.note,
+        });
+      } else {
+        next = setButtonNote(file, index, message.note);
+      }
+      await writeButtonsFile(fileUri, next);
+      editingByPanel.delete(panelId);
+      await refreshState(true);
+      await refreshWebview();
+      return;
+    }
+
+    case "remove": {
+      const fileUri = fileUriFor(message.source);
+      if (!fileUri) {
+        return;
+      }
+      const state = await refreshState();
+      const file = message.source === "project" ? state.projectFile : state.globalFile;
+      const removedEntry = file.buttons[message.index];
+      const next = removeButton(file, message.index);
+      await writeButtonsFile(fileUri, next);
+      const currentEditing = editingByPanel.get(panelId);
+      if (removedEntry && currentEditing?.source === message.source && currentEditing.id === buttonId(removedEntry)) {
+        editingByPanel.delete(panelId);
+      }
+      await refreshState(true);
+      await refreshWebview();
+      return;
+    }
+
+    case "start-add":
+      addingByPanel.set(panelId, message.source);
+      await refreshWebview();
+      return;
+
+    case "cancel-add":
+      addingByPanel.delete(panelId);
+      await refreshWebview();
+      return;
+
+    case "save-add": {
+      const fileUri = fileUriFor(message.source);
+      if (!fileUri) {
+        return;
+      }
+      const command = message.command.trim();
+      if (!command) {
+        return;
+      }
+      const state = await refreshState();
+      const file = message.source === "project" ? state.projectFile : state.globalFile;
+      const next = addCommandButton(file, command, message.note.trim() || undefined);
+      await writeButtonsFile(fileUri, next);
+      addingByPanel.delete(panelId);
+      await refreshState(true);
+      await refreshWebview();
+      return;
+    }
+
+    case "open-project-file": {
+      const uri = getProjectButtonsFileUri();
+      if (!uri) {
+        void vscode.window.showErrorMessage("No workspace folder is open.");
+        return;
+      }
+      await openOrCreateFile(uri);
+      return;
+    }
+
+    case "open-global-file":
+      await openOrCreateFile(getGlobalButtonsFileUri());
+      return;
+
+    case "open-settings":
+      await vscode.commands.executeCommand("workbench.action.openSettings", "buttons.textSize");
+      return;
+  }
+}
+
+async function openOrCreateFile(uri: vscode.Uri): Promise<void> {
+  try {
+    await vscode.workspace.fs.stat(uri);
+  } catch {
+    await writeButtonsFile(uri, emptyButtonsFile());
+  }
+  const document = await vscode.workspace.openTextDocument(uri);
+  await vscode.window.showTextDocument(document);
+}
+
+function isIgnoredScriptPath(uri: vscode.Uri): boolean {
+  const root = getWorkspaceFolderUri();
+  if (!root) {
+    return false;
+  }
+  const relative = path.relative(root.fsPath, uri.fsPath);
+  return relative.split(path.sep).some((segment) => shouldIgnoreDir(segment));
+}
+
+function debounce(fn: () => void, ms: number): () => void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return () => {
+    if (timer) {
+      clearTimeout(timer);
+    }
+    timer = setTimeout(fn, ms);
   };
 }

@@ -5,7 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build & Development Commands
 
 ```bash
-npm run compile      # Compile TypeScript to dist/
+npm run clean        # Remove dist/ (stale compiled files)
+npm run compile      # Clean + compile TypeScript to dist/
 npm run watch        # Watch mode (continuous compilation)
 npm run lint         # Type-check only (tsc --noEmit)
 npm test             # Compile + run all tests (Node.js built-in test runner)
@@ -14,73 +15,58 @@ npm run package      # Package as .vsix via vsce
 
 **Development workflow:** Run `npm run watch` in a terminal, then press F5 in VSCode to launch the Extension Development Host. Reload with Ctrl+Shift+F5 after changes.
 
-**Running a single test file:** `npm run compile && node --test dist/test/configHelpers.test.js`
+**Running a single test file:** `npm run compile && node --test dist/test/scanner.test.js`
+
+## What the extension does
+
+Buttons scans a project for scripts (`package.json` scripts and `Makefile` targets, including nested packages in monorepos), lets the user select which to include by checkbox, add custom commands, and run them from a single sidebar table (Run / New Terminal / Copy, plus inline edit/remove). Config persists to JSON files: `<workspace root>/.buttons.json` (project) and `~/.buttons.json` (global, applies to every project).
 
 ## Architecture
 
-The extension activates when a workspace contains a `.buttons` file (`workspaceContains:.buttons`) or on startup (for user `~/.buttons`). Main entry: `dist/extension.js` (compiled from `src/extension.ts`).
+The extension activates via `workspaceContains:.buttons.json` or `onStartupFinished`, and on Activity Bar icon click (`onView:buttons.sidebarView`). Main entry: `dist/extension.js` (compiled from `src/extension.ts`).
 
 ### Data flow
 
 ```
-.buttons (TOML file)
-  → config/findButtonsFile.ts      finds the file in workspace root or ~/
-  → config/loadButtonsConfig.ts    reads file via vscode.workspace.fs, parses TOML
-  → config/configHelpers.ts        validates, resolves templates/macros/generation (all pure functions)
-  → config/displaySettings.ts      reads VS Code settings for display/styling config
-  → models/types.ts                ButtonsDocument → ResolvedButtonsConfig (with diagnostics)
-  → extension.ts                   caches as LoadedButtonsState, passes to panel
-  → panel/ButtonsRenderer.ts       server-side renders HTML webview with buttons
-  → execution/actions.ts           runs commands in terminal, opens URLs/ports, copies to clipboard
-
-Script scanning (optional):
-  → scanner/scriptScanner.ts       scans package.json, Makefile for scripts
-  → scanner/types.ts               DiscoveredScript interface (pure, no vscode dep)
-  → generator/tomlGenerator.ts     generates .buttons TOML from discovered scripts (pure)
-  → generator/buttonsGenerator.ts  VS Code UI: QuickPick, file creation, import flow
+package.json / Makefile (workspace tree)
+  → scanner/scriptScanner.ts      finds script files (excluding node_modules etc.), parses into DiscoveredScript[]
+  → config/buttonsFile.ts         pure parse/serialize/mutate of .buttons.json + resolveButtons (recompute command from scan)
+  → config/buttonsStore.ts        vscode IO: read/write files, loadRuntimeState (project + global + scan)
+  → models/types.ts               ButtonsFile → RuntimeState → WebviewState
+  → extension.ts                  caches RuntimeState, handles PanelActionMessage, watchers
+  → panel/ButtonsRenderer.ts      server-renders the sidebar HTML (scan section + two tables)
+  → execution/actions.ts          runs commands in terminals / copies to clipboard
 ```
 
 ### Key modules
 
-- **extension.ts** — Registers commands (including `buttons.importScripts`), manages global `currentState: CombinedButtonsState`, sets up debounced file watcher for `.buttons` changes, listens for VS Code settings changes, wires panel callbacks
-- **config/configHelpers.ts** — All pure functions: TOML validation, macro expansion (with cycle detection), cartesian product button generation (with 1000-button explosion guard), danger detection, defaults cascade, template application, slug/title utilities
-- **config/displaySettings.ts** — `buildDisplayFromSettings()` reads `buttons.*`, `buttons.appearance.*`, `buttons.actions.*` VS Code settings and constructs a `ResolvedGroupDisplay` object
-- **config/loadButtonsConfig.ts** — Thin wrapper: reads `.buttons` file via vscode API, parses TOML via `@iarna/toml`, delegates to configHelpers for validation and resolution
-- **panel/ButtonsRenderer.ts** — Webview with inline HTML/CSS/JS (no frontend framework). Communicates with extension host via `PanelActionMessage` discriminated union. Uses VSCode theme CSS variables for styling. Renders action buttons (Run, New Terminal, Copy to Terminal, Copy to New Terminal, Copy to Clipboard). All display/styling comes from VS Code settings, not from `.buttons` files
-- **execution/actions.ts** — Terminal creation/reuse (named "Buttons"), `sendText()` for command execution, copy-to-terminal (current and new), `vscode.env.openExternal()` for URLs/ports
-- **scanner/scriptScanner.ts** — Scans workspace for package.json scripts and Makefile targets, detects package manager from lockfiles
-- **generator/tomlGenerator.ts** — Pure function that generates `.buttons` TOML from `DiscoveredScript[]` (testable without vscode)
-- **generator/buttonsGenerator.ts** — VS Code UI command for importing scripts: QuickPick multi-select, file creation/replacement
-- **models/types.ts** — All interfaces. Key hierarchy: `ButtonsDocument` (raw TOML) → `ResolvedButtonsConfig` (processed, extends `ResolvedGroupDisplay`) wrapped in `LoadedButtonsState` (with file path and diagnostics)
+- **extension.ts** — Registers 5 commands (`buttons.openPanel`, `buttons.openMainPanel`, `buttons.rescan`, `buttons.openProjectButtons`, `buttons.openGlobalButtons`), manages module-level `currentState: RuntimeState` plus transient `editing`/`addingSource`, sets up debounced file watchers (project `.buttons.json`, script files, global `~/.buttons.json` via `fs.watch`), and routes webview messages to file mutations.
+- **config/buttonsFile.ts** — Pure (no `vscode` import), directly unit-tested. `parseButtonsFile`/`serializeButtonsFile`, immutable mutations (`addScriptButton`, `removeScriptButton`, `addCommandButton`, `updateCommandButton`, `setButtonNote`, `removeButton`), and `resolveButtons` (script refs recompute their command from the current scan; a ref with no matching script becomes `missing`).
+- **config/buttonsStore.ts** — vscode layer: `readButtonsFile`/`writeButtonsFile`/`loadRuntimeState`.
+- **config/findButtonsFile.ts** — URI resolution: `getProjectButtonsFileUri()` (`<root>/.buttons.json`), `getGlobalButtonsFileUri()` (`~/.buttons.json`), `getWorkspaceFolderUri()`.
+- **scanner/types.ts** — Pure: `DiscoveredScript`, `PackageManager`, `scriptKey`, `scriptCommand`, `EXCLUDE_DIRS`, `shouldIgnoreDir`, `parsePackageJsonText`, `parseMakefileText`, `iconForScript`.
+- **scanner/scriptScanner.ts** — vscode wrapper: `scanWorkspaceScripts` uses `vscode.workspace.findFiles` with an exclude glob, detects the package manager from root lockfiles, and parses each file.
+- **panel/ButtonsRenderer.ts** — Webview with inline HTML/CSS/JS (no framework). `renderHtml(state, codiconUri)` builds the header, scan section, and two tables. Uses VS Code theme CSS variables and `@vscode/codicons`.
+- **panel/ButtonsSidebarProvider.ts** — The single `WebviewViewProvider`; serves the codicon CSS and delegates messages to the extension host.
+- **execution/actions.ts** — `runInCurrentTerminal` (reuse active terminal or a named "Buttons" terminal), `runInNewTerminal` (named `Buttons: <label>`), `copyToClipboard`.
+- **models/types.ts** — All interfaces: `ScriptButton`/`CommandButton`/`ButtonEntry`/`ButtonsFile`, `ResolvedButton`, `RuntimeState`, `WebviewState`, `PanelActionMessage`.
 
-### Display/styling architecture
+### Storage model
 
-All display and styling configuration lives in VS Code settings (not in `.buttons` files):
-- `buttons.appearance.*` — showLabels, showIcons, compact, buttonColor, groupBackgroundColor, labelSize, commandClickToCopy
-- `buttons.actions.*` — showRun, showNewTerminal, etc., runLabel, newTerminalLabel, etc., actionSize, actionBorderRadius
+`.buttons.json` holds a flat `buttons` array. Each entry is one of:
 
-The `.buttons` file's `[display]` block is deprecated and ignored (a warning diagnostic is emitted). Group-level `layout` overrides are still supported.
+- `{ type: "script", file, script, packageDir, packageManager, note? }` — a live reference; the command is recomputed as `pnpm dev`/`bun dev`/etc. on every rescan.
+- `{ type: "command", command, note? }` — a literal custom command.
 
-### Config resolution pipeline (configHelpers.ts)
-
-1. Parse TOML into `ButtonsDocument`
-2. Validate version, field types, icons (codicon format), colors (hex), ports
-3. Emit deprecation warnings for any `[display]` blocks
-4. Expand macros recursively with circular reference detection
-5. Apply templates — substitute `{{base}}`, `{{arg1}}`, `{{arg2}}`, variables
-6. Generate buttons from `[generate]` blocks (cartesian product, capped at 1000)
-7. Cascade defaults from document → group → button level
-8. Detect dangerous commands by keyword matching
-9. Deduplicate button IDs (first wins, duplicates emit error diagnostic)
-10. Apply display defaults from VS Code settings (passed in as `ResolvedGroupDisplay`)
-11. Return `ResolvedButtonsConfig` + diagnostics array
+The checkbox selection state is derived from which `script` entries exist in the project file (keyed by `file:script`). Running a script button opens a terminal with `cwd` set to the script's `packageDir`.
 
 ### Testing
 
-Tests live in `src/test/` and use Node.js built-in test runner (`node:test` + `node:assert/strict`). Zero test dependencies. Tests cover:
-- `configHelpers.test.ts` — cartesian, template expansion, macro resolution, validation, document resolution, danger detection, utility functions, deprecation warnings
-- `buttonsGenerator.test.ts` — TOML generation from discovered scripts
-- `includesMerge.test.ts` — file include merging
+Tests live in `src/test/` and use Node.js built-in test runner (`node:test` + `node:assert/strict`). Zero test dependencies. Only pure (vscode-free) modules are tested — the same convention as before:
+
+- `scanner.test.ts` — `shouldIgnoreDir`, `parsePackageJsonText`, `parseMakefileText`, `scriptCommand`, `scriptKey`
+- `buttonsFile.test.ts` — `parseButtonsFile` validation, serialization round-trip, mutations
+- `references.test.ts` — `resolveButtons` (command recomputation, missing refs, command pass-through)
 
 ### Releasing
 
@@ -90,4 +76,4 @@ npm run publish:marketplace  # Publish to VS Code Marketplace (vsce publish)
 npm run publish:ovsx         # Publish to Open VSX Registry (VS Codium)
 ```
 
-The same `.vsix` file works for both marketplaces. Pre-release: bump `version` in `package.json`, update `CHANGELOG.md`, run `npm test` and `npm run lint`, then `vsce package` and test the `.vsix` locally before publishing.
+Pre-release: bump `version` in `package.json`, update `CHANGELOG.md`, run `npm test` and `npm run lint`, then `vsce package` and test the `.vsix` locally before publishing.

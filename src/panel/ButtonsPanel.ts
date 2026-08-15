@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { CombinedButtonsState, PanelActionMessage } from "../models/types";
+import type { PanelActionMessage, WebviewState } from "../models/types";
 import { renderHtml } from "./ButtonsRenderer";
 
 export class ButtonsPanel {
@@ -7,28 +7,33 @@ export class ButtonsPanel {
 
   public constructor(
     private readonly extensionUri: vscode.Uri,
-    private readonly getState: () => Promise<CombinedButtonsState>,
+    private readonly getState: () => Promise<WebviewState>,
     private readonly onMessage: (message: PanelActionMessage) => Promise<void>,
   ) {}
 
-  public async show(): Promise<void> {
+  public async createOrShow(): Promise<void> {
     if (this.panel) {
-      this.panel.reveal(vscode.ViewColumn.Active);
-      await this.refresh();
+      this.panel.reveal();
       return;
     }
 
-    this.panel = vscode.window.createWebviewPanel("buttons.panel", "Buttons", vscode.ViewColumn.Active, {
-      enableScripts: true,
-      retainContextWhenHidden: true,
+    this.panel = vscode.window.createWebviewPanel(
+      "buttons.mainPanel",
+      "Buttons",
+      vscode.ViewColumn.One,
+      {
+        enableScripts: true,
+        localResourceRoots: [this.extensionUri],
+        retainContextWhenHidden: true,
+      },
+    );
+
+    this.panel.webview.onDidReceiveMessage(async (message: PanelActionMessage) => {
+      await this.onMessage(message);
     });
 
     this.panel.onDidDispose(() => {
       this.panel = undefined;
-    });
-
-    this.panel.webview.onDidReceiveMessage(async (message: PanelActionMessage) => {
-      await this.onMessage(message);
     });
 
     await this.refresh();
@@ -43,6 +48,6 @@ export class ButtonsPanel {
     const codiconUri = this.panel.webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, "node_modules", "@vscode", "codicons", "dist", "codicon.css"),
     ).toString();
-    this.panel.webview.html = renderHtml(state, codiconUri, { sidebar: false });
+    this.panel.webview.html = renderHtml(state, codiconUri, "editor");
   }
 }

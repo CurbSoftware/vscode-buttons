@@ -1,38 +1,21 @@
 # Changelog
 
-All notable changes to the Buttons extension will be documented in this file.
+All notable changes to the Buttons extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [0.1.0] - 2026-03-17
+## [1.0.0] - 2026-08-14
+
+Initial stable release.
 
 ### Added
 
-- Parse `.buttons` TOML files from the workspace root
-- Personal `~/.buttons` user config available across all projects
-- Source tabs to toggle between project and user buttons
-- 5 layout modes: grid, rows, columns, table, and flow
-- Accordion groups with persistent collapse/expand state
-- Eye toggle to hide individual buttons from the panel
-- Per-group `[display]` blocks with independent layout, color, and visibility overrides
-- Custom action button labels, icons, and sizes per group
-- Click-to-copy on command preview text
-- Run commands in the current or a new terminal
-- Copy to terminal and copy to new terminal actions
-- Copy resolved commands to the clipboard
-- Open related URLs and localhost ports
-- Static buttons and cartesian-generated buttons via `[generate]` blocks
-- Simple variables and reusable macros with circular reference detection
-- File includes for composing configs from multiple `.buttons` files
-- Danger detection with heuristic keyword matching and explicit `danger` flag
-- Confirmation prompt before running dangerous commands
-- Custom hex colors per button, per group, and at document level
-- Codicon icon support for buttons and groups
-- File watcher for automatic panel refresh on config changes
-- Activity Bar sidebar panel
-- Toolbar icon in the editor title bar
-- 29 example `.buttons` packs (Node, Docker, Python, Git, AWS, Kubernetes, and more)
-- Template expansion with `{{base}}`, `{{arg1}}`, `{{arg2}}`, and variables
-- Defaults cascade from document to group to button level
-- Button ID deduplication (first wins, duplicates emit diagnostics)
-- 1000-button explosion guard on cartesian generation
+- Scan `package.json`, `Makefile`, `composer.json`, and `justfile` for runnable scripts, including nested packages in monorepos.
+- Package-manager detection from lockfiles (`pnpm-lock.yaml`, `yarn.lock`, `bun.lockb`, `package-lock.json`).
+- Two launcher surfaces kept in sync: an Activity Bar sidebar and a full-width editor panel.
+- Run commands in the current or a new integrated terminal, copy the exact command, and attach inline notes.
+- Custom commands stored verbatim, scoped to the project or the global profile.
+- Project (`<workspace>/.buttons.json`) and global (`~/.buttons.json`) storage, with script references that recompute their command on every rescan.
+- Generate vs Rescan workflow so scanning never discards existing selections, notes, or custom commands.
+- Settings: `buttons.textSize` and `buttons.scriptFiles`.
+- Five commands: Open Panel, Open in Editor, Rescan Scripts, Open Project Buttons File, Open Global Buttons File.
