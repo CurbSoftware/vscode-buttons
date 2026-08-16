@@ -1,6 +1,6 @@
 # Buttons Documentation
 
-**Buttons** scans your project for scripts — `package.json`, `Makefile`, `composer.json`, and `justfile`, including nested packages in monorepos — and turns them into a clickable command launcher in VS Code and VS Codium.
+**Buttons** scans your project for scripts — `package.json`, `Makefile`, `composer.json`, and `justfile`, including nested packages in monorepos — and turns them into a clickable command launcher in VS Code and VSCodium.
 
 This directory holds the detailed user guides. For a quick overview, start with the [README](../README.md).
 
@@ -19,7 +19,7 @@ This directory holds the detailed user guides. For a quick overview, start with 
 
 ## Quick links
 
-- Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=buttons-dev.buttons-vscode) or [Open VSX](https://open-vsx.org/extension/buttons-dev/buttons-vscode).
+- Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=CurbSoftware.buttons-vscode) or [Open VSX](https://open-vsx.org/extension/CurbSoftware/buttons-vscode).
 - Source and issues: [github.com/CurbSoftware/vscode-buttons](https://github.com/CurbSoftware/vscode-buttons).
 
 [Back to README](../README.md)

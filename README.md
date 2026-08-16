@@ -1,11 +1,11 @@
 # Buttons
 
-**Buttons** is a VS Code and VS Codium extension that scans your project for scripts — `package.json` scripts, `Makefile` targets, PHP `composer.json` scripts, and `justfile` recipes, including nested packages in monorepos — and turns them into a clickable command launcher.
+**Buttons** is a VS Code and VSCodium extension that scans your project for scripts — `package.json` scripts, `Makefile` targets, PHP `composer.json` scripts, and `justfile` recipes, including nested packages in monorepos — and turns them into a clickable command launcher.
 
 Run any command in the current or a new integrated terminal, copy it to the clipboard, add your own custom commands, and manage everything from a single panel — no more digging through `package.json` or remembering the exact flags.
 
-- **VS Code:** [Install from the Marketplace](https://marketplace.visualstudio.com/items?itemName=buttons-dev.buttons-vscode)
-- **VS Codium:** [Install from Open VSX](https://open-vsx.org/extension/buttons-dev/buttons-vscode)
+- **VS Code:** [Install from the Marketplace](https://marketplace.visualstudio.com/items?itemName=CurbSoftware.buttons-vscode)
+- **VSCodium:** [Install from Open VSX](https://open-vsx.org/extension/CurbSoftware/buttons-vscode)
 - **Source / issues:** [github.com/CurbSoftware/vscode-buttons](https://github.com/CurbSoftware/vscode-buttons)
 
 ## Screenshots
@@ -101,7 +101,7 @@ A **Rescan** button plus automatic file watchers keep commands current when `pac
 
 ## Getting started
 
-1. Install from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=buttons-dev.buttons-vscode) or [Open VSX](https://open-vsx.org/extension/buttons-dev/buttons-vscode).
+1. Install from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=CurbSoftware.buttons-vscode) or [Open VSX](https://open-vsx.org/extension/CurbSoftware/buttons-vscode).
 2. Open a folder/project in VS Code.
 3. Click the **Buttons** icon in the Activity Bar (or the editor title-bar icon).
 4. Click **Generate** to scan the project and create `.buttons.json` with every discovered script.
@@ -290,11 +290,11 @@ npm test             # compile + run the test suite
 npm run package      # package as .vsix
 ```
 
-See [CLAUDE.md](CLAUDE.md) for architecture details, and [CHANGELOG.md](CHANGELOG.md) for version history.
+See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ### Requirements
 
-- Node.js `>= 24`
+- Node.js `>= 22`
 - VS Code `^1.97.0`
 
 ---

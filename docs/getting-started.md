@@ -4,13 +4,13 @@ Follow these steps to go from installing Buttons to running your first command.
 
 ## Prerequisites
 
-- **VS Code** `^1.97.0` (or VS Codium) — see [installation](#1-install).
+- **VS Code** `^1.97.0` (or VSCodium) — see [installation](#1-install).
 - **Node.js** `>= 24` is only needed if you build the extension from source, not to use it.
 
 ## 1. Install
 
-- **VS Code** — [install from the Marketplace](https://marketplace.visualstudio.com/items?itemName=buttons-dev.buttons-vscode).
-- **VS Codium** — [install from Open VSX](https://open-vsx.org/extension/buttons-dev/buttons-vscode).
+- **VS Code** — [install from the Marketplace](https://marketplace.visualstudio.com/items?itemName=CurbSoftware.buttons-vscode).
+- **VSCodium** — [install from Open VSX](https://open-vsx.org/extension/CurbSoftware/buttons-vscode).
 
 If you'd rather build it yourself, see [Local installation](../README.md#local-installation).
 
