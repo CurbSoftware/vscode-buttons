@@ -8,10 +8,11 @@ Buttons publishes to the **VS Code Marketplace** and **Open VSX** (VSCodium) aut
 |---|---|
 | Marketplace publisher `CurbSoftware` | ✅ done — 1.1.0 published (manually) on 2026-08-15 |
 | `VSCE_PAT` repo secret (Azure DevOps PAT, Marketplace → Manage scope) | ✅ done |
-| Open VSX namespace `CurbSoftware` | ⬜ **TODO** — claim at [open-vsx.org](https://open-vsx.org) → User Settings → Namespaces |
-| `OVSX_PAT` repo secret | ⬜ **TODO** — open-vsx.org → User Settings → Access Tokens |
+| Open VSX namespace `CurbSoftware` | ✅ done — claimed 2026-08-15 |
+| `OVSX_PAT` repo secret | ✅ done |
+| Open VSX extension listing | ✅ done — 1.1.0 published on 2026-08-15 |
 
-Until both Open VSX steps are done, the pipeline's Marketplace step will succeed and the Open VSX step will fail. To set a secret:
+One-time setup is **complete**: every future GitHub Release publishes to both registries automatically. To rotate a secret:
 
 ```bash
 gh secret set OVSX_PAT -R CurbSoftware/vscode-buttons   # pastes securely, then Ctrl+D
@@ -47,3 +48,7 @@ npm run lint && npm test && npm run package
 npx vsce publish -p <VSCE_PAT>          # Marketplace
 npx ovsx publish buttons-vscode-X.Y.Z.vsix -p <OVSX_PAT>   # Open VSX
 ```
+
+## Open VSX account notes (for token rotation)
+
+Tokens are created at [open-vsx.org](https://open-vsx.org) → User Settings → Access Tokens (requires an Eclipse Foundation account linked to GitHub and a signed Publisher Agreement).
