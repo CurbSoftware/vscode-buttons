@@ -5,7 +5,6 @@
 src/**
 dist/test/**
 media/screenshots/**
-!media/screenshots/btn-btns-animate.webp
 *.md
 !README.md
 !CHANGELOG.md
@@ -15,8 +14,6 @@ tsconfig.json
 .vscodeignore
 .buttons
 .buttons.json
-.node-version
-buttons-vscode.code-workspace
 **/*.map
 node_modules/@vscode/codicons/src/**
 node_modules/@vscode/codicons/.github/**

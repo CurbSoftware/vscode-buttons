@@ -10,7 +10,7 @@ Run any command in the current or a new integrated terminal, copy it to the clip
 
 ## Screenshots
 
-![Buttons scanning scripts into a clickable launcher](media/screenshots/btn-btns-animate.webp)
+![Buttons scanning scripts into a clickable launcher](https://raw.githubusercontent.com/CurbSoftware/vscode-buttons/main/media/screenshots/btn-btns-animate.webp)
 
 ---
 

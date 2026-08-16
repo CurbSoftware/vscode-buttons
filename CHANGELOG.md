@@ -4,6 +4,22 @@ All notable changes to the Buttons extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.1.0] - 2026-08-15
+
+### Added
+
+- Grouped the **Project scripts** tab by file, with a bulk-select checkbox per file to include or remove all of its scripts at once.
+
+### Changed
+
+- Publisher is now `CurbSoftware` — Marketplace and Open VSX install links updated.
+- Scanner docs and the empty-state message now cover all supported script files generically.
+
+### Removed
+
+- Dead `ready` webview message and the unused `source` field on resolved buttons (internal cleanup, no behavior change).
+- Development-only files and unused screenshots; the README animation is served from GitHub, shrinking the packaged `.vsix` roughly 10x.
+
 ## [1.0.0] - 2026-08-14
 
 Initial stable release.
