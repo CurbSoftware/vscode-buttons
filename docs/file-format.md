@@ -69,6 +69,6 @@ The `version` field is optional when absent (it defaults to `1`), and `note` is 
 
 ## Editing by hand
 
-You can edit these files directly — via the `Buttons: Open Project Buttons File` / `Buttons: Open Global Buttons File` commands, or in any editor. Buttons watches the files and picks up changes automatically.
+You can edit these files directly - via the `Buttons: Open Project Buttons File` / `Buttons: Open Global Buttons File` commands, or in any editor. Buttons watches the files and picks up changes automatically.
 
 [Back to index](index.md)

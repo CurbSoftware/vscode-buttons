@@ -1,6 +1,6 @@
 # Buttons Documentation
 
-**Buttons** scans your project for scripts — `package.json`, `Makefile`, `composer.json`, and `justfile`, including nested packages in monorepos — and turns them into a clickable command launcher in VS Code and VSCodium.
+**Buttons** scans your project for scripts - `package.json`, `Makefile`, `composer.json`, and `justfile`, including nested packages in monorepos - and turns them into a clickable command launcher in VS Code and VSCodium.
 
 This directory holds the detailed user guides. For a quick overview, start with the [README](../README.md).
 

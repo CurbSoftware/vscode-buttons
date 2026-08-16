@@ -60,7 +60,7 @@ export function scriptCommand(pm: PackageManager, name: string): string {
   }
 }
 
-/** Directories that must never be scanned — installed packages, VCS, build/cache output. */
+/** Directories that must never be scanned - installed packages, VCS, build/cache output. */
 export const EXCLUDE_DIRS = [
   "node_modules",
   ".git",

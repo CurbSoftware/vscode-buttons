@@ -1,8 +1,8 @@
 # Buttons
 
-**Buttons** is a VS Code and VSCodium extension that scans your project for scripts — `package.json` scripts, `Makefile` targets, PHP `composer.json` scripts, and `justfile` recipes, including nested packages in monorepos — and turns them into a clickable command launcher.
+**Buttons** is a VS Code and VSCodium extension that scans your project for scripts - `package.json` scripts, `Makefile` targets, PHP `composer.json` scripts, and `justfile` recipes, including nested packages in monorepos - and turns them into a clickable command launcher.
 
-Run any command in the current or a new integrated terminal, copy it to the clipboard, add your own custom commands, and manage everything from a single panel — no more digging through `package.json` or remembering the exact flags.
+Run any command in the current or a new integrated terminal, copy it to the clipboard, add your own custom commands, and manage everything from a single panel - no more digging through `package.json` or remembering the exact flags.
 
 - **VS Code:** [Install from the Marketplace](https://marketplace.visualstudio.com/items?itemName=CurbSoftware.buttons-vscode)
 - **VSCodium:** [Install from Open VSX](https://open-vsx.org/extension/CurbSoftware/buttons-vscode)
@@ -33,13 +33,13 @@ Detailed guides live in the [`docs/`](docs/index.md) directory:
 
 ### Two ways to open it
 
-- **Activity Bar** — click the Buttons icon in the left Activity Bar for a compact sidebar.
-- **Editor panel** — click the Buttons icon in the editor title bar (top-right, near "split editor") for a full-width editor tab. Both stay in sync and can be used at the same time.
+- **Activity Bar** - click the Buttons icon in the left Activity Bar for a compact sidebar.
+- **Editor panel** - click the Buttons icon in the editor title bar (top-right, near "split editor") for a full-width editor tab. Both stay in sync and can be used at the same time.
 
 ### Two tabs
 
-- **Buttons** (default) — your project buttons and global buttons.
-- **Project scripts** — the scanner, where you pick which discovered scripts become buttons.
+- **Buttons** (default) - your project buttons and global buttons.
+- **Project scripts** - the scanner, where you pick which discovered scripts become buttons.
 
 ### Generate, don't assume
 
@@ -48,7 +48,7 @@ Opening a project **never** writes a file. Click **Generate** to scan the projec
 ### Script scanning
 
 - Scans `package.json`, `Makefile`, `composer.json`, and `justfile` (see [Script file types](#script-file-types)).
-- Supports **monorepos** — nested `package.json` files under `packages/`, `apps/`, etc. are found and scoped to their own directory.
+- Supports **monorepos** - nested `package.json` files under `packages/`, `apps/`, etc. are found and scoped to their own directory.
 - Skips installed packages, VCS, and build output (`node_modules`, `dist`, `build`, `coverage`, `.git`, `.venv`, `vendor`, and more).
 
 ### Package-manager aware
@@ -68,17 +68,17 @@ In the **Project scripts** tab, check or uncheck scripts to include or remove th
 
 ### Custom commands
 
-Add any command that isn't in a script file — `docker ps`, `git pull`, `curl …` — with **+ Add command**, and attach an optional note.
+Add any command that isn't in a script file - `docker ps`, `git pull`, `curl …` - with **+ Add command**, and attach an optional note.
 
 ### Run, copy, and manage
 
 Every button gives you:
 
-- **Run** — run in the current integrated terminal (reusing it, or a dedicated `Buttons` terminal).
-- **New Terminal** — run in a fresh terminal named `Buttons: <label>`.
-- **Copy** — copy the exact command to the clipboard.
-- **Note / Edit** — inline-edit the note (for script buttons) or the command and note (for custom commands).
-- **✕** — remove the button.
+- **Run** - run in the current integrated terminal (reusing it, or a dedicated `Buttons` terminal).
+- **New Terminal** - run in a fresh terminal named `Buttons: <label>`.
+- **Copy** - copy the exact command to the clipboard.
+- **Note / Edit** - inline-edit the note (for script buttons) or the command and note (for custom commands).
+- **✕** - remove the button.
 
 ### Layouts that fit
 
@@ -87,7 +87,7 @@ Every button gives you:
 
 ### Configurable text size
 
-Set the UI text size to VS Code default, +2px, or +4px via `buttons.textSize` — or click the gear icon in the panel header to jump straight to the setting (see [Settings](#settings)).
+Set the UI text size to VS Code default, +2px, or +4px via `buttons.textSize` - or click the gear icon in the panel header to jump straight to the setting (see [Settings](#settings)).
 
 ### Global profile
 
@@ -105,7 +105,7 @@ A **Rescan** button plus automatic file watchers keep commands current when `pac
 2. Open a folder/project in VS Code.
 3. Click the **Buttons** icon in the Activity Bar (or the editor title-bar icon).
 4. Click **Generate** to scan the project and create `.buttons.json` with every discovered script.
-5. Fine-tune in the **Project scripts** tab, then use **Run**, **New Terminal**, or **Copy** on any row — or **+ Add command** for a custom command.
+5. Fine-tune in the **Project scripts** tab, then use **Run**, **New Terminal**, or **Copy** on any row - or **+ Add command** for a custom command.
 
 ---
 
@@ -115,8 +115,8 @@ A **Rescan** button plus automatic file watchers keep commands current when `pac
 
 The default tab shows two sections:
 
-- **Project buttons** — commands from the current workspace's `<workspace root>/.buttons.json`.
-- **Global buttons** — commands from your personal `~/.buttons.json`, shown in every project.
+- **Project buttons** - commands from the current workspace's `<workspace root>/.buttons.json`.
+- **Global buttons** - commands from your personal `~/.buttons.json`, shown in every project.
 
 Each row (or card, in the sidebar) shows the command, an optional note, a file badge for script buttons, and the action buttons described above.
 
@@ -138,8 +138,8 @@ Custom commands are stored verbatim and are never rewritten by scanning.
 
 Buttons distinguishes two scan actions so you never lose work:
 
-- **Generate** — creates the project's `.buttons.json` from scratch, including **every** discovered script. Use it the first time you open a project (it only appears when no file exists yet).
-- **Rescan** — re-runs the scanner against the *existing* file. It keeps your included scripts and notes, recomputes their commands, marks scripts that no longer exist as "not found", and leaves newly-discovered scripts unchecked for you to opt in.
+- **Generate** - creates the project's `.buttons.json` from scratch, including **every** discovered script. Use it the first time you open a project (it only appears when no file exists yet).
+- **Rescan** - re-runs the scanner against the *existing* file. It keeps your included scripts and notes, recomputes their commands, marks scripts that no longer exist as "not found", and leaves newly-discovered scripts unchecked for you to opt in.
 
 In other words: **Generate** seeds the file; **Rescan** updates it in place without overriding your custom commands or selections.
 
@@ -156,9 +156,9 @@ The **Buttons: Script Files** setting controls which files are scanned. `package
 | `composer.json` | PHP | `composer test` |
 | `justfile` | Universal task runner | `just build` |
 
-Only these formats are parsed. Other ecosystems (Python `pyproject.toml`, Rust `Cargo.toml`, .NET, etc.) aren't auto-parsed — add their commands with **+ Add command** instead.
+Only these formats are parsed. Other ecosystems (Python `pyproject.toml`, Rust `Cargo.toml`, .NET, etc.) aren't auto-parsed - add their commands with **+ Add command** instead.
 
-Disabling a file type stops *offering* its scripts in the **Project scripts** tab, but never removes buttons already in your `.buttons.json` — Rescan preserves your custom commands and scripts.
+Disabling a file type stops *offering* its scripts in the **Project scripts** tab, but never removes buttons already in your `.buttons.json` - Rescan preserves your custom commands and scripts.
 
 ---
 
@@ -179,8 +179,8 @@ You can open the settings page from the gear icon in the panel header, or via **
 
 Buttons stores its configuration as JSON:
 
-- **Project** — `<workspace root>/.buttons.json`
-- **Global** — `~/.buttons.json`
+- **Project** - `<workspace root>/.buttons.json`
+- **Global** - `~/.buttons.json`
 
 The file has a flat `buttons` array. Each entry is either a **script reference** (a live link to a scanned script) or a **custom command**:
 
@@ -216,7 +216,7 @@ The file has a flat `buttons` array. Each entry is either a **script reference**
 | `command` | The literal command to run. |
 | `note` | Optional human-readable note. |
 
-Because a script entry is a *reference*, its command is recomputed on every scan — so if you switch from `pnpm` to `bun`, the button updates to `bun dev` automatically. Custom command entries are stored verbatim.
+Because a script entry is a *reference*, its command is recomputed on every scan - so if you switch from `pnpm` to `bun`, the button updates to `bun dev` automatically. Custom command entries are stored verbatim.
 
 ---
 
@@ -256,7 +256,7 @@ These directories are excluded from the scan: `node_modules`, `.git`, `.hg`, `.s
 
 ## Safety
 
-Buttons runs the commands exactly as they are written. Review a shared project's `.buttons.json` before running its commands — treat it like a `Makefile` or a `package.json` script. Your `~/.buttons.json` is personal and is never shared with a project.
+Buttons runs the commands exactly as they are written. Review a shared project's `.buttons.json` before running its commands - treat it like a `Makefile` or a `package.json` script. Your `~/.buttons.json` is personal and is never shared with a project.
 
 ---
 

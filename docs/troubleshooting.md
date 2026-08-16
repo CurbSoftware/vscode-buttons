@@ -10,8 +10,8 @@ A buttons file failed to parse (invalid JSON or a validation error). Buttons sur
 ## The panel is empty or shows no scripts
 
 - Make sure a **workspace folder is open** (`File → Open Folder`). A single untitled file has no workspace to scan.
-- Check [`buttons.scriptFiles`](configuration.md#buttonsscriptfiles) — if you disabled a file type, its scripts aren't offered.
-- Check the **Project scripts** tab — scripts appear there first; you may need to **Generate** a file or check boxes.
+- Check [`buttons.scriptFiles`](configuration.md#buttonsscriptfiles) - if you disabled a file type, its scripts aren't offered.
+- Check the **Project scripts** tab - scripts appear there first; you may need to **Generate** a file or check boxes.
 
 ## A script shows "not found"
 

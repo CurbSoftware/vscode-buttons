@@ -4,8 +4,8 @@ The Buttons panel has two tabs and renders differently depending on where you op
 
 ## Where to open it
 
-- **Activity Bar** — click the Buttons icon in the left sidebar. Renders as a compact card layout.
-- **Editor title bar** — click the Buttons icon in the top-right. Renders as a full-width table.
+- **Activity Bar** - click the Buttons icon in the left sidebar. Renders as a compact card layout.
+- **Editor title bar** - click the Buttons icon in the top-right. Renders as a full-width table.
 
 Both panels show the same data and stay in sync; you can use both at once.
 
@@ -15,8 +15,8 @@ Both panels show the same data and stay in sync; you can use both at once.
 
 Two sections:
 
-- **Project buttons** — from the current workspace's `<workspace root>/.buttons.json`.
-- **Global buttons** — from your personal `~/.buttons.json`, shown in every project.
+- **Project buttons** - from the current workspace's `<workspace root>/.buttons.json`.
+- **Global buttons** - from your personal `~/.buttons.json`, shown in every project.
 
 ### Project scripts
 
@@ -51,6 +51,6 @@ Custom commands are stored verbatim and are never rewritten by scanning. This is
 
 ## Text size
 
-Click the gear icon in the panel header to open the settings page for `buttons.textSize`, or change it directly — see [Configuration](configuration.md#buttonstextsize).
+Click the gear icon in the panel header to open the settings page for `buttons.textSize`, or change it directly - see [Configuration](configuration.md#buttonstextsize).
 
 [Back to index](index.md)

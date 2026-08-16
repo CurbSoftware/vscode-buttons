@@ -32,7 +32,7 @@ Controls which script files are scanned for commands.
 - **Default:** `["package.json"]`
 - **`uniqueItems`:** `true`
 
-`package.json` is enabled by default; the others are opt-in. Only these formats can be parsed — anything else is added as a custom command instead.
+`package.json` is enabled by default; the others are opt-in. Only these formats can be parsed - anything else is added as a custom command instead.
 
 > Disabling a file type here stops *offering* its scripts in the **Project scripts** tab, but it never removes buttons already present in your `.buttons.json`. See [Script scanning](scanning.md#script-file-types) for details.
 

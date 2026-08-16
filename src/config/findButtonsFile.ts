@@ -20,7 +20,7 @@ export function getProjectButtonsFileUri(): vscode.Uri | undefined {
   return vscode.Uri.joinPath(workspaceFolder.uri, ".buttons.json");
 }
 
-/** `~/.buttons.json` — the global profile that applies to every project. */
+/** `~/.buttons.json` - the global profile that applies to every project. */
 export function getGlobalButtonsFileUri(): vscode.Uri {
   return vscode.Uri.file(path.join(os.homedir(), ".buttons.json"));
 }

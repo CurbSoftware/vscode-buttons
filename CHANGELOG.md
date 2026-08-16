@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
-- `RELEASING.md` — release guide covering one-time registry setup and the release checklist.
+- `RELEASING.md` - release guide covering one-time registry setup and the release checklist.
 
 ### Changed
 
@@ -22,7 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
-- Publisher is now `CurbSoftware` — Marketplace and Open VSX install links updated.
+- Publisher is now `CurbSoftware` - Marketplace and Open VSX install links updated.
 - Scanner docs and the empty-state message now cover all supported script files generically.
 
 ### Removed
