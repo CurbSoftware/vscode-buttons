@@ -145,9 +145,9 @@
     "watch": "tsc -w -p ./",
     "lint": "tsc -p ./ --noEmit",
     "test": "npm run compile && node --test dist/test/**/*.test.js",
-    "package": "vsce package",
+    "package": "vsce package -o release/",
     "publish:marketplace": "vsce publish",
-    "publish:ovsx": "ovsx publish buttons-vscode-*.vsix",
+    "publish:ovsx": "ovsx publish release/buttons-vscode-*.vsix",
     "vscode:prepublish": "npm run compile"
   },
   "dependencies": {

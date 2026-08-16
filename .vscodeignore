@@ -14,6 +14,7 @@ tsconfig.json
 .vscodeignore
 .buttons
 .buttons.json
+release/**
 **/*.map
 node_modules/@vscode/codicons/src/**
 node_modules/@vscode/codicons/.github/**

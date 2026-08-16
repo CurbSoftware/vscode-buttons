@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Changed
 
 - Publish workflow now fails fast when the release tag doesn't match the `package.json` version.
+- `npm run package` now writes the `.vsix` into `release/` instead of the project root.
 
 ## [1.1.0] - 2026-08-15
 

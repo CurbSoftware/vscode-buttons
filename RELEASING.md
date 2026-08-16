@@ -46,8 +46,10 @@ gh secret set OVSX_PAT -R CurbSoftware/vscode-buttons   # pastes securely, then 
 ```bash
 npm run lint && npm test && npm run package
 npx vsce publish -p <VSCE_PAT>          # Marketplace
-npx ovsx publish buttons-vscode-X.Y.Z.vsix -p <OVSX_PAT>   # Open VSX
+npx ovsx publish release/buttons-vscode-X.Y.Z.vsix -p <OVSX_PAT>   # Open VSX
 ```
+
+Packaged `.vsix` files build into `release/` (gitignored); the same single package serves both VS Code and VSCodium — the registries are just two publish targets.
 
 ## Open VSX account notes (for token rotation)
 

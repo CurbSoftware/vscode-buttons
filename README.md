@@ -287,7 +287,7 @@ npm run compile      # clean + compile TypeScript to dist/
 npm run watch        # continuous compilation
 npm run lint         # type-check only (tsc --noEmit)
 npm test             # compile + run the test suite
-npm run package      # package as .vsix
+npm run package      # package as release/<name>-<version>.vsix
 ```
 
 See [CHANGELOG.md](CHANGELOG.md) for version history.
