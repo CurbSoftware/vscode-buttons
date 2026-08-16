@@ -6,7 +6,7 @@ import { emptyButtonsFile, parseButtonsFile, resolveButtons, serializeButtonsFil
 import { getGlobalButtonsFileUri, getProjectButtonsFileUri, getWorkspaceFolderUri } from "./findButtonsFile";
 
 /** Read a `.buttons.json` file, returning an empty file (and optional error) when missing or malformed. */
-export async function readButtonsFile(uri: vscode.Uri): Promise<{ file: ButtonsFile; error?: string; exists: boolean }> {
+async function readButtonsFile(uri: vscode.Uri): Promise<{ file: ButtonsFile; error?: string; exists: boolean }> {
   try {
     const rawBytes = await vscode.workspace.fs.readFile(uri);
     const text = Buffer.from(rawBytes).toString("utf8");
@@ -25,7 +25,7 @@ export async function writeButtonsFile(uri: vscode.Uri, file: ButtonsFile): Prom
 }
 
 /** Read the `buttons.scriptFiles` setting, returning the enabled (and valid) file types. */
-export function getEnabledScriptFiles(): ScriptFileType[] {
+function getEnabledScriptFiles(): ScriptFileType[] {
   const configured = vscode.workspace.getConfiguration("buttons").get<string[]>("scriptFiles") ?? ["package.json"];
   return configured.filter(isScriptFileType);
 }
@@ -48,8 +48,8 @@ export async function loadRuntimeState(): Promise<RuntimeState> {
   return {
     projectFile: project.file,
     globalFile: global.file,
-    projectButtons: resolveButtons(project.file, allDiscovered, "project"),
-    globalButtons: resolveButtons(global.file, allDiscovered, "global"),
+    projectButtons: resolveButtons(project.file, allDiscovered),
+    globalButtons: resolveButtons(global.file, allDiscovered),
     discovered,
     projectFileExists: project.exists,
     parseError: errors.length > 0 ? errors.join("\n") : undefined,

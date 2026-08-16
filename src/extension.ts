@@ -235,9 +235,6 @@ function fileUriFor(source: ButtonsSource): vscode.Uri | undefined {
 
 async function handlePanelMessage(panelId: PanelId, message: PanelActionMessage): Promise<void> {
   switch (message.type) {
-    case "ready":
-      return;
-
     case "rescan": {
       editingByPanel.clear();
       addingByPanel.clear();

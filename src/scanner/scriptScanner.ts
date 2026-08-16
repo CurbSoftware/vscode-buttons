@@ -65,8 +65,9 @@ async function detectPackageManager(workspaceUri: vscode.Uri): Promise<PackageMa
 }
 
 /**
- * Recursively scan the workspace for package.json and Makefile scripts, excluding
- * installed packages, VCS, and build/cache directories.
+ * Recursively scan the workspace for scripts in all supported script files
+ * (package.json, Makefile, composer.json, justfile), excluding installed
+ * packages, VCS, and build/cache directories.
  */
 export async function scanWorkspaceScripts(workspaceUri: vscode.Uri): Promise<DiscoveredScript[]> {
   const excludeGlob = `**/{${EXCLUDE_DIRS.join(",")}}/**`;

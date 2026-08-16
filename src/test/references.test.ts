@@ -21,11 +21,10 @@ describe("resolveButtons", () => {
       version: 1,
       buttons: [{ type: "script", file: "package.json", script: "dev", packageDir: "", packageManager: "npm" }],
     };
-    const resolved = resolveButtons(file, [script({ command: "pnpm dev", packageManager: "pnpm" })], "project");
+    const resolved = resolveButtons(file, [script({ command: "pnpm dev", packageManager: "pnpm" })]);
     assert.equal(resolved.length, 1);
     assert.equal(resolved[0].command, "pnpm dev");
     assert.equal(resolved[0].missing, false);
-    assert.equal(resolved[0].source, "project");
     assert.equal(resolved[0].index, 0);
   });
 
@@ -34,7 +33,7 @@ describe("resolveButtons", () => {
       version: 1,
       buttons: [{ type: "script", file: "package.json", script: "deleted", packageDir: "", packageManager: "npm" }],
     };
-    const resolved = resolveButtons(file, [], "project");
+    const resolved = resolveButtons(file, []);
     assert.equal(resolved[0].missing, true);
     assert.equal(resolved[0].command, "npm run deleted");
   });
@@ -44,23 +43,20 @@ describe("resolveButtons", () => {
       version: 1,
       buttons: [{ type: "command", command: "docker ps", note: "list" }],
     };
-    const resolved = resolveButtons(file, [], "global");
+    const resolved = resolveButtons(file, []);
     assert.equal(resolved[0].command, "docker ps");
     assert.equal(resolved[0].kind, "command");
-    assert.equal(resolved[0].source, "global");
     assert.equal(resolved[0].missing, undefined);
   });
 
-  it("resolves both sources with correct source and index", () => {
+  it("assigns indexes per file independently", () => {
     const projectFile: ButtonsFile = { version: 1, buttons: [{ type: "command", command: "npm run dev" }] };
     const globalFile: ButtonsFile = { version: 1, buttons: [{ type: "command", command: "gh pr list" }] };
 
-    const project = resolveButtons(projectFile, [], "project");
-    const global = resolveButtons(globalFile, [], "global");
+    const project = resolveButtons(projectFile, []);
+    const global = resolveButtons(globalFile, []);
 
-    assert.equal(project[0].source, "project");
     assert.equal(project[0].index, 0);
-    assert.equal(global[0].source, "global");
     assert.equal(global[0].index, 0);
   });
 
@@ -76,8 +72,8 @@ describe("resolveButtons", () => {
       version: 1,
       buttons: [{ type: "command", command: "b" }],
     };
-    const beforeId = resolveButtons(before, [], "project")[1].id;
-    const afterId = resolveButtons(after, [], "project")[0].id;
+    const beforeId = resolveButtons(before, [])[1].id;
+    const afterId = resolveButtons(after, [])[0].id;
     assert.equal(beforeId, afterId);
   });
 });

@@ -67,7 +67,7 @@ function renderScanSection(state: WebviewState): string {
     return `<section class="scan">${title}<div class="muted">Open a folder to scan for scripts.</div></section>`;
   }
   if (state.discovered.length === 0) {
-    return `<section class="scan">${title}<div class="muted">No package.json or Makefile scripts found.</div></section>`;
+    return `<section class="scan">${title}<div class="muted">No scripts found in the enabled script file types.</div></section>`;
   }
 
   const generateCta = !state.projectFileExists

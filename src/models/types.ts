@@ -33,7 +33,6 @@ export interface ButtonsFile {
 
 /** A button resolved to its executable form, plus UI bookkeeping. */
 export interface ResolvedButton {
-  source: ButtonsSource;
   /** Index into the source file's `buttons` array. */
   index: number;
   /** Stable identity, independent of array position (script key or command content). */
@@ -78,7 +77,6 @@ export interface WebviewState {
 }
 
 export type PanelActionMessage =
-  | { type: "ready" }
   | { type: "rescan" }
   | { type: "toggle-script"; file: string; script: string; checked: boolean }
   | { type: "toggle-file"; file: string; checked: boolean }

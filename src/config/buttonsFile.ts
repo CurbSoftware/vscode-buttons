@@ -3,7 +3,7 @@
  * module is directly unit-testable with the Node.js built-in test runner.
  */
 
-import type { ButtonsFile, ButtonsSource, ButtonEntry, CommandButton, ResolvedButton, ScriptButton } from "../models/types";
+import type { ButtonsFile, ButtonEntry, CommandButton, ResolvedButton, ScriptButton } from "../models/types";
 import { scriptCommand, scriptKey, type DiscoveredScript, type PackageManager } from "../scanner/types";
 
 export function emptyButtonsFile(): ButtonsFile {
@@ -32,7 +32,7 @@ function normalizePackageManager(value: unknown): PackageManager {
   return typeof value === "string" && PACKAGE_MANAGERS.has(value) ? (value as PackageManager) : "npm";
 }
 
-export type ParseResult = { ok: true; file: ButtonsFile } | { ok: false; error: string };
+type ParseResult = { ok: true; file: ButtonsFile } | { ok: false; error: string };
 
 /** Parse `.buttons.json` text into a ButtonsFile, with clear validation errors. */
 export function parseButtonsFile(text: string): ParseResult {
@@ -184,7 +184,7 @@ export function buttonId(entry: ButtonEntry): string {
 }
 
 /** Resolve a file's entries into executable rows, recomputing script commands from the current scan. */
-export function resolveButtons(file: ButtonsFile, discovered: DiscoveredScript[], source: ButtonsSource): ResolvedButton[] {
+export function resolveButtons(file: ButtonsFile, discovered: DiscoveredScript[]): ResolvedButton[] {
   const byKey = new Map<string, DiscoveredScript>();
   for (const d of discovered) {
     byKey.set(scriptKey(d), d);
@@ -193,16 +193,15 @@ export function resolveButtons(file: ButtonsFile, discovered: DiscoveredScript[]
   return file.buttons.map((entry, index): ResolvedButton => {
     const id = buttonId(entry);
     if (entry.type === "command") {
-      return { source, index, id, kind: "command", command: entry.command, note: entry.note, entry };
+      return { index, id, kind: "command", command: entry.command, note: entry.note, entry };
     }
 
     const found = byKey.get(scriptKey(entry));
     if (found) {
-      return { source, index, id, kind: "script", command: found.command, note: entry.note, entry, missing: false };
+      return { index, id, kind: "script", command: found.command, note: entry.note, entry, missing: false };
     }
 
     return {
-      source,
       index,
       id,
       kind: "script",
