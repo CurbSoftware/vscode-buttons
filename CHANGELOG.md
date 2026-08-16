@@ -4,6 +4,16 @@ All notable changes to the Buttons extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.1.1] - Unreleased
+
+### Added
+
+- `RELEASING.md` — release guide covering one-time registry setup and the release checklist.
+
+### Changed
+
+- Publish workflow now fails fast when the release tag doesn't match the `package.json` version.
+
 ## [1.1.0] - 2026-08-15
 
 ### Added
