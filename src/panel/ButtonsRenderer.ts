@@ -70,8 +70,9 @@ function renderScanSection(state: WebviewState): string {
     return `<section class="scan">${title}<div class="muted">No scripts found in the enabled script file types.</div></section>`;
   }
 
+  const rootCount = state.discovered.filter((d) => d.packageDir === "").length;
   const generateCta = !state.projectFileExists
-    ? `<div class="generate-cta"><button class="btn primary" data-action="generate"><span class="codicon codicon-wand"></span> Generate buttons file</button><span class="muted">Include all ${state.discovered.length} scripts as project buttons.</span></div>`
+    ? `<div class="generate-cta"><button class="btn primary" data-action="generate"><span class="codicon codicon-wand"></span> Generate buttons file</button><span class="muted">Include ${rootCount} root-level scripts as project buttons.</span></div>`
     : "";
 
   const selectedKeys = new Set(state.selectedKeys);
@@ -80,7 +81,13 @@ function renderScanSection(state: WebviewState): string {
     .map((group) => renderScanGroup(group, selectedKeys, !state.projectFileExists))
     .join("");
 
-  return `<section class="scan">${title}${generateCta}<div class="scan-list">${rows}</div></section>`;
+  const allSelected = groups.length > 0 && groups.every((g) => g.fileChecked);
+  const bulkToggle = state.projectFileExists
+    ? `<button class="btn" data-action="toggle-all" data-checked="${!allSelected}">${allSelected ? "Unselect all" : "Select all"}</button>`
+    : "";
+  const titleWithBulk = `<div class="section-title">Project scripts ${bulkToggle}</div>`;
+
+  return `<section class="scan">${titleWithBulk}${generateCta}<div class="scan-list">${rows}</div></section>`;
 }
 
 function renderScanRow(script: DiscoveredScript, checked: boolean, disabled: boolean): string {
@@ -563,6 +570,7 @@ document.addEventListener("click", (event) => {
     }
     case "rescan": post({ type: "rescan" }); break;
     case "generate": post({ type: "generate" }); break;
+    case "toggle-all": post({ type: "toggle-all", checked: el.dataset.checked === "true" }); break;
     case "set-tab": post({ type: "set-tab", tab: el.dataset.tab }); break;
     case "open-project-file": post({ type: "open-project-file" }); break;
     case "open-global-file": post({ type: "open-global-file" }); break;

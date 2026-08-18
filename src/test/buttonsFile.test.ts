@@ -12,6 +12,7 @@ import {
   removeScriptButton,
   removeScriptFile,
   serializeButtonsFile,
+  setAllScripts,
   setButtonNote,
   updateCommandButton,
 } from "../config/buttonsFile";
@@ -137,6 +138,23 @@ describe("generateButtonsFile", () => {
 
   it("returns an empty file for no discovered scripts", () => {
     assert.deepEqual(generateButtonsFile([]), { version: 1, buttons: [] });
+  });
+});
+
+describe("setAllScripts", () => {
+  it("selects all discovered scripts, skipping keys already present", () => {
+    const base = addScriptButton(emptyButtonsFile(), script());
+    const file = setAllScripts(base, [script(), script({ file: "Makefile", script: "build", command: "make build", packageManager: "make", packageDir: "" })], true);
+    assert.deepEqual(file.buttons, [
+      { type: "script", file: "package.json", script: "dev", packageDir: "", packageManager: "pnpm" },
+      { type: "script", file: "Makefile", script: "build", packageDir: "", packageManager: "make" },
+    ]);
+  });
+
+  it("unselecting removes all script entries but keeps command buttons", () => {
+    const base = addCommandButton(addScriptButton(emptyButtonsFile(), script()), "docker ps");
+    const file = setAllScripts(base, [script()], false);
+    assert.deepEqual(file.buttons, [{ type: "command", command: "docker ps" }]);
   });
 });
 

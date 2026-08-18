@@ -2,7 +2,7 @@
   "name": "buttons-vscode",
   "displayName": "Buttons",
   "description": "Scan your project's package.json, Makefile, composer.json, and justfile scripts into a clickable command launcher - run, copy, and manage commands in VS Code.",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "publisher": "CurbSoftware",
   "license": "MIT",
   "pricing": "Free",

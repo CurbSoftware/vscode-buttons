@@ -11,6 +11,7 @@ import {
   removeButton,
   removeScriptButton,
   removeScriptFile,
+  setAllScripts,
   setButtonNote,
   updateCommandButton,
 } from "./config/buttonsFile";
@@ -305,6 +306,22 @@ async function handlePanelMessage(panelId: PanelId, message: PanelActionMessage)
       const next = message.checked
         ? addScriptFile(state.projectFile, inFile)
         : removeScriptFile(state.projectFile, message.file);
+      await writeButtonsFile(fileUri, next);
+      await refreshState(true);
+      await refreshWebview();
+      return;
+    }
+
+    case "toggle-all": {
+      const fileUri = getProjectButtonsFileUri();
+      if (!fileUri) {
+        return;
+      }
+      const state = await refreshState();
+      if (!state.projectFileExists) {
+        return;
+      }
+      const next = setAllScripts(state.projectFile, state.discovered, message.checked);
       await writeButtonsFile(fileUri, next);
       await refreshState(true);
       await refreshWebview();

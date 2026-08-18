@@ -4,6 +4,12 @@ All notable changes to the Buttons extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.2.0] - Unreleased
+
+### Added
+
+- Select all / Unselect all toggle for the Project scripts tab, alongside the existing per-file and per-script checkboxes.
+
 ## [1.1.1] - 2026-08-18
 
 ### Added
