@@ -116,7 +116,7 @@ describe("emptyButtonsFile", () => {
 });
 
 describe("generateButtonsFile", () => {
-  it("maps every discovered script to a script entry", () => {
+  it("maps every root-level script to a script entry", () => {
     const file = generateButtonsFile([
       script(),
       script({ file: "Makefile", script: "build", command: "make build", packageManager: "make", packageDir: "" }),
@@ -125,6 +125,14 @@ describe("generateButtonsFile", () => {
       { type: "script", file: "package.json", script: "dev", packageDir: "", packageManager: "pnpm" },
       { type: "script", file: "Makefile", script: "build", packageDir: "", packageManager: "make" },
     ]);
+  });
+
+  it("excludes scripts from nested files", () => {
+    const file = generateButtonsFile([
+      script(),
+      script({ file: "packages/app/package.json", script: "dev", command: "npm --prefix packages/app run dev", packageDir: "packages/app" }),
+    ]);
+    assert.deepEqual(file.buttons, [{ type: "script", file: "package.json", script: "dev", packageDir: "", packageManager: "pnpm" }]);
   });
 
   it("returns an empty file for no discovered scripts", () => {

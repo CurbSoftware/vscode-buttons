@@ -4,7 +4,7 @@ All notable changes to the Buttons extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [1.1.1] - Unreleased
+## [1.1.1] - 2026-08-18
 
 ### Added
 
@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
+- Generate now activates only scripts from root-level script files by default; nested files remain available, unchecked, in the Project scripts tab.
 - Publish workflow now fails fast when the release tag doesn't match the `package.json` version.
 - `npm run package` now writes the `.vsix` into `release/` instead of the project root.
 

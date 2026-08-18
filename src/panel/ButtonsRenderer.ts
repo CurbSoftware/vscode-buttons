@@ -125,7 +125,7 @@ function renderButtonsPage(state: WebviewState, variant: RenderVariant): string 
   const projectHint = !state.hasWorkspace
     ? "No project buttons yet. Open a folder to get started."
     : !state.projectFileExists
-      ? "No project buttons yet. Click Generate to include all discovered scripts."
+      ? "No project buttons yet. Click Generate to include scripts from root-level files."
       : "No project buttons yet. Add a command or enable scripts in the Project scripts tab.";
   return `${renderTable(state, "project", "Project buttons", undefined, state.projectButtons, state.hasWorkspace, projectHint, variant)}
 ${renderTable(state, "global", "Global buttons", "Applies to every project", state.globalButtons, true, "No global buttons yet. Add a command to use across all projects.", variant)}`;
@@ -198,7 +198,7 @@ function renderDisplayRow(source: ButtonsSource, button: ResolvedButton): string
       ? `<span class="badge">${escapeHtml(button.entry.file)}</span>`
       : "";
   const missingBadge = button.missing ? `<span class="badge missing">not found</span>` : "";
-  const note = button.note ? escapeHtml(button.note) : '<span class="muted">—</span>';
+  const note = button.note ? escapeHtml(button.note) : "";
   const editLabel = button.kind === "script" ? "Note" : "Edit";
 
   const runActions = button.missing

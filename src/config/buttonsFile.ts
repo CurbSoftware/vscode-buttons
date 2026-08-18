@@ -10,9 +10,9 @@ export function emptyButtonsFile(): ButtonsFile {
   return { version: 1, buttons: [] };
 }
 
-/** Build an initial project file that includes every discovered script. */
+/** Build an initial project file that includes scripts from root-level files only. */
 export function generateButtonsFile(discovered: DiscoveredScript[]): ButtonsFile {
-  return { version: 1, buttons: discovered.map((s) => toScriptButton(s)) };
+  return { version: 1, buttons: discovered.filter((s) => s.packageDir === "").map((s) => toScriptButton(s)) };
 }
 
 function toScriptButton(s: DiscoveredScript, note?: string): ScriptButton {
