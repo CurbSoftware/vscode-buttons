@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 - Select all / Unselect all toggle for the Project scripts tab, alongside the existing per-file and per-script checkboxes.
 
+### Fixed
+
+- `npm run package` now creates `release/` before packaging, fixing a failure on fresh clones.
+
 ## [1.1.1] - 2026-08-18
 
 ### Added
