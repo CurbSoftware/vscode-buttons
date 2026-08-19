@@ -9,6 +9,7 @@ import {
   hasScriptButton,
   parseButtonsFile,
   removeButton,
+  resolveButtons,
   removeScriptButton,
   removeScriptFile,
   serializeButtonsFile,
@@ -31,6 +32,35 @@ function script(overrides: Partial<DiscoveredScript> = {}): DiscoveredScript {
 }
 
 describe("parseButtonsFile", () => {
+  it("round-trips shell and python script entries unchanged", () => {
+    const result = parseButtonsFile(
+      JSON.stringify({
+        version: 1,
+        buttons: [
+          { type: "script", file: "scripts/deploy.sh", script: "scripts/deploy.sh", packageManager: "shell", packageDir: "scripts" },
+          { type: "script", file: "venv", script: "Activate venv", packageManager: "python", packageDir: "" },
+        ],
+      }),
+    );
+    if (!result.ok) {
+      assert.fail(`expected ok: ${result.error}`);
+    }
+    assert.deepEqual(result.file.buttons[0], {
+      type: "script",
+      file: "scripts/deploy.sh",
+      script: "scripts/deploy.sh",
+      packageManager: "shell",
+      packageDir: "scripts",
+    });
+    assert.deepEqual(result.file.buttons[1], {
+      type: "script",
+      file: "venv",
+      script: "Activate venv",
+      packageManager: "python",
+      packageDir: "",
+    });
+  });
+
   it("parses a valid command entry", () => {
     const result = parseButtonsFile(JSON.stringify({ version: 1, buttons: [{ type: "command", command: "docker ps", note: "list" }] }));
     if (!result.ok) {
@@ -272,5 +302,30 @@ describe("removeScriptFile", () => {
   it("returns the same object when no entries match", () => {
     const base = addScriptButton(emptyButtonsFile(), script());
     assert.equal(removeScriptFile(base, "Makefile"), base);
+  });
+});
+
+describe("resolveButtons", () => {
+  it("recomputes shell and python commands from the live scan", () => {
+    const file = generateButtonsFile([
+      script({ file: "deploy.sh", script: "deploy.sh", command: "bash deploy.sh", packageManager: "shell", packageDir: "" }),
+      script({ file: "app.py", script: "app.py", command: "python app.py", packageManager: "python", packageDir: "" }),
+    ]);
+    const resolved = resolveButtons(file, [
+      script({ file: "deploy.sh", script: "deploy.sh", command: "bash deploy.sh", packageManager: "shell", packageDir: "" }),
+      script({ file: "app.py", script: "app.py", command: "python app.py", packageManager: "python", packageDir: "" }),
+    ]);
+    assert.equal(resolved[0].command, "bash deploy.sh");
+    assert.equal(resolved[0].missing, false);
+    assert.equal(resolved[1].command, "python app.py");
+  });
+
+  it("marks vanished venv buttons missing with a command fallback", () => {
+    const file = generateButtonsFile([
+      script({ file: "venv", script: "Activate venv", command: "source venv/bin/activate", packageManager: "python", packageDir: "" }),
+    ]);
+    const resolved = resolveButtons(file, []);
+    assert.equal(resolved[0].missing, true);
+    assert.equal(resolved[0].command, 'python "Activate venv"');
   });
 });

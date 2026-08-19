@@ -26,7 +26,17 @@ function toScriptButton(s: DiscoveredScript, note?: string): ScriptButton {
   };
 }
 
-const PACKAGE_MANAGERS: ReadonlySet<string> = new Set(["npm", "pnpm", "yarn", "bun", "make", "composer", "just"]);
+const PACKAGE_MANAGERS: ReadonlySet<string> = new Set([
+  "npm",
+  "pnpm",
+  "yarn",
+  "bun",
+  "make",
+  "composer",
+  "just",
+  "shell",
+  "python",
+]);
 
 function normalizePackageManager(value: unknown): PackageManager {
   return typeof value === "string" && PACKAGE_MANAGERS.has(value) ? (value as PackageManager) : "npm";

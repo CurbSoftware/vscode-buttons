@@ -15,11 +15,30 @@ A buttons file failed to parse (invalid JSON or a validation error). Buttons sur
 
 ## A script shows "not found"
 
-The script reference points at a script that no longer exists in the scan. This happens when a script is renamed or deleted, or its file type was disabled.
+The script reference points at a script that no longer exists in the scan. This happens when a script is renamed or deleted, its file type was disabled, or its directory is outside the scan scope.
 
 - Run **Rescan** (or `Buttons: Rescan Scripts`) to refresh.
 - If the script was renamed, check the newly-discovered script in the **Project scripts** tab.
+- If the script lives in a directory that is no longer scanned, add it back as a scan directory.
 - If you removed it deliberately, uncheck or remove the stale button.
+
+## Nested scripts are missing
+
+Since 2.0, only the project root's top level is scanned by default. Add the parent directory in the **Scan directories** card (or [`buttons.scanDirectories`](configuration.md#buttonsscandirectories)) - switch **recursive** on for nested packages. See [Scan directories](scanning.md#scan-directories).
+
+## A virtual environment isn't detected
+
+- Buttons only recognizes a venv named `venv` or `.venv`, located in the project root or the top level of a scan directory. Check the name.
+- Run **Rescan** (or `Buttons: Rescan Scripts`) - a newly created venv is picked up on rescan or file change.
+- Make sure `python` is enabled in [`buttons.scriptFiles`](configuration.md#buttonsscriptfiles).
+
+## Activating a venv fails on Windows
+
+PowerShell blocks `.ps1` scripts under a restricted execution policy. Either run the `activate.bat` variant instead, or allow local scripts once:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
 
 ## Commands aren't updating after I edit a file
 

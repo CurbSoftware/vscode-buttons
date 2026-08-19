@@ -90,4 +90,28 @@ describe("groupScriptsByFile", () => {
     assert.equal(g.selectedCount, 1);
     assert.equal(g.fileChecked, true);
   });
+
+  it("gives each standalone .sh file its own group", () => {
+    const groups = groupScriptsByFile(
+      [
+        script({ file: "deploy.sh", script: "deploy.sh", command: "bash deploy.sh", packageManager: "shell", packageDir: "" }),
+        script({ file: "scripts/build.sh", script: "scripts/build.sh", command: "bash scripts/build.sh", packageManager: "shell", packageDir: "scripts" }),
+      ],
+      [],
+    );
+    assert.deepEqual(groups.map((g) => g.file), ["deploy.sh", "scripts/build.sh"]);
+  });
+
+  it("groups venv buttons under the venv path", () => {
+    const venvEntry = (name: string, command: string): DiscoveredScript =>
+      script({ file: "venv", script: name, command, packageManager: "python", packageDir: "" });
+    const [g] = groupScriptsByFile(
+      [venvEntry("Activate venv", "source venv/bin/activate"), venvEntry("Deactivate", "deactivate")],
+      ["venv:Activate venv"],
+    );
+    assert.equal(g.file, "venv");
+    assert.equal(g.scripts.length, 2);
+    assert.equal(g.selectedCount, 1);
+    assert.equal(g.fileIndeterminate, true);
+  });
 });

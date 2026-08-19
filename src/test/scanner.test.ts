@@ -1,10 +1,13 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  dirOf,
+  fileEntryScript,
   isScriptFileType,
   parseJustfileText,
   parseMakefileText,
   parsePackageJsonText,
+  PYTHON_ENTRY_FILES,
   SCRIPT_FILE_TYPES,
   scriptCommand,
   scriptFileTypeOf,
@@ -41,13 +44,69 @@ describe("scriptCommand", () => {
     assert.equal(scriptCommand("composer", "test"), "composer test");
     assert.equal(scriptCommand("just", "build"), "just build");
   });
+
+  it("runs file entries through their interpreter", () => {
+    assert.equal(scriptCommand("shell", "scripts/deploy.sh"), "bash scripts/deploy.sh");
+    assert.equal(scriptCommand("python", "app.py"), "python app.py");
+  });
+
+  it("quotes file-entry arguments containing whitespace", () => {
+    assert.equal(scriptCommand("shell", "my script.sh"), `bash "my script.sh"`);
+    assert.equal(scriptCommand("python", "app file.py"), `python "app file.py"`);
+  });
+});
+
+describe("dirOf", () => {
+  it("returns the directory portion, empty for root-level paths", () => {
+    assert.equal(dirOf("package.json"), "");
+    assert.equal(dirOf("scripts/deploy.sh"), "scripts");
+    assert.equal(dirOf("packages/api/.venv"), "packages/api");
+  });
+});
+
+describe("fileEntryScript", () => {
+  it("builds a bash entry keyed on the relative path, with a packageDir-relative command", () => {
+    const entry = fileEntryScript("deploy.sh", "scripts/deploy.sh");
+    assert.deepEqual(entry, {
+      file: "scripts/deploy.sh",
+      script: "scripts/deploy.sh",
+      command: "bash deploy.sh",
+      packageManager: "shell",
+      packageDir: "scripts",
+      icon: "terminal-bash",
+    });
+  });
+
+  it("builds a python entry for each Python entry file", () => {
+    for (const name of PYTHON_ENTRY_FILES) {
+      const entry = fileEntryScript(name, `services/api/${name}`);
+      assert.equal(entry?.command, `python ${name}`);
+      assert.equal(entry?.packageManager, "python");
+      assert.equal(entry?.packageDir, "services/api");
+    }
+  });
+
+  it("returns null for other files", () => {
+    assert.equal(fileEntryScript("helper.py", "utils/helper.py"), null);
+    assert.equal(fileEntryScript("notes.txt", "notes.txt"), null);
+    assert.equal(fileEntryScript("package.json", "package.json"), null);
+  });
 });
 
 describe("script file types", () => {
   it("recognizes supported file types", () => {
-    assert.deepEqual(SCRIPT_FILE_TYPES, ["package.json", "Makefile", "composer.json", "justfile"]);
+    assert.deepEqual(SCRIPT_FILE_TYPES, [
+      "package.json",
+      "Makefile",
+      "composer.json",
+      "justfile",
+      "shell",
+      "python",
+    ]);
     assert.equal(isScriptFileType("package.json"), true);
     assert.equal(isScriptFileType("justfile"), true);
+    assert.equal(isScriptFileType("shell"), true);
+    assert.equal(isScriptFileType("python"), true);
     assert.equal(isScriptFileType("pyproject.toml"), false);
   });
 
@@ -55,6 +114,12 @@ describe("script file types", () => {
     assert.equal(scriptFileTypeOf({ file: "package.json" }), "package.json");
     assert.equal(scriptFileTypeOf({ file: "packages/api/composer.json" }), "composer.json");
     assert.equal(scriptFileTypeOf({ file: "Makefile" }), "Makefile");
+    assert.equal(scriptFileTypeOf({ file: "scripts/deploy.sh" }), "shell");
+    assert.equal(scriptFileTypeOf({ file: "app.py" }), "python");
+    assert.equal(scriptFileTypeOf({ file: "services/api/main.py" }), "python");
+    assert.equal(scriptFileTypeOf({ file: "venv" }), "python");
+    assert.equal(scriptFileTypeOf({ file: "packages/api/.venv" }), "python");
+    assert.equal(scriptFileTypeOf({ file: "unknown.lol" }), "package.json");
   });
 });
 

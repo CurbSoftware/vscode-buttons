@@ -1,3 +1,4 @@
+import type { ScanDirectory } from "../scanner/scanScope";
 import type { DiscoveredScript, PackageManager } from "../scanner/types";
 
 export type ButtonsSource = "project" | "global";
@@ -74,6 +75,8 @@ export interface WebviewState {
   projectFileExists: boolean;
   /** Which tab this panel is currently showing. */
   activeTab: ButtonsTab;
+  /** Normalized `buttons.scanDirectories` setting (root is implicit and not listed). */
+  scanDirectories: ScanDirectory[];
 }
 
 export type PanelActionMessage =
@@ -95,4 +98,7 @@ export type PanelActionMessage =
   | { type: "open-global-file" }
   | { type: "open-settings" }
   | { type: "generate" }
+  | { type: "add-scan-dir" }
+  | { type: "remove-scan-dir"; path: string }
+  | { type: "toggle-scan-dir-recursive"; path: string; recursive: boolean }
   | { type: "set-tab"; tab: ButtonsTab };

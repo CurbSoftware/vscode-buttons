@@ -1,6 +1,6 @@
 # Buttons
 
-**Buttons** is a VS Code and VSCodium extension that scans your project for scripts - `package.json` scripts, `Makefile` targets, PHP `composer.json` scripts, and `justfile` recipes, including nested packages in monorepos - and turns them into a clickable command launcher.
+**Buttons** is a VS Code and VSCodium extension that scans your project for scripts - `package.json` scripts, `Makefile` targets, PHP `composer.json` scripts, `justfile` recipes, shell `.sh` files, and Python entry files - and turns them into a clickable command launcher. You choose the directories to scan (the project root is always included); virtual environments get activate / deactivate / install-requirements buttons.
 
 Run any command in the current or a new integrated terminal, copy it to the clipboard, add your own custom commands, and manage everything from a single panel - no more digging through `package.json` or remembering the exact flags.
 
@@ -43,13 +43,18 @@ Detailed guides live in the [`docs/`](docs/index.md) directory:
 
 ### Generate, don't assume
 
-Opening a project **never** writes a file. Click **Generate** to scan the project and create the initial `.buttons.json` with every discovered script. After that, **Rescan** keeps it current without losing your choices (see [Generate vs Rescan](#generate-vs-rescan)).
+Opening a project **never** writes a file. Click **Generate** to scan the project and create the initial `.buttons.json` with the root-level discovered scripts. After that, **Rescan** keeps it current without losing your choices (see [Generate vs Rescan](#generate-vs-rescan)).
+
+### Scan directories
+
+The **project root is always scanned** at its top level. Add more directories in the **Project scripts** tab - each with its own **recursive** toggle - via the **Scan directories** card and your OS folder picker. The list lives in the `buttons.scanDirectories` workspace setting, so it is shared with the project (see [Script file types](#script-file-types) and [docs/scanning.md](docs/scanning.md)).
 
 ### Script scanning
 
-- Scans `package.json`, `Makefile`, `composer.json`, and `justfile` (see [Script file types](#script-file-types)).
-- Supports **monorepos** - nested `package.json` files under `packages/`, `apps/`, etc. are found and scoped to their own directory.
-- Skips installed packages, VCS, and build output (`node_modules`, `dist`, `build`, `coverage`, `.git`, `.venv`, `vendor`, and more).
+- Scans `package.json`, `Makefile`, `composer.json`, and `justfile`, plus standalone `.sh` files and common Python entry files (`app.py`, `main.py`, `manage.py`, `run.py`, `server.py`) - see [Script file types](#script-file-types).
+- Offers **venv buttons** - `Activate venv`, `Deactivate`, and `Install requirements` - when a `venv/` or `.venv/` directory is detected.
+- Supports **monorepos** - add `packages/` (or `apps/`, …) as a recursive scan directory and nested manifests are found and scoped to their own directory.
+- Skips installed packages, VCS, and build output (`node_modules`, `dist`, `build`, `coverage`, `.git`, `vendor`, and more).
 
 ### Package-manager aware
 
@@ -95,7 +100,7 @@ A `~/.buttons.json` file holds commands that apply to **every** project, so your
 
 ### Auto-update
 
-A **Rescan** button plus automatic file watchers keep commands current when `package.json`, `Makefile`, `composer.json`, `justfile`, or your buttons files change.
+A **Rescan** button plus automatic file watchers keep commands current when `package.json`, `Makefile`, `composer.json`, `justfile`, `.sh` or Python entry files, `requirements.txt`, or your buttons files change.
 
 ---
 
@@ -104,7 +109,7 @@ A **Rescan** button plus automatic file watchers keep commands current when `pac
 1. Install from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=CurbSoftware.buttons-vscode) or [Open VSX](https://open-vsx.org/extension/CurbSoftware/buttons-vscode).
 2. Open a folder/project in VS Code.
 3. Click the **Buttons** icon in the Activity Bar (or the editor title-bar icon).
-4. Click **Generate** to scan the project and create `.buttons.json` with every discovered script.
+4. Click **Generate** to scan the project and create `.buttons.json` with the root-level discovered scripts.
 5. Fine-tune in the **Project scripts** tab, then use **Run**, **New Terminal**, or **Copy** on any row - or **+ Add command** for a custom command.
 
 ---
@@ -122,7 +127,7 @@ Each row (or card, in the sidebar) shows the command, an optional note, a file b
 
 ### The **Project scripts** tab
 
-A list of every discovered script. Checking a box adds it as a project button; unchecking removes it. Before you **Generate** a file, the boxes are disabled (there's nothing to edit yet) and a **Generate buttons file** call-to-action is shown.
+A **Scan directories** card (the always-on project root plus the directories you've added, each with a recursive toggle), and a list of every discovered script grouped by file. Checking a box adds it as a project button; unchecking removes it. Before you **Generate** a file, the boxes are disabled (there's nothing to edit yet) and a **Generate buttons file** call-to-action is shown.
 
 ### Adding a custom command
 
@@ -138,7 +143,7 @@ Custom commands are stored verbatim and are never rewritten by scanning.
 
 Buttons distinguishes two scan actions so you never lose work:
 
-- **Generate** - creates the project's `.buttons.json` from scratch, including **every** discovered script. Use it the first time you open a project (it only appears when no file exists yet).
+- **Generate** - creates the project's `.buttons.json` from scratch, including **every root-level** discovered script. Use it the first time you open a project (it only appears when no file exists yet).
 - **Rescan** - re-runs the scanner against the *existing* file. It keeps your included scripts and notes, recomputes their commands, marks scripts that no longer exist as "not found", and leaves newly-discovered scripts unchecked for you to opt in.
 
 In other words: **Generate** seeds the file; **Rescan** updates it in place without overriding your custom commands or selections.
@@ -147,14 +152,18 @@ In other words: **Generate** seeds the file; **Rescan** updates it in place with
 
 ## Script file types
 
-The **Buttons: Script Files** setting controls which files are scanned. `package.json` is included by default; the others are opt-in checkboxes:
+The **Buttons: Script Files** setting controls which file types are scanned. `package.json`, `shell`, and `python` are included by default; the others are opt-in checkboxes:
 
-| File | Ecosystem | Run as |
+| Type | Ecosystem | Run as |
 | --- | --- | --- |
 | `package.json` | Node.js / TypeScript | `pnpm dev`, `npm run dev`, `yarn test`, `bun dev` |
 | `Makefile` | C/C++, Go, generic | `make build` |
 | `composer.json` | PHP | `composer test` |
 | `justfile` | Universal task runner | `just build` |
+| `shell` | `.sh` files | `bash deploy.sh` |
+| `python` | `app.py`, `main.py`, `manage.py`, `run.py`, `server.py` + venv buttons | `python app.py`, `source venv/bin/activate` |
+
+Commands run with the terminal's working directory set to the script file's directory, and their paths are relative to that directory - `scripts/migrate.sh` becomes `bash migrate.sh` inside `scripts/`.
 
 Only these formats are parsed. Other ecosystems (Python `pyproject.toml`, Rust `Cargo.toml`, .NET, etc.) aren't auto-parsed - add their commands with **+ Add command** instead.
 
@@ -164,12 +173,13 @@ Disabling a file type stops *offering* its scripts in the **Project scripts** ta
 
 ## Settings
 
-Buttons contributes two settings, both configurable at **User** and **Workspace** scope:
+Buttons contributes three settings, configurable at **User** and **Workspace** scope:
 
 | Setting | Type | Default | Description |
 | --- | --- | --- | --- |
 | `buttons.textSize` | `string` (`default` / `plus2` / `plus4`) | `default` | Text size in the Buttons UI, relative to VS Code's font size. |
-| `buttons.scriptFiles` | `string[]` (checkbox list) | `["package.json"]` | Which script files to scan for commands. |
+| `buttons.scriptFiles` | `string[]` (checkbox list) | `["package.json", "shell", "python"]` | Which script file types to scan for commands. |
+| `buttons.scanDirectories` | `{ path, recursive }[]` | `[]` | Extra directories to scan; the project root is always scanned at its top level. |
 
 You can open the settings page from the gear icon in the panel header, or via **Command Palette → Preferences: Open Settings** and searching "Buttons".
 
@@ -190,8 +200,9 @@ The file has a flat `buttons` array. Each entry is either a **script reference**
   "buttons": [
     { "type": "script", "file": "package.json", "script": "dev", "packageDir": "", "packageManager": "pnpm", "note": "Vite dev server" },
     { "type": "script", "file": "packages/api/package.json", "script": "start", "packageDir": "packages/api", "packageManager": "pnpm" },
-    { "type": "script", "file": "Makefile", "script": "build", "packageDir": "", "packageManager": "make" },
-    { "type": "script", "file": "composer.json", "script": "test", "packageDir": "", "packageManager": "composer" },
+    { "type": "script", "file": "deploy.sh", "script": "deploy.sh", "packageDir": "", "packageManager": "shell" },
+    { "type": "script", "file": "app.py", "script": "app.py", "packageDir": "", "packageManager": "python" },
+    { "type": "script", "file": "venv", "script": "Activate venv", "packageDir": "", "packageManager": "python" },
     { "type": "command", "command": "docker ps", "note": "List running containers" }
   ]
 }
@@ -203,9 +214,9 @@ The file has a flat `buttons` array. Each entry is either a **script reference**
 | --- | --- |
 | `type` | Always `"script"`. |
 | `file` | The script file, relative to the workspace root (e.g. `package.json`, `packages/api/package.json`). |
-| `script` | The script/target name (e.g. `dev`, `build`). |
+| `script` | The script/target name (e.g. `dev`, `build`). For standalone `.sh` and Python entry files this is the file's relative path. |
 | `packageDir` | The directory of the script file relative to the workspace root (empty string = root). This is where the terminal's working directory is set when you run it. |
-| `packageManager` | One of `npm`, `pnpm`, `yarn`, `bun`, `make`, `composer`, `just`. |
+| `packageManager` | One of `npm`, `pnpm`, `yarn`, `bun`, `make`, `composer`, `just`, `shell`, `python`. |
 | `note` | Optional human-readable note. |
 
 ### Command entry fields
@@ -236,21 +247,31 @@ These commands are available in the Command Palette (Ctrl/Cmd+Shift+P):
 
 ## Monorepo & ignore behavior
 
-Buttons scans `package.json` / `composer.json` files in **nested directories**, so a monorepo like this is handled naturally:
+Buttons scans the **project root (top level) plus the directories you add** in the **Scan directories** card. For a monorepo, add the package roots as recursive scan directories - e.g. `apps` and `packages`:
 
 ```text
 project/
-├── package.json
-├── apps/
+├── package.json            <- always found (root)
+├── apps/                   <- add as recursive scan directory
 │   └── web/package.json
-├── packages/
+├── packages/               <- add as recursive scan directory
 │   └── api/package.json
-└── plugin/composer.json
+└── plugin/composer.json    <- found when "plugin" is a scan directory
+```
+
+```jsonc
+// .vscode/settings.json
+{
+  "buttons.scanDirectories": [
+    { "path": "apps", "recursive": true },
+    { "path": "packages", "recursive": true }
+  ]
+}
 ```
 
 Each script's terminal is opened with its working directory set to the script's `packageDir`, so `pnpm dev` in `apps/web` runs in the right place.
 
-These directories are excluded from the scan: `node_modules`, `.git`, `.hg`, `.svn`, `.next`, `.nuxt`, `.output`, `.cache`, `.turbo`, `.yarn`, `.pnpm-store`, `dist`, `build`, `out`, `coverage`, `vendor`, `.venv`, `venv`, `__pycache__`, `.vscode`, `.idea`, `target`, `.svelte-kit`, `.parcel-cache`, and any hidden (dot-prefixed) directory.
+Inside recursive scan directories, these directories are never entered: `node_modules`, `.git`, `.hg`, `.svn`, `.next`, `.nuxt`, `.output`, `.cache`, `.turbo`, `.yarn`, `.pnpm-store`, `dist`, `build`, `out`, `coverage`, `vendor`, `.venv`, `venv`, `__pycache__`, `.vscode`, `.idea`, `target`, `.svelte-kit`, `.parcel-cache`, and any hidden (dot-prefixed) directory.
 
 ---
 

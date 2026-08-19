@@ -25,6 +25,10 @@ A list of every script Buttons discovered, with a checkbox next to each:
 - **Check** a script to add it as a project button.
 - **Uncheck** a script to remove it.
 
+The tab also holds the **Scan directories** card, which lists the extra directories scanned on top of the always-scanned project root (top level only). Each row has a **recursive** toggle for scanning the directory's whole tree, and **Add folder** opens your OS folder picker. The card edits the [`buttons.scanDirectories`](configuration.md#buttonsscandirectories) workspace setting - see [Scan directories](scanning.md#scan-directories).
+
+Detected virtual environments (`venv/` or `.venv/`) also appear in this tab, grouped under the venv's path - see [Virtual environments](scanning.md#virtual-environments).
+
 Before you've generated a buttons file, the checkboxes are disabled and a **Generate buttons file** call-to-action is shown instead.
 
 ## Button actions
@@ -47,7 +51,7 @@ Every row (or card) offers the same actions:
 2. Enter the command (e.g. `docker ps`) and an optional note.
 3. Click **Save**.
 
-Custom commands are stored verbatim and are never rewritten by scanning. This is also how you run anything Buttons can't parse (see [Script scanning](scanning.md#script-file-types)).
+Custom commands are stored verbatim and are never rewritten by scanning. This is also how you run anything Buttons can't parse (see [Script scanning](scanning.md#what-is-discovered)).
 
 ## Text size
 

@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import type { ButtonsFile, RuntimeState } from "../models/types";
+import { normalizeScanDirectories, type ScanDirectory } from "../scanner/scanScope";
 import { scanWorkspaceScripts } from "../scanner/scriptScanner";
 import { isScriptFileType, scriptFileTypeOf, type ScriptFileType } from "../scanner/types";
 import { emptyButtonsFile, parseButtonsFile, resolveButtons, serializeButtonsFile } from "./buttonsFile";
@@ -26,8 +27,18 @@ export async function writeButtonsFile(uri: vscode.Uri, file: ButtonsFile): Prom
 
 /** Read the `buttons.scriptFiles` setting, returning the enabled (and valid) file types. */
 function getEnabledScriptFiles(): ScriptFileType[] {
-  const configured = vscode.workspace.getConfiguration("buttons").get<string[]>("scriptFiles") ?? ["package.json"];
+  const configured =
+    vscode.workspace.getConfiguration("buttons").get<string[]>("scriptFiles") ?? ["package.json", "shell", "python"];
   return configured.filter(isScriptFileType);
+}
+
+/**
+ * Read and normalize the `buttons.scanDirectories` setting. The setting is
+ * resource-scoped, so pass the workspace folder URI to honor folder-level
+ * overrides.
+ */
+export function getScanDirectories(resource?: vscode.Uri): ScanDirectory[] {
+  return normalizeScanDirectories(vscode.workspace.getConfiguration("buttons", resource).get("scanDirectories"));
 }
 
 /** Load project + global files, scan the workspace, and resolve both button lists. */
@@ -39,7 +50,7 @@ export async function loadRuntimeState(): Promise<RuntimeState> {
   const global = await readButtonsFile(globalUri);
 
   const workspaceUri = getWorkspaceFolderUri();
-  const allDiscovered = workspaceUri ? await scanWorkspaceScripts(workspaceUri) : [];
+  const allDiscovered = workspaceUri ? await scanWorkspaceScripts(workspaceUri, getScanDirectories(workspaceUri)) : [];
   const enabled = getEnabledScriptFiles();
   const discovered = allDiscovered.filter((d) => enabled.includes(scriptFileTypeOf(d)));
 

@@ -6,7 +6,11 @@ No. Script buttons are *references*, not copies. If you switch from `npm` to `pn
 
 ## Why does a button show "not found"?
 
-A script button becomes "not found" when its script can no longer be found in the scan - usually because the script was renamed or deleted, or its file type was disabled. Run **Rescan** to refresh. See [Troubleshooting](troubleshooting.md#a-script-shows-not-found).
+A script button becomes "not found" when its script can no longer be found in the scan - usually because the script was renamed or deleted, its file type was disabled, or its directory is no longer scanned. Run **Rescan** to refresh. See [Troubleshooting](troubleshooting.md#a-script-shows-not-found).
+
+## Why did my nested package scripts disappear after 2.0?
+
+Scanning is now directory-scoped: the project root is scanned at its top level only. Add the parent directory (e.g. `packages`) as a scan directory - recursive for nested packages - in the **Scan directories** card or [`buttons.scanDirectories`](configuration.md#buttonsscandirectories). See [Scan directories](scanning.md#scan-directories).
 
 ## I disabled a file type in settings - why are its buttons still there?
 
@@ -27,11 +31,15 @@ See [`.buttons.json` file format](file-format.md).
 
 ## Do I have to create the buttons file myself?
 
-No. Click **Generate** in the **Project scripts** tab and Buttons creates `<workspace root>/.buttons.json` for you, including every discovered script. Opening a project never writes a file on its own.
+No. Click **Generate** in the **Project scripts** tab and Buttons creates `<workspace root>/.buttons.json` for you, including every root-level script. Opening a project never writes a file on its own.
 
 ## Can I add a command that isn't in a script file?
 
 Yes - use **+ Add command** to add any literal command (e.g. `docker ps`). This is also how you run things from ecosystems Buttons doesn't parse. See [Using the panel](usage.md#adding-a-custom-command).
+
+## Can Buttons run .sh or Python files?
+
+Yes, since 2.0. `.sh` files run as `bash <path>`, and Python entry files (`app.py`, `main.py`, `manage.py`, `run.py`, `server.py`) run as `python <path>`. Both types are enabled by default. See [What is discovered](scanning.md#what-is-discovered).
 
 ## How is the package manager detected?
 
@@ -43,6 +51,6 @@ For monorepo scripts, the terminal's working directory is set to the script's `p
 
 ## What's the difference between Generate and Rescan?
 
-**Generate** creates the file from scratch with every script (first use). **Rescan** updates the existing file in place, preserving your inclusions and notes, marking missing scripts, and leaving new scripts unchecked. See [Generate vs Rescan](scanning.md#generate-vs-rescan).
+**Generate** creates the file from scratch with every root-level script (first use). **Rescan** updates the existing file in place, preserving your inclusions and notes, marking missing scripts, and leaving new scripts unchecked. See [Generate vs Rescan](scanning.md#generate-vs-rescan).
 
 [Back to index](index.md)

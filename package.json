@@ -1,8 +1,8 @@
 {
   "name": "buttons-vscode",
   "displayName": "Buttons",
-  "description": "Scan your project's package.json, Makefile, composer.json, and justfile scripts into a clickable command launcher - run, copy, and manage commands in VS Code.",
-  "version": "1.2.0",
+  "description": "Scan your project's scripts - package.json, Makefile, composer.json, justfile, shell, and Python files - into a clickable command launcher. Pick the directories to scan, run, copy, and manage commands in VS Code.",
+  "version": "2.0.0",
   "publisher": "CurbSoftware",
   "license": "MIT",
   "pricing": "Free",
@@ -28,6 +28,10 @@
     "task-runner",
     "terminal",
     "package.json",
+    "shell",
+    "bash",
+    "python",
+    "venv",
     "automation"
   ],
   "engines": {
@@ -126,15 +130,50 @@
               "package.json",
               "Makefile",
               "composer.json",
-              "justfile"
+              "justfile",
+              "shell",
+              "python"
+            ],
+            "enumDescriptions": [
+              "package.json scripts",
+              "Makefile targets",
+              "composer.json scripts",
+              "justfile recipes",
+              ".sh files in scan directories",
+              "Python entry files (app.py, main.py, ...) and venv buttons"
             ]
           },
           "default": [
-            "package.json"
+            "package.json",
+            "shell",
+            "python"
           ],
           "uniqueItems": true,
-          "description": "Script files to scan for runnable commands. package.json is included by default; enable others to scan them. Add unsupported file types as custom commands instead.",
+          "description": "Script file types to scan for runnable commands. shell covers .sh files; python covers Python entry files and venv activate/deactivate/install buttons.",
           "scope": "window"
+        },
+        "buttons.scanDirectories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Workspace-relative directory path."
+              },
+              "recursive": {
+                "type": "boolean",
+                "default": false,
+                "description": "Scan subdirectories too."
+              }
+            },
+            "required": [
+              "path"
+            ]
+          },
+          "default": [],
+          "description": "Extra directories to scan for scripts. The project root is always scanned at its top level.",
+          "scope": "resource"
         }
       }
     }

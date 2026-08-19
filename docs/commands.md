@@ -6,7 +6,7 @@ Buttons contributes these commands to the Command Palette (**Ctrl/Cmd+Shift+P**)
 | --- | --- | --- |
 | `Buttons: Open Panel` | `buttons.openPanel` | Focuses the Buttons sidebar in the Activity Bar. |
 | `Buttons: Open in Editor` | `buttons.openMainPanel` | Opens the full-width Buttons editor panel. Also available from the editor title-bar icon. |
-| `Buttons: Rescan Scripts` | `buttons.rescan` | Re-scans the workspace and reconciles the project scripts. |
+| `Buttons: Rescan Scripts` | `buttons.rescan` | Re-runs the scan (project root plus scan directories) and reconciles the project scripts. |
 | `Buttons: Open Project Buttons File` | `buttons.openProjectButtons` | Opens (and creates if needed) `<workspace root>/.buttons.json`. |
 | `Buttons: Open Global Buttons File` | `buttons.openGlobalButtons` | Opens (and creates if needed) `~/.buttons.json`. |
 

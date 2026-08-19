@@ -3,21 +3,73 @@
  * `vscode` import so it can be unit-tested with the Node.js built-in test runner.
  */
 
-export type PackageManager = "npm" | "pnpm" | "yarn" | "bun" | "make" | "composer" | "just";
+export type PackageManager = "npm" | "pnpm" | "yarn" | "bun" | "make" | "composer" | "just" | "shell" | "python";
 
-/** Script file formats the scanner understands. */
-export type ScriptFileType = "package.json" | "Makefile" | "composer.json" | "justfile";
+/** Manifest file basenames the scanner parses for named scripts. */
+export const MANIFEST_FILE_NAMES = ["package.json", "Makefile", "composer.json", "justfile"] as const;
 
-export const SCRIPT_FILE_TYPES: ScriptFileType[] = ["package.json", "Makefile", "composer.json", "justfile"];
+/** Python entry files offered as one-click buttons when discovered. */
+export const PYTHON_ENTRY_FILES = ["app.py", "main.py", "manage.py", "run.py", "server.py"] as const;
+
+/** Directory names treated as virtual environments for venv buttons. */
+export const VENV_DIR_NAMES = ["venv", ".venv"] as const;
+
+/** Script discovery kinds: the four manifests plus the file-entry types shell and python. */
+export type ScriptFileType = (typeof MANIFEST_FILE_NAMES)[number] | "shell" | "python";
+
+export const SCRIPT_FILE_TYPES: ScriptFileType[] = [...MANIFEST_FILE_NAMES, "shell", "python"];
 
 export function isScriptFileType(value: string): value is ScriptFileType {
   return (SCRIPT_FILE_TYPES as string[]).includes(value);
 }
 
-/** The file type (basename) a discovered script came from. */
+/** Directory portion of a posix relative path; "" for the workspace root. */
+export function dirOf(posixPath: string): string {
+  const idx = posixPath.lastIndexOf("/");
+  return idx === -1 ? "" : posixPath.slice(0, idx);
+}
+
+/** The discovery kind a discovered script came from, derived from its path. */
 export function scriptFileTypeOf(script: { file: string }): ScriptFileType {
   const base = script.file.split("/").pop() ?? script.file;
-  return isScriptFileType(base) ? base : "package.json";
+  if (isScriptFileType(base)) {
+    return base;
+  }
+  if ((VENV_DIR_NAMES as readonly string[]).includes(base)) {
+    return "python";
+  }
+  if (base.endsWith(".sh")) {
+    return "shell";
+  }
+  if ((PYTHON_ENTRY_FILES as readonly string[]).includes(base)) {
+    return "python";
+  }
+  return "package.json";
+}
+
+/**
+ * Build a discovered entry for a standalone script file (.sh or a Python entry
+ * file). `script` is the relative path (the stable identity); the *command* uses
+ * the basename because the terminal's working directory is set to the file's
+ * directory (`packageDir`) when it runs - same contract as manifest scripts.
+ */
+export function fileEntryScript(base: string, relpath: string): DiscoveredScript | null {
+  const pm: PackageManager | undefined = base.endsWith(".sh")
+    ? "shell"
+    : (PYTHON_ENTRY_FILES as readonly string[]).includes(base)
+      ? "python"
+      : undefined;
+  if (!pm) {
+    return null;
+  }
+  return {
+    file: relpath,
+    script: relpath,
+    command: scriptCommand(pm, base),
+    packageManager: pm,
+    packageDir: dirOf(relpath),
+    icon: pm === "shell" ? "terminal-bash" : "rocket",
+  };
 }
 
 export interface DiscoveredScript {
@@ -40,6 +92,11 @@ export function scriptKey(s: { file: string; script: string }): string {
   return `${s.file}:${s.script}`;
 }
 
+/** Quote a command argument only when whitespace would split it. */
+export function shellArg(value: string): string {
+  return /\s/.test(value) ? `"${value}"` : value;
+}
+
 /** Build the runnable command string for a package manager + script name. */
 export function scriptCommand(pm: PackageManager, name: string): string {
   switch (pm) {
@@ -57,6 +114,10 @@ export function scriptCommand(pm: PackageManager, name: string): string {
       return `composer ${name}`;
     case "just":
       return `just ${name}`;
+    case "shell":
+      return `bash ${shellArg(name)}`;
+    case "python":
+      return `python ${shellArg(name)}`;
   }
 }
 

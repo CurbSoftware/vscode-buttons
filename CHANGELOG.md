@@ -4,6 +4,25 @@ All notable changes to the Buttons extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.0.0] - 2026-08-19
+
+### Breaking
+
+- Script scanning is now **directory-scoped**: the project root is always scanned at its top level, and other directories are scanned only when listed in the new `buttons.scanDirectories` setting. Previously the whole workspace was scanned recursively. If buttons for nested packages now show "not found", add their parent directory as a (recursive) scan directory - e.g. `{ "path": "packages", "recursive": true }`.
+- `buttons.scriptFiles` now defaults to `["package.json", "shell", "python"]`. Users who customized the setting should add `"shell"` and/or `"python"` to keep the new file types enabled.
+
+### Added
+
+- **Scan directories** card in the Project scripts tab: add directories via the OS folder picker, toggle each one's **recursive** scan, and remove them. Stored in the `buttons.scanDirectories` workspace setting.
+- Discovery of standalone `.sh` files (run as `bash <file>`) and common Python entry files - `app.py`, `main.py`, `manage.py`, `run.py`, `server.py` (run as `python <file>`) - inside scan scopes. Commands run with the terminal's working directory set to the script file's directory.
+- **Venv buttons**: when a `venv/` or `.venv/` directory is detected in the project root or a scan directory, Buttons offers **Activate venv** (`source venv/bin/activate`, or the Windows PowerShell/batch activate), **Deactivate**, and **Install requirements** (`venv/bin/pip install -r requirements.txt` via the venv's own pip, offered when a `requirements.txt` sits next to the venv).
+- File watchers now also cover `.sh` files, Python entry files, and `requirements.txt`.
+- Keyboard focus outlines for all interactive webview controls.
+
+### Fixed
+
+- README and docs now match Generate's actual behavior (root-level scripts only).
+
 ## [1.2.0] - 2026-08-18
 
 ### Added

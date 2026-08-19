@@ -15,12 +15,13 @@ import {
   setButtonNote,
   updateCommandButton,
 } from "./config/buttonsFile";
-import { loadRuntimeState, writeButtonsFile } from "./config/buttonsStore";
+import { getScanDirectories, loadRuntimeState, writeButtonsFile } from "./config/buttonsStore";
 import { getGlobalButtonsFileUri, getProjectButtonsFileUri, getWorkspaceFolderUri } from "./config/findButtonsFile";
 import { copyToClipboard, runInCurrentTerminal, runInNewTerminal } from "./execution/actions";
 import { ButtonsPanel } from "./panel/ButtonsPanel";
 import { ButtonsSidebarProvider } from "./panel/ButtonsSidebarProvider";
-import { SCRIPT_FILE_TYPES, scriptKey, shouldIgnoreDir } from "./scanner/types";
+import { normalizeScanDirectories, SCAN_FILE_GLOB, type ScanDirectory } from "./scanner/scanScope";
+import { scriptKey, shouldIgnoreDir } from "./scanner/types";
 import type { ButtonsFile, ButtonsSource, ButtonsTab, PanelActionMessage, ResolvedButton, RuntimeState, WebviewState } from "./models/types";
 
 type PanelId = "sidebar" | "editor";
@@ -75,14 +76,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   );
 
-  const refreshAll = debounce(() => {
-    void (async () => {
-      editingByPanel.clear();
-      addingByPanel.clear();
-      await refreshState(true);
-      await refreshWebview();
-    })();
-  }, 300);
+  const refreshAll = sharedRefreshAll;
 
   // Watch the project .buttons.json file.
   const fileWatcher = vscode.workspace.createFileSystemWatcher("**/.buttons.json");
@@ -91,8 +85,8 @@ export function activate(context: vscode.ExtensionContext): void {
   fileWatcher.onDidDelete(refreshAll, undefined, context.subscriptions);
   context.subscriptions.push(fileWatcher);
 
-  // Watch script files so commands stay current.
-  const scriptWatcher = vscode.workspace.createFileSystemWatcher(`**/{${SCRIPT_FILE_TYPES.join(",")}}`);
+  // Watch script files (and requirements.txt for venv buttons) so commands stay current.
+  const scriptWatcher = vscode.workspace.createFileSystemWatcher(`**/{${SCAN_FILE_GLOB},requirements.txt}`);
   const onScriptChange = (uri: vscode.Uri): void => {
     if (isIgnoredScriptPath(uri)) {
       return;
@@ -143,13 +137,13 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(() => refreshAll()));
 
-  // React to settings changes: text size re-renders, script-file types re-scan.
+  // React to settings changes: text size re-renders, scan settings re-scan.
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("buttons.textSize")) {
         void refreshWebview();
       }
-      if (e.affectsConfiguration("buttons.scriptFiles")) {
+      if (e.affectsConfiguration("buttons.scriptFiles") || e.affectsConfiguration("buttons.scanDirectories")) {
         refreshAll();
       }
     }),
@@ -178,6 +172,21 @@ async function refreshWebview(): Promise<void> {
   await mainPanel?.refresh();
 }
 
+/**
+ * Shared debounced full refresh. Every watcher, settings change, and
+ * scan-directory mutation funnels through here so overlapping triggers
+ * (e.g. a settings write plus its onDidChangeConfiguration event) coalesce
+ * into a single re-render instead of a double document reload. Open edit/add
+ * forms are deliberately kept across background refreshes; the webview
+ * preserves their draft values, and rows that vanish simply stop rendering.
+ */
+const sharedRefreshAll = debounce(() => {
+  void (async () => {
+    await refreshState(true);
+    await refreshWebview();
+  })();
+}, 300);
+
 async function buildWebviewState(panelId: PanelId): Promise<WebviewState> {
   const state = await refreshState();
   return {
@@ -192,6 +201,7 @@ async function buildWebviewState(panelId: PanelId): Promise<WebviewState> {
     textSizePx: textSizePx(),
     projectFileExists: state.projectFileExists,
     activeTab: activeTabByPanel.get(panelId) ?? "buttons",
+    scanDirectories: getScanDirectories(getWorkspaceFolderUri()),
   };
 }
 
@@ -213,6 +223,97 @@ function selectedScriptKeys(state: RuntimeState): string[] {
 function findButton(state: RuntimeState, source: ButtonsSource, index: number): ResolvedButton | undefined {
   const list = source === "project" ? state.projectButtons : state.globalButtons;
   return list.find((b) => b.index === index);
+}
+
+/** Open a native folder picker and append the chosen workspace-relative directories to the setting. */
+async function addScanDirectory(): Promise<void> {
+  const root = getWorkspaceFolderUri();
+  if (!root) {
+    return;
+  }
+  const picks = await vscode.window.showOpenDialog({
+    canSelectFolders: true,
+    canSelectMany: true,
+    canSelectFiles: false,
+    defaultUri: root,
+    openLabel: "Add Scan Directory",
+    title: "Choose directories to scan for scripts",
+  });
+  if (!picks || picks.length === 0) {
+    return;
+  }
+
+  const additions: string[] = [];
+  for (const pick of picks) {
+    const rel = path.relative(root.fsPath, pick.fsPath).split(path.sep).join("/");
+    if (rel === "") {
+      void vscode.window.showInformationMessage("The project root is always scanned - not added again.");
+      continue;
+    }
+    if (rel === ".." || rel.startsWith("../") || path.isAbsolute(rel)) {
+      void vscode.window.showWarningMessage(`"${rel}" is outside the workspace and was skipped.`);
+      continue;
+    }
+    // Reject what the scanner would silently drop anyway (hidden/ignored names, glob metacharacters).
+    if (normalizeScanDirectories([{ path: rel }]).length === 0) {
+      void vscode.window.showWarningMessage(
+        `"${rel}" cannot be scanned - hidden, ignored, or unsupported directory names are skipped.`,
+      );
+      continue;
+    }
+    additions.push(rel);
+  }
+  if (additions.length === 0) {
+    return;
+  }
+
+  const foldCase = process.platform === "win32" ? (p: string) => p.toLowerCase() : (p: string) => p;
+  await mutateScanDirectories((dirs) => {
+    const existing = new Set(dirs.map((d) => foldCase(d.path)));
+    const next = [...dirs];
+    for (const p of additions) {
+      if (!existing.has(foldCase(p))) {
+        existing.add(foldCase(p));
+        next.push({ path: p, recursive: false });
+      } else {
+        void vscode.window.showInformationMessage(`"${p}" is already a scan directory.`);
+      }
+    }
+    return next;
+  });
+}
+
+/** Rewrite the `buttons.scanDirectories` workspace setting, then refresh. Serialized so
+ * concurrent panel messages can't read-modify-write past each other and lose a toggle. */
+let scanDirMutationQueue: Promise<void> = Promise.resolve();
+
+function mutateScanDirectories(mutate: (dirs: ScanDirectory[]) => ScanDirectory[]): Promise<void> {
+  const run = scanDirMutationQueue.then(() => applyScanDirectoriesMutation(mutate));
+  scanDirMutationQueue = run.then(
+    () => {},
+    () => {},
+  );
+  return run;
+}
+
+async function applyScanDirectoriesMutation(mutate: (dirs: ScanDirectory[]) => ScanDirectory[]): Promise<void> {
+  const root = getWorkspaceFolderUri();
+  const next = mutate(getScanDirectories(root).map((d) => ({ ...d })));
+  try {
+    await vscode.workspace.getConfiguration("buttons", root).update(
+      "scanDirectories",
+      next,
+      vscode.ConfigurationTarget.Workspace,
+    );
+  } catch {
+    void vscode.window.showErrorMessage("Could not save scan directories to workspace settings.");
+    // Re-render from persisted state so the webview checkbox doesn't show the failed toggle.
+    await refreshWebview();
+    return;
+  }
+  // The settings write also fires onDidChangeConfiguration; both routes go through the
+  // shared debounce, so this coalesces into a single refresh.
+  sharedRefreshAll();
 }
 
 function buttonCwd(button: ResolvedButton): string | undefined {
@@ -263,6 +364,20 @@ async function handlePanelMessage(panelId: PanelId, message: PanelActionMessage)
       await refreshWebview();
       return;
     }
+
+    case "add-scan-dir":
+      await addScanDirectory();
+      return;
+
+    case "remove-scan-dir":
+      await mutateScanDirectories((dirs) => dirs.filter((d) => d.path !== message.path));
+      return;
+
+    case "toggle-scan-dir-recursive":
+      await mutateScanDirectories((dirs) =>
+        dirs.map((d) => (d.path === message.path ? { ...d, recursive: message.recursive } : d)),
+      );
+      return;
 
     case "toggle-script": {
       const fileUri = getProjectButtonsFileUri();

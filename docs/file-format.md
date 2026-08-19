@@ -18,6 +18,10 @@ Both files use the same format: a `version` field and a flat `buttons` array.
     { "type": "script", "file": "Makefile", "script": "build", "packageDir": "", "packageManager": "make" },
     { "type": "script", "file": "composer.json", "script": "test", "packageDir": "", "packageManager": "composer" },
     { "type": "script", "file": "justfile", "script": "deploy", "packageDir": "", "packageManager": "just" },
+    { "type": "script", "file": "deploy.sh", "script": "deploy.sh", "packageDir": "", "packageManager": "shell" },
+    { "type": "script", "file": "scripts/migrate.sh", "script": "scripts/migrate.sh", "packageDir": "scripts", "packageManager": "shell" },
+    { "type": "script", "file": "app.py", "script": "app.py", "packageDir": "", "packageManager": "python" },
+    { "type": "script", "file": "venv", "script": "Activate venv", "packageDir": "", "packageManager": "python" },
     { "type": "command", "command": "docker ps", "note": "List running containers" }
   ]
 }
@@ -34,10 +38,10 @@ A live reference to a script the scanner found. The command is **recomputed on e
 | Field | Required | Meaning |
 | --- | --- | --- |
 | `type` | yes | Always `"script"`. |
-| `file` | yes | The script file, relative to the workspace root (e.g. `package.json`, `packages/api/package.json`). |
-| `script` | yes | The script/target name (e.g. `dev`, `build`). |
+| `file` | yes | The script file, relative to the workspace root (e.g. `package.json`, `packages/api/package.json`, `scripts/deploy.sh`); for venv buttons, the venv directory (e.g. `venv`). |
+| `script` | yes | The script/target name (e.g. `dev`, `build`). For standalone `.sh` and Python entry files this is the file's relative path - that path is what the command is rebuilt from. |
 | `packageDir` | no | The script file's directory relative to the workspace root (`""` = root). This is the terminal working directory when the script runs. |
-| `packageManager` | no | One of `npm`, `pnpm`, `yarn`, `bun`, `make`, `composer`, `just`. Invalid values are normalized to `npm`. |
+| `packageManager` | no | One of `npm`, `pnpm`, `yarn`, `bun`, `make`, `composer`, `just`, `shell`, `python`. Invalid values are normalized to `npm`. |
 | `note` | no | An optional note shown next to the button. |
 
 ### Command entries (`type: "command"`)

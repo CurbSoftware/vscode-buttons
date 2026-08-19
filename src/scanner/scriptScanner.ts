@@ -1,12 +1,21 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import {
+  scanScopePatterns,
+  venvActivateCandidates,
+  venvButtons,
+  type ScanDirectory,
+  type VenvActivateKind,
+} from "./scanScope";
+import {
+  dirOf,
   EXCLUDE_DIRS,
-  SCRIPT_FILE_TYPES,
   parseJustfileText,
   parseMakefileText,
   parsePackageJsonText,
+  fileEntryScript,
   scriptKey,
+  VENV_DIR_NAMES,
   type DiscoveredScript,
   type PackageManager,
 } from "./types";
@@ -16,11 +25,6 @@ const MAX_SCRIPT_FILES = 5000;
 /** Convert an absolute fs path to a posix path relative to the workspace root. */
 function toPosixRelative(workspaceFsPath: string, fileFsPath: string): string {
   return path.relative(workspaceFsPath, fileFsPath).split(path.sep).join("/");
-}
-
-function dirOf(posixPath: string): string {
-  const idx = posixPath.lastIndexOf("/");
-  return idx === -1 ? "" : posixPath.slice(0, idx);
 }
 
 /** Parse a script file's contents based on its basename. */
@@ -64,36 +68,52 @@ async function detectPackageManager(workspaceUri: vscode.Uri): Promise<PackageMa
   return "npm";
 }
 
-/**
- * Recursively scan the workspace for scripts in all supported script files
- * (package.json, Makefile, composer.json, justfile), excluding installed
- * packages, VCS, and build/cache directories.
- */
-export async function scanWorkspaceScripts(workspaceUri: vscode.Uri): Promise<DiscoveredScript[]> {
-  const excludeGlob = `**/{${EXCLUDE_DIRS.join(",")}}/**`;
-  const pattern = new vscode.RelativePattern(workspaceUri, `**/{${SCRIPT_FILE_TYPES.join(",")}}`);
-  const uris = await vscode.workspace.findFiles(pattern, excludeGlob, MAX_SCRIPT_FILES);
+/** Stat-based probe for a virtual environment at `venvRel` and its requirements.txt. */
+async function detectVenv(
+  workspaceUri: vscode.Uri,
+  venvRel: string,
+): Promise<{ activateKind: VenvActivateKind; hasRequirements: boolean } | undefined> {
+  const venvUri = vscode.Uri.joinPath(workspaceUri, ...venvRel.split("/"));
+  for (const [candidate, kind] of venvActivateCandidates()) {
+    try {
+      await vscode.workspace.fs.stat(vscode.Uri.joinPath(venvUri, ...candidate.split("/")));
+    } catch {
+      continue;
+    }
+    let hasRequirements = false;
+    const reqUri = vscode.Uri.joinPath(workspaceUri, dirOf(venvRel) === "" ? "requirements.txt" : `${dirOf(venvRel)}/requirements.txt`);
+    try {
+      await vscode.workspace.fs.stat(reqUri);
+      hasRequirements = true;
+    } catch {
+      // no requirements.txt next to the venv
+    }
+    return { activateKind: kind, hasRequirements };
+  }
+  return undefined;
+}
 
+/**
+ * Scan the project for scripts: the workspace root (top level only, always)
+ * plus each configured scan directory (top level or recursive). Manifest files
+ * are parsed for named scripts; standalone .sh and Python entry files become
+ * one-click entries; detected virtual environments offer activate/deactivate/
+ * install-requirements buttons. Installed packages, VCS, and build/cache
+ * directories are always excluded.
+ */
+export async function scanWorkspaceScripts(
+  workspaceUri: vscode.Uri,
+  scanDirectories: readonly ScanDirectory[] = [],
+): Promise<DiscoveredScript[]> {
+  // `.*` in the brace list also excludes every hidden directory, matching the
+  // documented contract and the watcher-side shouldIgnoreDir rule.
+  const excludeGlob = `**/{${[...EXCLUDE_DIRS, ".*"].join(",")}}/**`;
   const packageManager = await detectPackageManager(workspaceUri);
   const workspaceFsPath = workspaceUri.fsPath;
 
   const result: DiscoveredScript[] = [];
   const seen = new Set<string>();
-
-  for (const uri of uris) {
-    const relative = toPosixRelative(workspaceFsPath, uri.fsPath);
-    const packageDir = dirOf(relative);
-    const base = path.basename(uri.fsPath);
-
-    let scripts: DiscoveredScript[];
-    try {
-      const rawBytes = await vscode.workspace.fs.readFile(uri);
-      const text = Buffer.from(rawBytes).toString("utf8");
-      scripts = parseScriptFile(base, text, relative, packageDir, packageManager);
-    } catch {
-      continue;
-    }
-
+  const add = (scripts: Iterable<DiscoveredScript>): void => {
     for (const s of scripts) {
       const key = scriptKey(s);
       if (seen.has(key)) {
@@ -101,6 +121,45 @@ export async function scanWorkspaceScripts(workspaceUri: vscode.Uri): Promise<Di
       }
       seen.add(key);
       result.push(s);
+    }
+  };
+
+  for (const relPattern of scanScopePatterns(scanDirectories)) {
+    const pattern = new vscode.RelativePattern(workspaceUri, relPattern);
+    const uris = await vscode.workspace.findFiles(pattern, excludeGlob, MAX_SCRIPT_FILES);
+
+    for (const uri of uris) {
+      const relative = toPosixRelative(workspaceFsPath, uri.fsPath);
+      const packageDir = dirOf(relative);
+      const base = path.basename(uri.fsPath);
+
+      const entry = fileEntryScript(base, relative);
+      if (entry) {
+        add([entry]);
+        continue;
+      }
+
+      let scripts: DiscoveredScript[];
+      try {
+        const rawBytes = await vscode.workspace.fs.readFile(uri);
+        const text = Buffer.from(rawBytes).toString("utf8");
+        scripts = parseScriptFile(base, text, relative, packageDir, packageManager);
+      } catch {
+        continue;
+      }
+      add(scripts);
+    }
+  }
+
+  // Venv buttons for the root and the top level of each scan directory.
+  const venvBases = ["", ...scanDirectories.map((d) => d.path)];
+  for (const baseRel of venvBases) {
+    for (const venvName of VENV_DIR_NAMES) {
+      const venvRel = baseRel === "" ? venvName : `${baseRel}/${venvName}`;
+      const detected = await detectVenv(workspaceUri, venvRel);
+      if (detected) {
+        add(venvButtons(venvRel, detected.activateKind, detected.hasRequirements));
+      }
     }
   }
 

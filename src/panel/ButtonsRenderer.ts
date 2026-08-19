@@ -33,17 +33,19 @@ export function renderHtml(state: WebviewState, codiconUri: string, variant: Ren
 }
 
 function renderHeader(state: WebviewState): string {
-  const generateButton = state.hasWorkspace && !state.projectFileExists
-    ? `<button class="btn primary" data-action="generate" title="Scan and create the project .buttons.json"><span class="codicon codicon-wand"></span> Generate</button>`
+  // The Scripts tab shows its own Generate CTA; keep the header button off it
+  // so the no-file state doesn't stack two primary buttons.
+  const generateButton = state.activeTab === "buttons" && state.hasWorkspace && !state.projectFileExists
+    ? `<button class="btn primary" data-action="generate" title="Scan and create the project .buttons.json"><span class="codicon codicon-wand" aria-hidden="true"></span> Generate</button>`
     : "";
   return `<header class="header">
   <div class="header-title">Buttons</div>
   <div class="header-actions">
     ${generateButton}
-    <button class="btn" data-action="rescan" title="Rescan project scripts"><span class="codicon codicon-refresh"></span> Rescan</button>
-    <button class="btn" data-action="open-project-file" title="Open the project .buttons.json file"><span class="codicon codicon-file-code"></span></button>
-    <button class="btn" data-action="open-global-file" title="Open the global ~/.buttons.json file"><span class="codicon codicon-home"></span></button>
-    <button class="btn" data-action="open-settings" title="Open Buttons settings"><span class="codicon codicon-settings-gear"></span></button>
+    <button class="btn" data-action="rescan" title="Rescan project scripts"><span class="codicon codicon-refresh" aria-hidden="true"></span> Rescan</button>
+    <button class="btn" data-action="open-project-file" title="Open the project .buttons.json file" aria-label="Open the project .buttons.json file"><span class="codicon codicon-file-code" aria-hidden="true"></span></button>
+    <button class="btn" data-action="open-global-file" title="Open the global ~/.buttons.json file" aria-label="Open the global ~/.buttons.json file"><span class="codicon codicon-home" aria-hidden="true"></span></button>
+    <button class="btn" data-action="open-settings" title="Open Buttons settings" aria-label="Open Buttons settings"><span class="codicon codicon-settings-gear" aria-hidden="true"></span></button>
   </div>
 </header>`;
 }
@@ -66,13 +68,16 @@ function renderScanSection(state: WebviewState): string {
   if (!state.hasWorkspace) {
     return `<section class="scan">${title}<div class="muted">Open a folder to scan for scripts.</div></section>`;
   }
+
+  const scanDirsCard = renderScanDirectoriesCard(state);
+
   if (state.discovered.length === 0) {
-    return `<section class="scan">${title}<div class="muted">No scripts found in the enabled script file types.</div></section>`;
+    return `<section class="scan">${title}${scanDirsCard}<div class="muted">No scripts found. Add a scan directory or enable more script file types in settings.</div></section>`;
   }
 
   const rootCount = state.discovered.filter((d) => d.packageDir === "").length;
   const generateCta = !state.projectFileExists
-    ? `<div class="generate-cta"><button class="btn primary" data-action="generate"><span class="codicon codicon-wand"></span> Generate buttons file</button><span class="muted">Include ${rootCount} root-level scripts as project buttons.</span></div>`
+    ? `<div class="generate-cta"><button class="btn primary" data-action="generate"><span class="codicon codicon-wand" aria-hidden="true"></span> Generate buttons file</button><span class="muted">Include ${rootCount} root-level scripts as project buttons.</span></div>`
     : "";
 
   const selectedKeys = new Set(state.selectedKeys);
@@ -87,19 +92,60 @@ function renderScanSection(state: WebviewState): string {
     : "";
   const titleWithBulk = `<div class="section-title">Project scripts ${bulkToggle}</div>`;
 
-  return `<section class="scan">${titleWithBulk}${generateCta}<div class="scan-list">${rows}</div></section>`;
+  return `<section class="scan">${titleWithBulk}${scanDirsCard}${generateCta}<div class="scan-list">${rows}</div></section>`;
+}
+
+/** Card listing the scan scope: the locked project-root row plus each configured directory. */
+function renderScanDirectoriesCard(state: WebviewState): string {
+  const dirRows = state.scanDirectories
+    .map((d) => {
+      const p = escapeHtml(d.path);
+      return `<div class="scan-dir-row">
+    <span class="codicon codicon-folder" aria-hidden="true"></span>
+    <span class="scan-dir-path" title="${p}">${p}</span>
+    <label class="scan-dir-recursive" title="Scan ${p} and its subdirectories">
+      <input type="checkbox" data-action="toggle-scan-dir-recursive" data-path="${p}" aria-label="Scan ${p} recursively"${d.recursive ? " checked" : ""} />
+      <span>recursive</span>
+    </label>
+    <button type="button" class="btn icon-only" data-action="remove-scan-dir" data-path="${p}" title="Remove ${p}" aria-label="Remove ${p} from scan directories">
+      <span class="codicon codicon-close" aria-hidden="true"></span>
+    </button>
+  </div>`;
+    })
+    .join("");
+
+  return `<div class="scan-dirs">
+  <div class="scan-dirs-header">
+    <span class="scan-dirs-title">Scan directories</span>
+    <button type="button" class="btn" data-action="add-scan-dir" title="Add a directory to scan">
+      <span class="codicon codicon-new-folder" aria-hidden="true"></span> Add folder
+    </button>
+  </div>
+  <div class="scan-dir-row locked">
+    <span class="codicon codicon-root-folder" aria-hidden="true"></span>
+    <span class="scan-dir-path" title="Project root">Project root</span>
+    <span class="scan-dir-badge">always on</span>
+    <span class="scan-dir-badge">non-recursive</span>
+    <span class="codicon codicon-lock scan-dir-lock" aria-hidden="true"></span>
+  </div>
+  ${dirRows}
+  <div class="muted scan-dirs-hint">The project root is always scanned at its top level. Add folders to scan elsewhere.</div>
+</div>`;
 }
 
 function renderScanRow(script: DiscoveredScript, checked: boolean, disabled: boolean): string {
   const file = escapeHtml(script.file);
-  const name = escapeHtml(script.script);
+  // Standalone file entries (.sh, Python, venv actions) key on the path; show the basename.
+  const rawName = script.script === script.file ? (script.file.split("/").pop() ?? script.script) : script.script;
+  const name = escapeHtml(rawName);
   const command = escapeHtml(script.command);
-  const icon = script.icon ? `<span class="codicon codicon-${escapeHtml(script.icon)}"></span>` : "";
-  return `<label class="scan-row${disabled ? " disabled" : ""}" title="${escapeHtml(script.description ?? "")}">
-  <input type="checkbox" data-action="toggle-script" data-file="${file}" data-script="${name}" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""} />
+  const tooltip = escapeHtml(script.description || script.command);
+  const icon = script.icon ? `<span class="codicon codicon-${escapeHtml(script.icon)}" aria-hidden="true"></span>` : "";
+  return `<label class="scan-row${disabled ? " disabled" : ""}" title="${tooltip}">
+  <input type="checkbox" aria-label="Include ${name} from ${file}" data-action="toggle-script" data-file="${file}" data-script="${escapeHtml(script.script)}" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""} />
   ${icon}
   <span class="scan-name">${name}</span>
-  <code class="scan-cmd">${command}</code>
+  <code class="scan-cmd" title="${command}">${command}</code>
 </label>`;
 }
 
@@ -107,7 +153,7 @@ function renderScanGroup(group: ScriptGroup, selectedKeys: ReadonlySet<string>, 
   const file = escapeHtml(group.file);
   const fileChecked = group.fileChecked ? " checked" : "";
   const fileDisabled = projectDisabled ? " disabled" : "";
-  const scriptDisabled = projectDisabled || group.fileChecked;
+  const scriptDisabled = projectDisabled;
 
   const rows = group.scripts
     .map((s) => renderScanRow(s, selectedKeys.has(scriptKey(s)), scriptDisabled))
@@ -119,7 +165,7 @@ function renderScanGroup(group: ScriptGroup, selectedKeys: ReadonlySet<string>, 
       <input type="checkbox" data-action="toggle-file" data-file="${file}" data-selected-count="${group.selectedCount}" data-total="${group.scripts.length}"${fileChecked}${fileDisabled} />
     </label>
     <button type="button" class="scan-group-toggle" data-action="toggle-group" aria-expanded="false">
-      <span class="codicon codicon-chevron-right scan-group-caret"></span>
+      <span class="codicon codicon-chevron-right scan-group-caret" aria-hidden="true"></span>
       <span class="scan-group-title">${file}</span>
       <span class="scan-group-count">${group.scripts.length}</span>
     </button>
@@ -374,6 +420,8 @@ body {
   margin: 14px 0 6px;
 }
 .section-subtitle { color: var(--muted); font-size: 0.85em; margin-bottom: 4px; }
+/* Counteract the 0.85em section-title context so inline buttons match other buttons. */
+.section-title .btn { font-size: 1.06em; }
 .btn {
   appearance: none;
   border: 1px solid var(--border);
@@ -387,7 +435,7 @@ body {
   cursor: pointer;
   white-space: nowrap;
 }
-.btn:hover { background: var(--vscode-button-hoverBackground); color: var(--vscode-button-foreground); }
+.btn:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.1)); }
 .btn.primary { background: var(--vscode-button-background); color: var(--vscode-button-foreground); border-color: transparent; }
 .btn.primary:hover { background: var(--vscode-button-hoverBackground); }
 .btn.danger:hover { border-color: var(--danger); color: var(--danger); background: transparent; }
@@ -399,6 +447,60 @@ body {
   margin: 8px 0;
   font-size: 0.9em;
   white-space: pre-wrap;
+}
+.scan-dirs {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.scan-dirs-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.scan-dirs-title {
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.scan-dir-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; min-width: 0; }
+.scan-dir-row.locked { opacity: 0.8; }
+.scan-dir-path {
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scan-dir-recursive {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.85em;
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.scan-dir-recursive input[type="checkbox"] { margin: 0; }
+.scan-dir-badge {
+  padding: 0 5px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 0.8em;
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.scan-dir-lock { color: var(--muted); flex-shrink: 0; }
+.btn.icon-only { padding: 2px 4px; line-height: 1; }
+.scan-dirs-hint { font-size: 0.8em; margin-top: 2px; }
+.btn:focus-visible, .tab:focus-visible, .scan-group-toggle:focus-visible, input:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
 }
 .scan-list { display: flex; flex-direction: column; }
 .scan-row {
@@ -453,7 +555,8 @@ body {
 }
 .scan-group-toggle:hover { color: var(--vscode-focusBorder, var(--fg)); }
 .scan-group-caret { transition: transform 0.1s ease; flex-shrink: 0; }
-.scan-group.collapsed .scan-group-caret { transform: rotate(-90deg); }
+/* VS Code disclosure convention: collapsed points right, expanded points down. */
+.scan-group:not(.collapsed) .scan-group-caret { transform: rotate(90deg); }
 .scan-group-title {
   font-weight: 600;
   flex: 1;
@@ -535,9 +638,64 @@ function js(): string {
 const vscode = acquireVsCodeApi();
 function post(message) { vscode.postMessage(message); }
 
+function focusSelector(el) {
+  if (!el || !el.dataset || !el.dataset.action) { return null; }
+  const parts = ['[data-action="' + CSS.escape(el.dataset.action) + '"]'];
+  for (const a of ["path", "file", "script", "tab", "source"]) {
+    if (el.dataset[a] !== undefined) { parts.push('[data-' + a + '="' + CSS.escape(el.dataset[a]) + '"]'); }
+  }
+  if (el.dataset.index !== undefined) { parts.push('[data-index="' + el.dataset.index + '"]'); }
+  return parts.join("");
+}
+
+// The host replaces the whole document on every refresh; remember which control
+// the user was on so focus can be restored after the reload.
+function rememberFocus(el) {
+  const selector = focusSelector(el);
+  if (selector) { vscode.setState({ ...(vscode.getState() || {}), focusTarget: selector }); }
+}
+
+function restoreFocus() {
+  const saved = vscode.getState() || {};
+  if (!saved.focusTarget) { return; }
+  vscode.setState({ ...saved, focusTarget: null });
+  const el = document.querySelector(saved.focusTarget);
+  if (el) { el.focus(); }
+}
+
+// The host replaces the whole document on every refresh; keep in-progress form
+// text alive across those reloads.
+const DRAFT_IDS = ["edit-command", "edit-note", "add-command", "add-note"];
+
+function saveDrafts() {
+  const drafts = {};
+  for (const id of DRAFT_IDS) {
+    const input = document.getElementById(id);
+    if (input) { drafts[id] = input.value; }
+  }
+  vscode.setState({ ...(vscode.getState() || {}), drafts });
+}
+
+function clearDrafts() {
+  vscode.setState({ ...(vscode.getState() || {}), drafts: {} });
+}
+
+function restoreDrafts() {
+  const drafts = (vscode.getState() || {}).drafts || {};
+  for (const id of DRAFT_IDS) {
+    const input = document.getElementById(id);
+    if (input && typeof drafts[id] === "string") { input.value = drafts[id]; }
+  }
+}
+
+document.addEventListener("input", (event) => {
+  if (event.target && event.target.id && DRAFT_IDS.includes(event.target.id)) { saveDrafts(); }
+});
+
 document.addEventListener("change", (event) => {
   const el = event.target;
   if (!el || !el.matches) { return; }
+  rememberFocus(el);
   if (el.matches('input[data-action="toggle-script"]')) {
     post({
       type: "toggle-script",
@@ -547,6 +705,8 @@ document.addEventListener("change", (event) => {
     });
   } else if (el.matches('input[data-action="toggle-file"]')) {
     post({ type: "toggle-file", file: el.dataset.file, checked: el.checked });
+  } else if (el.matches('input[data-action="toggle-scan-dir-recursive"]')) {
+    post({ type: "toggle-scan-dir-recursive", path: el.dataset.path, recursive: el.checked });
   }
 });
 
@@ -557,6 +717,7 @@ document.addEventListener("click", (event) => {
   const action = el.dataset.action;
   const source = el.dataset.source;
   const index = el.dataset.index !== undefined ? Number(el.dataset.index) : undefined;
+  if (action !== "toggle-group") { rememberFocus(el); }
 
   switch (action) {
     case "toggle-group": {
@@ -570,6 +731,8 @@ document.addEventListener("click", (event) => {
     }
     case "rescan": post({ type: "rescan" }); break;
     case "generate": post({ type: "generate" }); break;
+    case "add-scan-dir": post({ type: "add-scan-dir" }); break;
+    case "remove-scan-dir": post({ type: "remove-scan-dir", path: el.dataset.path }); break;
     case "toggle-all": post({ type: "toggle-all", checked: el.dataset.checked === "true" }); break;
     case "set-tab": post({ type: "set-tab", tab: el.dataset.tab }); break;
     case "open-project-file": post({ type: "open-project-file" }); break;
@@ -578,11 +741,12 @@ document.addEventListener("click", (event) => {
     case "run-current": post({ type: "run-current", source, index }); break;
     case "run-new": post({ type: "run-new", source, index }); break;
     case "copy": post({ type: "copy", source, index }); break;
-    case "start-edit": post({ type: "start-edit", source, index }); break;
-    case "cancel-edit": post({ type: "cancel-edit" }); break;
+    case "start-edit": clearDrafts(); post({ type: "start-edit", source, index }); break;
+    case "cancel-edit": clearDrafts(); post({ type: "cancel-edit" }); break;
     case "save-edit": {
       const commandInput = document.getElementById("edit-command");
       const noteInput = document.getElementById("edit-note");
+      clearDrafts();
       post({
         type: "save-edit",
         source,
@@ -593,11 +757,12 @@ document.addEventListener("click", (event) => {
       break;
     }
     case "remove": post({ type: "remove", source, index }); break;
-    case "start-add": post({ type: "start-add", source }); break;
-    case "cancel-add": post({ type: "cancel-add" }); break;
+    case "start-add": clearDrafts(); post({ type: "start-add", source }); break;
+    case "cancel-add": clearDrafts(); post({ type: "cancel-add" }); break;
     case "save-add": {
       const commandInput = document.getElementById("add-command");
       const noteInput = document.getElementById("add-note");
+      clearDrafts();
       post({
         type: "save-add",
         source,
@@ -636,5 +801,8 @@ document.querySelectorAll(".scan-group").forEach((group) => {
     if (btn) { btn.setAttribute("aria-expanded", "true"); }
   }
 });
+
+restoreFocus();
+restoreDrafts();
 `;
 }
