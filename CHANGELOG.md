@@ -4,7 +4,7 @@ All notable changes to the Buttons extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [1.2.0] - Unreleased
+## [1.2.0] - 2026-08-18
 
 ### Added
 
