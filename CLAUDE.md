@@ -54,4 +54,4 @@ This repo's `docs/*.md` and the website repo at `../buttons-website` (Astro + St
 
 ## Release
 
-Automated by `.github/workflows/publish.yml`, triggered by a **GitHub Release** (tag `vX.Y.Z` must equal `package.json` version; workflow lint → test → vsce → ovsx). Ritual: bump version → `npm install` (sync lockfile) → date the CHANGELOG entry → commit + push main → create the GitHub Release → verify both marketplaces. Marketplace versions are immutable - a failed publish means a new patch version. Full runbook: `RELEASING.md`.
+Published **manually** with `vsce` + `ovsx` (Actions is disabled on the repo, so the committed `publish.yml` never runs; a GitHub Release is documentation only, not a trigger). Ritual: bump version → `npm install` (sync lockfile) → date the CHANGELOG entry → commit + push main → `npm run package` → publish the vsix to both marketplaces with the PATs → verify both listings. Marketplace versions are immutable - a failed publish means a new patch version. Full runbook: `RELEASING.md`.
