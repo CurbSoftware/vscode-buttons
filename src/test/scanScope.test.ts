@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  isAbsolutePosix,
   normalizeScanDirectories,
   scanScopePatterns,
   venvActivateCommand,
@@ -23,17 +24,37 @@ describe("normalizeScanDirectories", () => {
     assert.deepEqual(normalizeScanDirectories([{ path: "./scripts/" }]), [{ path: "scripts", recursive: false }]);
   });
 
-  it("drops root, parent, absolute, and empty paths", () => {
+  it("drops root, parent, and empty paths", () => {
     assert.deepEqual(
       normalizeScanDirectories([
         { path: "" },
         { path: "." },
         { path: ".." },
         { path: "../outside" },
-        { path: "/abs" },
-        { path: "C:/abs" },
         { path: "a//b" },
       ]),
+      [],
+    );
+  });
+
+  it("accepts absolute paths (out-of-workspace scopes), including windows drives and hidden segments", () => {
+    assert.deepEqual(
+      normalizeScanDirectories([
+        { path: "/opt/tools", recursive: true },
+        { path: "C:\\tools\\" },
+        { path: "/home/user/.config/tools" },
+      ]),
+      [
+        { path: "/opt/tools", recursive: true },
+        { path: "C:/tools", recursive: false },
+        { path: "/home/user/.config/tools", recursive: false },
+      ],
+    );
+  });
+
+  it("drops absolute paths with glob metacharacters, dot segments, or ! prefixes", () => {
+    assert.deepEqual(
+      normalizeScanDirectories([{ path: "/opt/../tools" }, { path: "/opt/a*b" }, { path: "C:/a{b}" }, { path: "/opt/./x" }, { path: "/!x" }]),
       [],
     );
   });
@@ -100,6 +121,22 @@ describe("scanScopePatterns", () => {
   it("scans recursive directories with **", () => {
     const patterns = scanScopePatterns([{ path: "packages", recursive: true }]);
     assert.equal(patterns[1], "packages/**/{package.json,Makefile,composer.json,justfile,*.sh,app.py,main.py,manage.py,run.py,server.py}");
+  });
+
+  it("skips absolute directories (they get their own base URI in the scanner)", () => {
+    const patterns = scanScopePatterns([{ path: "/opt/tools", recursive: true }, { path: "scripts", recursive: false }]);
+    assert.equal(patterns.length, 2);
+    assert.equal(patterns[1], "scripts/{package.json,Makefile,composer.json,justfile,*.sh,app.py,main.py,manage.py,run.py,server.py}");
+  });
+});
+
+describe("isAbsolutePosix", () => {
+  it("recognizes posix roots and windows drives, not relative paths", () => {
+    assert.equal(isAbsolutePosix("/opt/tools"), true);
+    assert.equal(isAbsolutePosix("C:/tools"), true);
+    assert.equal(isAbsolutePosix("scripts"), false);
+    assert.equal(isAbsolutePosix("./scripts"), false);
+    assert.equal(isAbsolutePosix(""), false);
   });
 });
 

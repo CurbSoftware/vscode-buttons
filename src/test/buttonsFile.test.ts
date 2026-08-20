@@ -328,4 +328,25 @@ describe("resolveButtons", () => {
     assert.equal(resolved[0].missing, true);
     assert.equal(resolved[0].command, 'python "Activate venv"');
   });
+
+  it("resolves a standalone entry for a file outside the workspace", () => {
+    const external = script({
+      file: "/opt/tools/deploy.sh",
+      script: "/opt/tools/deploy.sh",
+      command: "bash deploy.sh",
+      packageManager: "shell",
+      packageDir: "/opt/tools",
+    });
+    const file = addScriptButton(emptyButtonsFile(), external);
+    const roundTrip = parseButtonsFile(serializeButtonsFile(file));
+    assert.ok(roundTrip.ok);
+    assert.deepEqual(roundTrip.file, file);
+
+    const resolved = resolveButtons(file, [external]);
+    assert.equal(resolved[0].missing, false);
+    assert.equal(resolved[0].command, "bash deploy.sh");
+
+    const vanished = resolveButtons(file, []);
+    assert.equal(vanished[0].missing, true);
+  });
 });

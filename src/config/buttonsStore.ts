@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import type { ButtonsFile, RuntimeState } from "../models/types";
+import type { ButtonsFile, RuntimeState, ScriptButton } from "../models/types";
 import { normalizeScanDirectories, type ScanDirectory } from "../scanner/scanScope";
 import { scanWorkspaceScripts } from "../scanner/scriptScanner";
 import { isScriptFileType, scriptFileTypeOf, type ScriptFileType } from "../scanner/types";
@@ -50,7 +50,15 @@ export async function loadRuntimeState(): Promise<RuntimeState> {
   const global = await readButtonsFile(globalUri);
 
   const workspaceUri = getWorkspaceFolderUri();
-  const allDiscovered = workspaceUri ? await scanWorkspaceScripts(workspaceUri, getScanDirectories(workspaceUri)) : [];
+  // Standalone file entries (project + global) resolve without a matching scan
+  // scope; the scanner stats them directly. Global absolute paths give buttons
+  // that follow the user into every workspace.
+  const entryFilePaths = [...project.file.buttons, ...global.file.buttons]
+    .filter((b): b is ScriptButton => b.type === "script")
+    .map((b) => b.file);
+  const allDiscovered = workspaceUri
+    ? await scanWorkspaceScripts(workspaceUri, getScanDirectories(workspaceUri), entryFilePaths)
+    : [];
   const enabled = getEnabledScriptFiles();
   const discovered = allDiscovered.filter((d) => enabled.includes(scriptFileTypeOf(d)));
 

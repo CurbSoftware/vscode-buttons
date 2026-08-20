@@ -92,6 +92,11 @@
           "dark": "media/buttons-icon-color.svg",
           "light": "media/buttons-icon-color.svg"
         }
+      },
+      {
+        "command": "buttons.addFileButton",
+        "title": "Buttons: Add to Buttons",
+        "shortTitle": "Add to Buttons"
       }
     ],
     "menus": {
@@ -100,6 +105,13 @@
           "command": "buttons.openMainPanel",
           "group": "navigation",
           "when": "true"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "buttons.addFileButton",
+          "group": "buttons",
+          "when": "resourceFilename =~ /^(.*\\.sh|app\\.py|main\\.py|manage\\.py|run\\.py|server\\.py|package\\.json|Makefile|justfile|composer\\.json)$/"
         }
       ]
     },
@@ -159,7 +171,7 @@
             "properties": {
               "path": {
                 "type": "string",
-                "description": "Workspace-relative directory path."
+                "description": "Workspace-relative or absolute directory path. Absolute paths may point outside the workspace."
               },
               "recursive": {
                 "type": "boolean",
@@ -172,7 +184,7 @@
             ]
           },
           "default": [],
-          "description": "Extra directories to scan for scripts. The project root is always scanned at its top level.",
+          "description": "Extra directories to scan for scripts. The project root is always scanned at its top level. Paths outside the workspace must be absolute.",
           "scope": "resource"
         }
       }

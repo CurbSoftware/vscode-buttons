@@ -20,8 +20,8 @@ import { getGlobalButtonsFileUri, getProjectButtonsFileUri, getWorkspaceFolderUr
 import { copyToClipboard, runInCurrentTerminal, runInNewTerminal } from "./execution/actions";
 import { ButtonsPanel } from "./panel/ButtonsPanel";
 import { ButtonsSidebarProvider } from "./panel/ButtonsSidebarProvider";
-import { normalizeScanDirectories, SCAN_FILE_GLOB, type ScanDirectory } from "./scanner/scanScope";
-import { scriptKey, shouldIgnoreDir } from "./scanner/types";
+import { isAbsolutePosix, normalizeScanDirectories, SCAN_FILE_GLOB, type ScanDirectory } from "./scanner/scanScope";
+import { fileEntryScript, scriptKey, shouldIgnoreDir, type DiscoveredScript } from "./scanner/types";
 import type { ButtonsFile, ButtonsSource, ButtonsTab, PanelActionMessage, ResolvedButton, RuntimeState, WebviewState } from "./models/types";
 
 type PanelId = "sidebar" | "editor";
@@ -73,6 +73,12 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand("buttons.openGlobalButtons", async () => {
       await openOrCreateFile(getGlobalButtonsFileUri());
+    }),
+    vscode.commands.registerCommand("buttons.addFileButton", async (uri?: vscode.Uri, uris?: vscode.Uri[]) => {
+      // Explorer passes the clicked uri; multi-select arrives via the second argument.
+      for (const u of uris && uris.length > 0 ? uris : uri ? [uri] : []) {
+        await addFileFromExplorer(u);
+      }
     }),
   );
 
@@ -135,7 +141,12 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   });
 
-  context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(() => refreshAll()));
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeWorkspaceFolders(() => {
+      rebuildExternalWatchers();
+      refreshAll();
+    }),
+  );
 
   // React to settings changes: text size re-renders, scan settings re-scan.
   context.subscriptions.push(
@@ -144,16 +155,45 @@ export function activate(context: vscode.ExtensionContext): void {
         void refreshWebview();
       }
       if (e.affectsConfiguration("buttons.scriptFiles") || e.affectsConfiguration("buttons.scanDirectories")) {
+        rebuildExternalWatchers();
         refreshAll();
       }
     }),
   );
+
+  rebuildExternalWatchers();
+}
+
+/** Watchers for absolute scan directories; the workspace-glob script watcher cannot see them. */
+let externalWatchers: vscode.FileSystemWatcher[] = [];
+
+function rebuildExternalWatchers(): void {
+  for (const watcher of externalWatchers) {
+    watcher.dispose();
+  }
+  externalWatchers = [];
+  for (const dir of getScanDirectories(getWorkspaceFolderUri())) {
+    if (!isAbsolutePosix(dir.path)) {
+      continue;
+    }
+    const watcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(vscode.Uri.file(dir.path), `**/{${SCAN_FILE_GLOB},requirements.txt}`),
+    );
+    watcher.onDidChange(sharedRefreshAll);
+    watcher.onDidCreate(sharedRefreshAll);
+    watcher.onDidDelete(sharedRefreshAll);
+    externalWatchers.push(watcher);
+  }
 }
 
 export function deactivate(): void {
   currentState = undefined;
   sidebarProvider = undefined;
   mainPanel = undefined;
+  for (const watcher of externalWatchers) {
+    watcher.dispose();
+  }
+  externalWatchers = [];
   editingByPanel.clear();
   addingByPanel.clear();
   activeTabByPanel.clear();
@@ -225,62 +265,117 @@ function findButton(state: RuntimeState, source: ButtonsSource, index: number): 
   return list.find((b) => b.index === index);
 }
 
-/** Open a native folder picker and append the chosen workspace-relative directories to the setting. */
-async function addScanDirectory(): Promise<void> {
+/** Stable path identity for a file: workspace-relative when inside the project, absolute posix otherwise. */
+function toEntryPath(root: vscode.Uri, fsPath: string): string {
+  const rel = path.relative(root.fsPath, fsPath).split(path.sep).join("/");
+  if (rel === "" || rel === ".." || rel.startsWith("../") || path.isAbsolute(rel)) {
+    return fsPath.split(path.sep).join("/");
+  }
+  return rel;
+}
+
+/** Append one directory (workspace-relative when inside the project, absolute otherwise) to the setting. */
+async function addScanDirectoryPath(absoluteFsPath: string): Promise<void> {
   const root = getWorkspaceFolderUri();
   if (!root) {
     return;
   }
-  const picks = await vscode.window.showOpenDialog({
-    canSelectFolders: true,
-    canSelectMany: true,
-    canSelectFiles: false,
-    defaultUri: root,
-    openLabel: "Add Scan Directory",
-    title: "Choose directories to scan for scripts",
-  });
-  if (!picks || picks.length === 0) {
+  const entry = toEntryPath(root, absoluteFsPath);
+  if (entry === "") {
+    void vscode.window.showInformationMessage("The project root is always scanned - not added again.");
     return;
   }
-
-  const additions: string[] = [];
-  for (const pick of picks) {
-    const rel = path.relative(root.fsPath, pick.fsPath).split(path.sep).join("/");
-    if (rel === "") {
-      void vscode.window.showInformationMessage("The project root is always scanned - not added again.");
-      continue;
-    }
-    if (rel === ".." || rel.startsWith("../") || path.isAbsolute(rel)) {
-      void vscode.window.showWarningMessage(`"${rel}" is outside the workspace and was skipped.`);
-      continue;
-    }
-    // Reject what the scanner would silently drop anyway (hidden/ignored names, glob metacharacters).
-    if (normalizeScanDirectories([{ path: rel }]).length === 0) {
-      void vscode.window.showWarningMessage(
-        `"${rel}" cannot be scanned - hidden, ignored, or unsupported directory names are skipped.`,
-      );
-      continue;
-    }
-    additions.push(rel);
-  }
-  if (additions.length === 0) {
+  // Reject what the scanner would silently drop anyway (hidden/ignored names, glob metacharacters).
+  if (normalizeScanDirectories([{ path: entry }]).length === 0) {
+    void vscode.window.showWarningMessage(
+      `"${entry}" cannot be scanned - hidden, ignored, or unsupported directory names are skipped.`,
+    );
     return;
   }
 
   const foldCase = process.platform === "win32" ? (p: string) => p.toLowerCase() : (p: string) => p;
   await mutateScanDirectories((dirs) => {
-    const existing = new Set(dirs.map((d) => foldCase(d.path)));
-    const next = [...dirs];
-    for (const p of additions) {
-      if (!existing.has(foldCase(p))) {
-        existing.add(foldCase(p));
-        next.push({ path: p, recursive: false });
-      } else {
-        void vscode.window.showInformationMessage(`"${p}" is already a scan directory.`);
-      }
+    if (dirs.some((d) => foldCase(d.path) === foldCase(entry))) {
+      void vscode.window.showInformationMessage(`"${entry}" is already a scan directory.`);
+      return dirs;
     }
-    return next;
+    return [...dirs, { path: entry, recursive: false }];
   });
+}
+
+/** Add one standalone script file (.sh / Python entry file) as a project button. */
+async function addStandaloneFile(entry: DiscoveredScript): Promise<void> {
+  const fileUri = getProjectButtonsFileUri();
+  if (!fileUri) {
+    void vscode.window.showErrorMessage("No workspace folder is open.");
+    return;
+  }
+  const state = await refreshState();
+  const base = state.projectFileExists ? state.projectFile : emptyButtonsFile();
+  const next = addScriptButton(base, entry);
+  if (next === base) {
+    void vscode.window.showInformationMessage(`"${entry.script}" is already a button.`);
+    return;
+  }
+  await writeButtonsFile(fileUri, next);
+  await refreshState(true);
+  await refreshWebview();
+}
+
+/**
+ * Turn a pasted path into scan scope or buttons. Directories become scan
+ * directories (relative inside the project, absolute outside); .sh and Python
+ * entry files become standalone buttons; manifest files are covered by
+ * scanning their folder.
+ */
+async function addScanPath(rawPath: string): Promise<void> {
+  const root = getWorkspaceFolderUri();
+  if (!root) {
+    return;
+  }
+  const trimmed = rawPath.trim().replace(/^"(.*)"$/, "$1"); // Windows "Copy as path" pastes quoted.
+  if (!trimmed) {
+    return;
+  }
+  const absolute =
+    path.isAbsolute(trimmed) || /^[a-zA-Z]:/.test(trimmed) ? trimmed : path.resolve(root.fsPath, trimmed);
+
+  let isDirectory: boolean;
+  try {
+    isDirectory = (await vscode.workspace.fs.stat(vscode.Uri.file(absolute))).type === vscode.FileType.Directory;
+  } catch {
+    void vscode.window.showWarningMessage(`"${trimmed}" does not exist.`);
+    return;
+  }
+
+  if (isDirectory) {
+    await addScanDirectoryPath(absolute);
+    return;
+  }
+  const entryPath = toEntryPath(root, absolute);
+  const entry = fileEntryScript(path.basename(absolute), entryPath);
+  if (entry) {
+    await addStandaloneFile(entry);
+    return;
+  }
+  // A manifest file: its scripts come from scanning its folder.
+  await addScanDirectoryPath(path.dirname(absolute));
+}
+
+/** Context-menu handler: add a right-clicked file as a button, or scan its folder for manifests. */
+async function addFileFromExplorer(uri: vscode.Uri): Promise<void> {
+  const root = getWorkspaceFolderUri();
+  if (!root) {
+    void vscode.window.showErrorMessage("No workspace folder is open.");
+    return;
+  }
+  const entryPath = toEntryPath(root, uri.fsPath);
+  const entry = fileEntryScript(path.basename(uri.fsPath), entryPath);
+  if (entry) {
+    await addStandaloneFile(entry);
+    return;
+  }
+  await addScanDirectoryPath(path.dirname(uri.fsPath));
 }
 
 /** Rewrite the `buttons.scanDirectories` workspace setting, then refresh. Serialized so
@@ -322,6 +417,10 @@ function buttonCwd(button: ResolvedButton): string | undefined {
     return undefined;
   }
   if (button.entry.type === "script" && button.entry.packageDir) {
+    // Absolute package dirs (scripts outside the workspace) are used as-is.
+    if (isAbsolutePosix(button.entry.packageDir)) {
+      return button.entry.packageDir;
+    }
     return path.join(root.fsPath, ...button.entry.packageDir.split("/"));
   }
   return root.fsPath;
@@ -366,7 +465,7 @@ async function handlePanelMessage(panelId: PanelId, message: PanelActionMessage)
     }
 
     case "add-scan-dir":
-      await addScanDirectory();
+      await addScanPath(message.path);
       return;
 
     case "remove-scan-dir":

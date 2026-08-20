@@ -61,6 +61,7 @@ describe("dirOf", () => {
     assert.equal(dirOf("package.json"), "");
     assert.equal(dirOf("scripts/deploy.sh"), "scripts");
     assert.equal(dirOf("packages/api/.venv"), "packages/api");
+    assert.equal(dirOf("/opt/tools/deploy.sh"), "/opt/tools");
   });
 });
 
@@ -73,6 +74,18 @@ describe("fileEntryScript", () => {
       command: "bash deploy.sh",
       packageManager: "shell",
       packageDir: "scripts",
+      icon: "terminal-bash",
+    });
+  });
+
+  it("builds an entry for a file outside the workspace, keyed on the absolute path", () => {
+    const entry = fileEntryScript("deploy.sh", "/opt/tools/deploy.sh");
+    assert.deepEqual(entry, {
+      file: "/opt/tools/deploy.sh",
+      script: "/opt/tools/deploy.sh",
+      command: "bash deploy.sh",
+      packageManager: "shell",
+      packageDir: "/opt/tools",
       icon: "terminal-bash",
     });
   });

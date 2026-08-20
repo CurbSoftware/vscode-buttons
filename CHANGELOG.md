@@ -4,6 +4,18 @@ All notable changes to the Buttons extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Changed
+
+- The **Scan directories** card no longer opens the OS folder picker. Type or paste a path into the new Add field: relative paths resolve inside the project, full paths reach outside it.
+
+### Added
+
+- **Scanning outside the project**: `buttons.scanDirectories` now accepts absolute paths. Those directories are scanned and watched like in-project ones, and their buttons run with the terminal set to the script's own directory.
+- **Add to Buttons** context menu on Explorer right-click of a `.sh` or Python entry file: adds it as a standalone project button without scanning its folder. Right-clicking a manifest (`package.json`, `Makefile`, `justfile`, `composer.json`) adds its folder as a scan directory instead.
+- Standalone file entries in `.buttons.json` now resolve without a matching scan scope, so file buttons keep working wherever the file lives.
+
 ## [2.0.0] - 2026-08-19
 
 ### Breaking

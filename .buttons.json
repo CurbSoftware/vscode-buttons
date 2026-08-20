@@ -21,6 +21,27 @@
       "script": "compile",
       "packageDir": "",
       "packageManager": "npm"
+    },
+    {
+      "type": "script",
+      "file": "package.json",
+      "script": "watch",
+      "packageDir": "",
+      "packageManager": "npm"
+    },
+    {
+      "type": "script",
+      "file": "package.json",
+      "script": "lint",
+      "packageDir": "",
+      "packageManager": "npm"
+    },
+    {
+      "type": "script",
+      "file": "package.json",
+      "script": "test",
+      "packageDir": "",
+      "packageManager": "npm"
     }
   ]
 }

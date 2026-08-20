@@ -25,7 +25,9 @@ A list of every script Buttons discovered, with a checkbox next to each:
 - **Check** a script to add it as a project button.
 - **Uncheck** a script to remove it.
 
-The tab also holds the **Scan directories** card, which lists the extra directories scanned on top of the always-scanned project root (top level only). Each row has a **recursive** toggle for scanning the directory's whole tree, and **Add folder** opens your OS folder picker. The card edits the [`buttons.scanDirectories`](configuration.md#buttonsscandirectories) workspace setting - see [Scan directories](scanning.md#scan-directories).
+The tab also holds the **Scan directories** card, which lists the extra directories scanned on top of the always-scanned project root (top level only). Each row has a **recursive** toggle for scanning the directory's whole tree. Type or paste a path into the Add field: relative paths resolve inside the project, full paths reach outside it. The card edits the [`buttons.scanDirectories`](configuration.md#buttonsscandirectories) workspace setting - see [Scan directories](scanning.md#scan-directories).
+
+In the Explorer, right-clicking a `.sh` or Python entry file offers **Add to Buttons**, which adds it as a standalone project button without scanning its folder.
 
 Detected virtual environments (`venv/` or `.venv/`) also appear in this tab, grouped under the venv's path - see [Virtual environments](scanning.md#virtual-environments).
 

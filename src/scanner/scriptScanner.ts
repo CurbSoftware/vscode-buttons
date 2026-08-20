@@ -1,6 +1,8 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import {
+  isAbsolutePosix,
+  SCAN_FILE_GLOB,
   scanScopePatterns,
   venvActivateCandidates,
   venvButtons,
@@ -95,15 +97,19 @@ async function detectVenv(
 
 /**
  * Scan the project for scripts: the workspace root (top level only, always)
- * plus each configured scan directory (top level or recursive). Manifest files
- * are parsed for named scripts; standalone .sh and Python entry files become
- * one-click entries; detected virtual environments offer activate/deactivate/
+ * plus each configured scan directory (top level or recursive; absolute
+ * entries point outside the workspace and are scanned with their own base).
+ * Standalone file entries from `.buttons.json` resolve here too, so they work
+ * even when their directory is not a scan scope. Manifest files are parsed
+ * for named scripts; standalone .sh and Python entry files become one-click
+ * entries; detected virtual environments offer activate/deactivate/
  * install-requirements buttons. Installed packages, VCS, and build/cache
  * directories are always excluded.
  */
 export async function scanWorkspaceScripts(
   workspaceUri: vscode.Uri,
   scanDirectories: readonly ScanDirectory[] = [],
+  entryFilePaths: readonly string[] = [],
 ): Promise<DiscoveredScript[]> {
   // `.*` in the brace list also excludes every hidden directory, matching the
   // documented contract and the watcher-side shouldIgnoreDir rule.
@@ -124,35 +130,74 @@ export async function scanWorkspaceScripts(
     }
   };
 
+  // Turn one discovered file uri into scripts. `file` is the stable path
+  // identity: workspace-relative for workspace scopes, absolute for external ones.
+  const discoverFile = async (uri: vscode.Uri, file: string): Promise<void> => {
+    const packageDir = dirOf(file);
+    const base = path.basename(uri.fsPath);
+
+    const entry = fileEntryScript(base, file);
+    if (entry) {
+      add([entry]);
+      return;
+    }
+
+    let scripts: DiscoveredScript[];
+    try {
+      const rawBytes = await vscode.workspace.fs.readFile(uri);
+      const text = Buffer.from(rawBytes).toString("utf8");
+      scripts = parseScriptFile(base, text, file, packageDir, packageManager);
+    } catch {
+      return;
+    }
+    add(scripts);
+  };
+
   for (const relPattern of scanScopePatterns(scanDirectories)) {
     const pattern = new vscode.RelativePattern(workspaceUri, relPattern);
     const uris = await vscode.workspace.findFiles(pattern, excludeGlob, MAX_SCRIPT_FILES);
-
     for (const uri of uris) {
-      const relative = toPosixRelative(workspaceFsPath, uri.fsPath);
-      const packageDir = dirOf(relative);
-      const base = path.basename(uri.fsPath);
-
-      const entry = fileEntryScript(base, relative);
-      if (entry) {
-        add([entry]);
-        continue;
-      }
-
-      let scripts: DiscoveredScript[];
-      try {
-        const rawBytes = await vscode.workspace.fs.readFile(uri);
-        const text = Buffer.from(rawBytes).toString("utf8");
-        scripts = parseScriptFile(base, text, relative, packageDir, packageManager);
-      } catch {
-        continue;
-      }
-      add(scripts);
+      await discoverFile(uri, toPosixRelative(workspaceFsPath, uri.fsPath));
     }
   }
 
-  // Venv buttons for the root and the top level of each scan directory.
-  const venvBases = ["", ...scanDirectories.map((d) => d.path)];
+  for (const dir of scanDirectories) {
+    if (!isAbsolutePosix(dir.path)) {
+      continue;
+    }
+    const pattern = new vscode.RelativePattern(
+      vscode.Uri.file(dir.path),
+      dir.recursive ? `**/{${SCAN_FILE_GLOB}}` : `{${SCAN_FILE_GLOB}}`,
+    );
+    const uris = await vscode.workspace.findFiles(pattern, excludeGlob, MAX_SCRIPT_FILES);
+    for (const uri of uris) {
+      await discoverFile(uri, uri.fsPath.split(path.sep).join("/"));
+    }
+  }
+
+  // Standalone file entries from `.buttons.json` are self-discovering: stat each
+  // one so entries keep working outside every scan scope (including outside the
+  // workspace), while vanished files degrade to `missing` via resolveButtons.
+  for (const entryFile of entryFilePaths) {
+    const base = entryFile.split("/").pop() ?? entryFile;
+    const entry = fileEntryScript(base, entryFile);
+    if (!entry) {
+      continue;
+    }
+    const uri = isAbsolutePosix(entryFile)
+      ? vscode.Uri.file(entryFile)
+      : vscode.Uri.joinPath(workspaceUri, ...entryFile.split("/"));
+    try {
+      await vscode.workspace.fs.stat(uri);
+    } catch {
+      continue;
+    }
+    add([entry]);
+  }
+
+  // Venv buttons for the root and the top level of each workspace scan directory.
+  // ponytail: external (absolute) scan dirs get no venv buttons; give detectVenv a baseUri if that matters.
+  const venvBases = ["", ...scanDirectories.filter((d) => !isAbsolutePosix(d.path)).map((d) => d.path)];
   for (const baseRel of venvBases) {
     for (const venvName of VENV_DIR_NAMES) {
       const venvRel = baseRel === "" ? venvName : `${baseRel}/${venvName}`;

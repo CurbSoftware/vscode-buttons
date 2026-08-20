@@ -7,22 +7,57 @@
 import { dirOf, EXCLUDE_DIRS, MANIFEST_FILE_NAMES, PYTHON_ENTRY_FILES, shellArg, type DiscoveredScript } from "./types";
 
 export interface ScanDirectory {
-  /** Posix-separated workspace-relative path, no leading "./" or trailing "/". */
+  /** Posix-separated workspace-relative path, or an absolute path for a directory outside the workspace. */
   path: string;
   /** Scan the directory tree recursively instead of only its top level. */
   recursive: boolean;
 }
 
+/** True for absolute posix paths ("/opt/tools") and windows drive paths ("C:/tools"). */
+export function isAbsolutePosix(p: string): boolean {
+  return p.startsWith("/") || /^[a-zA-Z]:/.test(p);
+}
+
 /** Basenames the scanner looks for inside every scan scope. */
 export const SCAN_FILE_GLOB = [...MANIFEST_FILE_NAMES, "*.sh", ...PYTHON_ENTRY_FILES].join(",");
 
+/** Relative-path half of the validation: hidden, ignored, and glob-unsafe names are dropped. */
+function isScannableRelativePath(normalized: string): boolean {
+  const segments = normalized.split("/");
+  return !(
+    normalized === "" ||
+    normalized === "." ||
+    normalized === ".." ||
+    /[{}[\]*?]/.test(normalized) ||
+    segments.some((s) => s === ".." || s === "" || s.startsWith(".") || EXCLUDE_DIRS.includes(s) || s.startsWith("!"))
+  );
+}
+
+/**
+ * Absolute-path half of the validation. The user pointed at this directory
+ * explicitly, so hidden and ignore-listed names inside the path are allowed
+ * (the exclude glob still filters what is found *inside* the directory); only
+ * glob metacharacters and `..` escapes are rejected.
+ */
+function isScannableAbsolutePath(normalized: string): boolean {
+  if (/[{}[\]*?]/.test(normalized)) {
+    return false;
+  }
+  const segments = normalized.replace(/^[a-zA-Z]:/, "").split("/");
+  // A leading empty segment is the posix root ("/opt/x"); interior ones are "//".
+  const checkable = segments[0] === "" ? segments.slice(1) : segments;
+  return !checkable.some((s) => s === "" || s === "." || s === ".." || s.startsWith("!"));
+}
+
 /**
  * Validate and normalize a raw `buttons.scanDirectories` value: fixes slashes,
- * drops entries that are not scannable workspace-relative directories, and
- * dedupes (first occurrence wins). Rejected on purpose: absolute paths, `..`
- * escapes, glob metacharacters (the path is interpolated into a glob), and
- * hidden or ignore-listed directory names (they are excluded from every scan
- * and from the file watcher, so they could never produce results).
+ * drops entries that are not scannable directories, and dedupes (first
+ * occurrence wins). Relative entries reject `..` escapes, glob
+ * metacharacters (the path is interpolated into a glob), and hidden or
+ * ignore-listed directory names (they are excluded from every workspace scan
+ * and from the file watcher, so they could never produce results). Absolute
+ * entries point outside the workspace and only reject glob metacharacters
+ * and `..` escapes.
  */
 export function normalizeScanDirectories(value: unknown): ScanDirectory[] {
   if (!Array.isArray(value)) {
@@ -42,17 +77,10 @@ export function normalizeScanDirectories(value: unknown): ScanDirectory[] {
     while (normalized.endsWith("/") && normalized.length > 1) {
       normalized = normalized.slice(0, -1);
     }
-    const segments = normalized.split("/");
-    if (
-      normalized === "" ||
-      normalized === "." ||
-      normalized === ".." ||
-      segments.some((s) => s === ".." || s === "" || s.startsWith(".") || EXCLUDE_DIRS.includes(s)) ||
-      normalized.startsWith("/") ||
-      /^[a-zA-Z]:/.test(normalized) ||
-      /[{}[\]*?]/.test(normalized) ||
-      segments.some((s) => s.startsWith("!"))
-    ) {
+    const scannable = isAbsolutePosix(normalized)
+      ? isScannableAbsolutePath(normalized)
+      : isScannableRelativePath(normalized);
+    if (!scannable) {
       continue;
     }
     if (seen.has(normalized)) {
@@ -65,13 +93,17 @@ export function normalizeScanDirectories(value: unknown): ScanDirectory[] {
 }
 
 /**
- * Glob patterns (relative to the workspace root) for every scan scope: the
- * project root is always scanned at its top level; each configured directory
- * at its top level or recursively.
+ * Glob patterns (relative to the workspace root) for the workspace scan
+ * scopes: the project root is always scanned at its top level; each relative
+ * configured directory at its top level or recursively. Absolute directories
+ * are skipped here and get their own base URI in the scanner.
  */
 export function scanScopePatterns(scanDirectories: readonly ScanDirectory[]): string[] {
   const patterns = [`{${SCAN_FILE_GLOB}}`];
   for (const dir of scanDirectories) {
+    if (isAbsolutePosix(dir.path)) {
+      continue;
+    }
     patterns.push(dir.recursive ? `${dir.path}/**/{${SCAN_FILE_GLOB}}` : `${dir.path}/{${SCAN_FILE_GLOB}}`);
   }
   return patterns;

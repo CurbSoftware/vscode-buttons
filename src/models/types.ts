@@ -8,11 +8,11 @@ export type ButtonsTab = "buttons" | "scripts";
 /** Live reference to a script discovered by the scanner. The command is recomputed on every rescan. */
 export interface ScriptButton {
   type: "script";
-  /** Posix-separated path of the script file relative to the workspace root. */
+  /** Posix-separated path of the script file: workspace-relative, or absolute for files outside the workspace. */
   file: string;
   /** Script/target name. */
   script: string;
-  /** Posix-separated directory of the script file relative to the workspace root; "" means root. */
+  /** Posix-separated directory of the script file: workspace-relative ("" means root) or absolute. */
   packageDir: string;
   packageManager: PackageManager;
   note?: string;
@@ -98,7 +98,7 @@ export type PanelActionMessage =
   | { type: "open-global-file" }
   | { type: "open-settings" }
   | { type: "generate" }
-  | { type: "add-scan-dir" }
+  | { type: "add-scan-dir"; path: string }
   | { type: "remove-scan-dir"; path: string }
   | { type: "toggle-scan-dir-recursive"; path: string; recursive: boolean }
   | { type: "set-tab"; tab: ButtonsTab };

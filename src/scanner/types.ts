@@ -73,14 +73,14 @@ export function fileEntryScript(base: string, relpath: string): DiscoveredScript
 }
 
 export interface DiscoveredScript {
-  /** Posix-separated path of the script file relative to the workspace root, e.g. "packages/app/package.json". */
+  /** Posix-separated path of the script file: workspace-relative (e.g. "packages/app/package.json") or absolute for external scopes. */
   file: string;
   /** Script/target name, e.g. "dev", "build", "test". */
   script: string;
   /** The executable command, recomputed on every scan, e.g. "pnpm dev". */
   command: string;
   packageManager: PackageManager;
-  /** Posix-separated directory of the script file relative to the workspace root; "" means root. */
+  /** Posix-separated directory of the script file: workspace-relative ("" means root) or absolute. */
   packageDir: string;
   /** package.json script body, or the preceding Makefile "#" comment. */
   description?: string;

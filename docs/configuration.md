@@ -60,7 +60,7 @@ Extra directories to scan, on top of the always-scanned project root (top level 
 - **Type:** array of objects
 - **Default:** `[]`
 
-Paths are normalized (backslashes fixed, trailing slashes dropped) and invalid entries - absolute paths, `..` escapes, glob metacharacters, hidden directories, ignore-listed names (e.g. `build`, `dist`), duplicates - are ignored. The **Scan directories** card in the **Project scripts** tab edits this setting for you via the OS folder picker. See [Script scanning](scanning.md#scan-directories) for the scope model.
+Paths are normalized (backslashes fixed, trailing slashes dropped). Relative entries must stay inside the workspace: `..` escapes, glob metacharacters, hidden directories, ignore-listed names (e.g. `build`, `dist`), and duplicates are ignored. Absolute entries (for directories outside the workspace) are allowed and only reject glob metacharacters and `..` segments. The **Scan directories** card in the **Project scripts** tab edits this setting for you through its paste-a-path Add field. See [Script scanning](scanning.md#scan-directories) for the scope model.
 
 ## Where settings live
 

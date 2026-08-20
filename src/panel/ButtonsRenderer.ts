@@ -117,9 +117,10 @@ function renderScanDirectoriesCard(state: WebviewState): string {
   return `<div class="scan-dirs">
   <div class="scan-dirs-header">
     <span class="scan-dirs-title">Scan directories</span>
-    <button type="button" class="btn" data-action="add-scan-dir" title="Add a directory to scan">
-      <span class="codicon codicon-new-folder" aria-hidden="true"></span> Add folder
-    </button>
+  </div>
+  <div class="scan-dir-add">
+    <input id="add-scan-path" type="text" placeholder="packages/api or /opt/tools" aria-label="Path to add (relative for this project, full path for outside it)" />
+    <button type="button" class="btn" data-action="add-scan-dir" title="Add this path">Add</button>
   </div>
   <div class="scan-dir-row locked">
     <span class="codicon codicon-root-folder" aria-hidden="true"></span>
@@ -129,7 +130,7 @@ function renderScanDirectoriesCard(state: WebviewState): string {
     <span class="codicon codicon-lock scan-dir-lock" aria-hidden="true"></span>
   </div>
   ${dirRows}
-  <div class="muted scan-dirs-hint">The project root is always scanned at its top level. Add folders to scan elsewhere.</div>
+  <div class="muted scan-dirs-hint">The project root is always scanned at its top level. Paste a folder path to scan elsewhere: relative for this project, full path for anything outside it.</div>
 </div>`;
 }
 
@@ -458,6 +459,8 @@ body {
   gap: 4px;
 }
 .scan-dirs-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.scan-dir-add { display: flex; align-items: center; gap: 6px; padding: 2px 0 4px; }
+.scan-dir-add input { flex: 1; min-width: 0; }
 .scan-dirs-title {
   font-size: 0.85em;
   text-transform: uppercase;
@@ -665,7 +668,7 @@ function restoreFocus() {
 
 // The host replaces the whole document on every refresh; keep in-progress form
 // text alive across those reloads.
-const DRAFT_IDS = ["edit-command", "edit-note", "add-command", "add-note"];
+const DRAFT_IDS = ["edit-command", "edit-note", "add-command", "add-note", "add-scan-path"];
 
 function saveDrafts() {
   const drafts = {};
@@ -690,6 +693,19 @@ function restoreDrafts() {
 
 document.addEventListener("input", (event) => {
   if (event.target && event.target.id && DRAFT_IDS.includes(event.target.id)) { saveDrafts(); }
+});
+
+// Submit the scan-path input; clear it and its draft so the post-add refresh leaves it empty.
+function submitScanPath() {
+  const input = document.getElementById("add-scan-path");
+  if (!input || !input.value.trim()) { return; }
+  post({ type: "add-scan-dir", path: input.value });
+  input.value = "";
+  saveDrafts();
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && event.target && event.target.id === "add-scan-path") { submitScanPath(); }
 });
 
 document.addEventListener("change", (event) => {
@@ -731,7 +747,7 @@ document.addEventListener("click", (event) => {
     }
     case "rescan": post({ type: "rescan" }); break;
     case "generate": post({ type: "generate" }); break;
-    case "add-scan-dir": post({ type: "add-scan-dir" }); break;
+    case "add-scan-dir": submitScanPath(); break;
     case "remove-scan-dir": post({ type: "remove-scan-dir", path: el.dataset.path }); break;
     case "toggle-all": post({ type: "toggle-all", checked: el.dataset.checked === "true" }); break;
     case "set-tab": post({ type: "set-tab", tab: el.dataset.tab }); break;
