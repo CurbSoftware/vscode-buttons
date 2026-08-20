@@ -8,6 +8,12 @@ Run any command in the current or a new integrated terminal, copy it to the clip
 - **VSCodium:** [Install from Open VSX](https://open-vsx.org/extension/CurbSoftware/buttons-vscode)
 - **Source / issues:** [github.com/CurbSoftware/vscode-buttons](https://github.com/CurbSoftware/vscode-buttons)
 
+## Why I built this
+
+Monorepos are my bittersweet ally. Every package brings its own scripts, and I never could keep them straight. I kept retyping the same commands, wasting time.
+
+Buttons is my marriage counsellor. It scans the scripts, turns them into buttons, and remembers what I don't want to. That's what makes my monorepos tolerable.
+
 ## Screenshots
 
 ![Buttons scanning scripts into a clickable launcher](https://raw.githubusercontent.com/CurbSoftware/vscode-buttons/main/media/screenshots/btn-btns-animate.webp)

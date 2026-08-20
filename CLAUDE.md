@@ -1,7 +1,17 @@
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-Do NOT use em-dashes ever.  Do not use "—" symbol anywhere, change and code or text copy found during tasks to remove them.  Write in a humanistic way.
+
+---
+Do NOT use em-dashes nor emojis unless explicitly instructed to do so, ever.  Do not use "\u2014" symbol anywhere, change and code or text copy found during tasks to remove them.
+Write all user facing text in a human-friendly way. Humanize writing by:
+- using natural working voice: direct, clear, slightly informal. 
+- cutting any sentence that doesn't add new information. 
+- using short punchy sentences, rhetorical fragments, and analogies.
+- avoiding overly promotional words like 'game-changing' or 'unlock.'
+- including personal anecdotes where appropriate.
+---
+
 
 
 ## Commands
