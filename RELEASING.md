@@ -23,7 +23,7 @@ Buttons publishes to the **VS Code Marketplace** and **Open VSX** (VSCodium). Th
 
 ## Registry setup (done)
 
-One-time setup completed 2026-08-15: publisher `CurbSoftware` on the Marketplace, Open VSX namespace claimed, secrets `VSCE_PAT` / `OVSX_PAT` stored in GitHub Actions. Versions 1.1.0 through 2.0.0 are live on both registries. To rotate a secret:
+One-time setup completed 2026-08-15: publisher `CurbSoftware` on the Marketplace, Open VSX namespace claimed, secrets `VSCE_PAT` / `OVSX_PAT` stored in GitHub Actions. Versions 1.1.0 through 2.0.1 are live on both registries (2.0.1 published manually on 2026-08-20, exercising the checklist above end to end). To rotate a secret:
 
 ```bash
 gh secret set OVSX_PAT -R CurbSoftware/vscode-buttons   # pastes securely, then Ctrl+D
