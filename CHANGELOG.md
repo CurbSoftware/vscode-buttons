@@ -4,6 +4,12 @@ All notable changes to the Buttons extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.1.1] - 2026-09-02
+
+### Changed
+
+- Replaced **Insert** / **Insert selected** and row checkboxes with per-command **+** (same line, space) and **↵** (new line). Neither runs the command; press Enter in the terminal when the line is ready.
+
 ## [2.1.0] - 2026-09-02
 
 ### Added

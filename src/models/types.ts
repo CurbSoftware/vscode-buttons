@@ -117,8 +117,7 @@ export type PanelActionMessage =
   | { type: "run-current"; source: ButtonsSource; path: number[] }
   | { type: "run-new"; source: ButtonsSource; path: number[] }
   | { type: "copy"; source: ButtonsSource; path: number[] }
-  | { type: "insert"; source: ButtonsSource; path: number[] }
-  | { type: "insert-selected"; source: ButtonsSource; paths: number[][] }
+  | { type: "append"; source: ButtonsSource; path: number[]; sep: "space" | "newline" }
   | { type: "start-edit"; source: ButtonsSource; path: number[] }
   | { type: "cancel-edit" }
   | { type: "save-edit"; source: ButtonsSource; path: number[]; command?: string; args?: string; note: string }

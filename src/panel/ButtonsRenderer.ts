@@ -211,12 +211,8 @@ function renderTable(
   const addButton = canAdd
     ? `<button class="btn" data-action="start-add" data-source="${source}">+ Add command</button>`
     : "";
-  const insertSelected =
-    buttons.length > 0
-      ? `<button class="btn" data-action="insert-selected" data-source="${source}" title="Insert selected commands into the terminal without running them">Insert selected</button>`
-      : "";
   const subtitleHtml = subtitle ? `<div class="section-subtitle">${escapeHtml(subtitle)}</div>` : "";
-  const titleActions = `<span class="section-title-actions">${insertSelected}${addButton}</span>`;
+  const titleActions = `<span class="section-title-actions">${addButton}</span>`;
 
   if (variant === "sidebar") {
     const rows: string[] = [];
@@ -261,10 +257,6 @@ function renderDragHandle(): string {
   return `<span class="drag-handle" draggable="true" title="Drag to reorder" aria-label="Drag to reorder"><span class="codicon codicon-gripper" aria-hidden="true"></span></span>`;
 }
 
-function renderSelect(source: ButtonsSource, path: number[]): string {
-  return `<input type="checkbox" data-action="toggle-select" ${sourcePathAttrs(source, path)} aria-label="Select command" />`;
-}
-
 function renderVariantToggle(source: ButtonsSource, path: number[]): string {
   return `<button type="button" class="scan-group-toggle variant-toggle" data-action="toggle-variants" ${sourcePathAttrs(source, path)} aria-expanded="false" title="Show parameter options">
     <span class="codicon codicon-chevron-right scan-group-caret" aria-hidden="true"></span>
@@ -289,7 +281,8 @@ function renderRowActions(source: ButtonsSource, button: ResolvedButton): string
     ? ""
     : `<button class="btn primary" data-action="run-current" ${ds} title="Run in the current integrated terminal">Run</button>
        <button class="btn" data-action="run-new" ${ds} title="Run in a new integrated terminal">New Terminal</button>
-       <button class="btn" data-action="insert" ${ds} title="Insert into the terminal without running">Insert</button>
+       <button class="btn" data-action="append" data-sep="space" ${ds} title="Add to the current terminal line (space). Does not run.">+</button>
+       <button class="btn" data-action="append" data-sep="newline" ${ds} title="Add on a new line. Does not run. Press Enter in the terminal to run.">↵</button>
        <button class="btn" data-action="copy" ${ds} title="Copy command to clipboard">Copy</button>`;
   return `${runActions}
     <button class="btn" data-action="duplicate" ${ds} title="Duplicate this button">Duplicate</button>
@@ -337,7 +330,6 @@ function renderCardDisplayRow(source: ButtonsSource, button: ResolvedButton, isC
   return `<div class="button-card${isChild ? " child" : ""}" ${sourcePathAttrs(source, button.path)}>
   <div class="button-card-head">
     ${renderDragHandle()}
-    ${renderSelect(source, button.path)}
     ${toggle}
     <div class="button-card-main"><code>${escapeHtml(button.command)}</code>${renderBadges(button)}${note}</div>
   </div>
@@ -401,7 +393,7 @@ function renderDisplayRow(source: ButtonsSource, button: ResolvedButton, isParen
   const ds = sourcePathAttrs(source, button.path);
   return `<tr ${ds}>
   <td class="cmd">
-    <div class="cmd-head">${renderDragHandle()}${renderSelect(source, button.path)}${toggle}<code>${escapeHtml(button.command)}</code>${renderBadges(button)}</div>
+    <div class="cmd-head">${renderDragHandle()}${toggle}<code>${escapeHtml(button.command)}</code>${renderBadges(button)}</div>
   </td>
   <td class="note">${note}</td>
   <td class="actions">${renderRowActions(source, button)}</td>
@@ -838,8 +830,6 @@ document.addEventListener("change", (event) => {
     post({ type: "toggle-file", file: el.dataset.file, checked: el.checked });
   } else if (el.matches('input[data-action="toggle-scan-dir-recursive"]')) {
     post({ type: "toggle-scan-dir-recursive", path: el.dataset.path, recursive: el.checked });
-  } else if (el.matches('input[data-action="toggle-select"]')) {
-    persistChecked();
   }
 });
 
@@ -881,16 +871,7 @@ document.addEventListener("click", (event) => {
     case "open-settings": post({ type: "open-settings" }); break;
     case "run-current": post({ type: "run-current", source, path }); break;
     case "run-new": post({ type: "run-new", source, path }); break;
-    case "insert": post({ type: "insert", source, path }); break;
-    case "insert-selected": {
-      const paths = [];
-      document.querySelectorAll('input[data-action="toggle-select"][data-source="' + CSS.escape(source) + '"]:checked').forEach((box) => {
-        const p = parsePath(box);
-        if (p) { paths.push(p); }
-      });
-      post({ type: "insert-selected", source, paths });
-      break;
-    }
+    case "append": post({ type: "append", source, path, sep: el.dataset.sep === "newline" ? "newline" : "space" }); break;
     case "copy": post({ type: "copy", source, path }); break;
     case "duplicate": post({ type: "duplicate", source, path }); break;
     case "start-edit": clearDrafts(); post({ type: "start-edit", source, path }); break;
@@ -964,14 +945,6 @@ function persistExpandedButtons() {
   vscode.setState({ ...(vscode.getState() || {}), expandedButtons });
 }
 
-function persistChecked() {
-  const checkedPaths = [];
-  document.querySelectorAll('input[data-action="toggle-select"]:checked').forEach((el) => {
-    checkedPaths.push(el.dataset.source + ":" + el.dataset.path);
-  });
-  vscode.setState({ ...(vscode.getState() || {}), checkedPaths });
-}
-
 document.addEventListener("dragstart", (event) => {
   const handle = event.target && event.target.closest ? event.target.closest(".drag-handle") : null;
   if (!handle) { return; }
@@ -1041,11 +1014,6 @@ document.querySelectorAll(".button-block").forEach((block) => {
     const btn = block.querySelector("[data-action='toggle-variants']");
     if (btn) { btn.setAttribute("aria-expanded", "true"); }
   }
-});
-
-const checkedPaths = new Set(Array.isArray(savedState.checkedPaths) ? savedState.checkedPaths : []);
-document.querySelectorAll('input[data-action="toggle-select"]').forEach((el) => {
-  el.checked = checkedPaths.has(el.dataset.source + ":" + el.dataset.path);
 });
 
 restoreFocus();

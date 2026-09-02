@@ -19,7 +19,13 @@ import {
 } from "./config/buttonsFile";
 import { getButtonColors, getScanDirectories, loadRuntimeState, writeButtonsFile } from "./config/buttonsStore";
 import { getGlobalButtonsFileUri, getProjectButtonsFileUri, getWorkspaceFolderUri } from "./config/findButtonsFile";
-import { copyToClipboard, insertInCurrentTerminal, runInCurrentTerminal, runInNewTerminal } from "./execution/actions";
+import {
+  appendToCurrentTerminal,
+  copyToClipboard,
+  registerTerminalComposeHooks,
+  runInCurrentTerminal,
+  runInNewTerminal,
+} from "./execution/actions";
 import { ButtonsPanel } from "./panel/ButtonsPanel";
 import { ButtonsSidebarProvider } from "./panel/ButtonsSidebarProvider";
 import { isAbsolutePosix, normalizeScanDirectories, SCAN_FILE_GLOB, type ScanDirectory } from "./scanner/scanScope";
@@ -50,6 +56,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("buttons.sidebarView", sidebarProvider),
+    ...registerTerminalComposeHooks(),
   );
 
   context.subscriptions.push(
@@ -561,29 +568,13 @@ async function handlePanelMessage(panelId: PanelId, message: PanelActionMessage)
       return;
     }
 
-    case "insert": {
+    case "append": {
       const state = await refreshState();
       const button = findButton(state, message.source, message.path);
       if (!button || button.missing) {
         return;
       }
-      insertInCurrentTerminal(button.command, buttonCwd(button));
-      return;
-    }
-
-    case "insert-selected": {
-      const state = await refreshState();
-      const lines: string[] = [];
-      for (const path of message.paths) {
-        const button = findButton(state, message.source, path);
-        if (button && !button.missing) {
-          lines.push(button.command);
-        }
-      }
-      if (lines.length === 0) {
-        return;
-      }
-      insertInCurrentTerminal(lines.join("\n"));
+      appendToCurrentTerminal(button.command, message.sep);
       return;
     }
 

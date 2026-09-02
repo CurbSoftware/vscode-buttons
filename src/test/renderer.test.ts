@@ -40,10 +40,14 @@ const parent: ResolvedButton = {
 };
 
 describe("renderHtml", () => {
-  it("renders insert, duplicate, variants, and theme fallbacks", () => {
+  it("renders append, duplicate, variants, and theme fallbacks", () => {
     const html = renderHtml(state({ projectButtons: [parent] }), "codicons.css");
-    assert.match(html, /Insert selected/);
-    assert.match(html, /data-action="insert"/);
+    assert.doesNotMatch(html, /Insert selected/);
+    assert.doesNotMatch(html, /data-action="insert"/);
+    assert.doesNotMatch(html, /toggle-select/);
+    assert.match(html, /data-action="append"/);
+    assert.match(html, /data-sep="space"/);
+    assert.match(html, /data-sep="newline"/);
     assert.match(html, /Duplicate/);
     assert.match(html, /drag-handle/);
     assert.match(html, /Add variant/);

@@ -41,13 +41,12 @@ Every row (or card) offers the same actions:
 | --- | --- |
 | **Run** | Runs the command in the current integrated terminal. Reuses the active terminal if one is open; otherwise reuses a terminal named `Buttons`, or creates one. |
 | **New Terminal** | Runs the command in a fresh terminal named `Buttons: <label>`, where `<label>` is the script name (or the first word of the command). |
-| **Insert** | Writes the command into the current terminal **without running it**, so you can edit or string several commands first. |
+| **+** | Adds the command to the current terminal line with a space (`pnpm` then `dev` → `pnpm dev`). Does not run. |
+| **↵** | Adds the command on a new line. Does not run. Press Enter in the terminal when the line is ready. |
 | **Copy** | Copies the exact command to the clipboard and shows a confirmation. |
 | **Duplicate** | Clones the button (and its variants) as a new row you can change independently. |
 | **Note / Edit** | Opens inline editing. For a **script** button you can edit only the note; for a **custom command** or **args** variant you can edit the command or args and the note. |
 | **✕** | Removes the button from its file. |
-
-Checkboxes on each row plus **Insert selected** in the section header write every checked command into the terminal as separate lines, still without running them.
 
 Drag the gripper on a row to reorder it among its siblings. Order is saved in `.buttons.json`.
 

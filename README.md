@@ -87,7 +87,8 @@ Every button gives you:
 
 - **Run** - run in the current integrated terminal (reusing it, or a dedicated `Buttons` terminal).
 - **New Terminal** - run in a fresh terminal named `Buttons: <label>`.
-- **Insert** - write the command into the terminal without running it. **Insert selected** strings several checked commands as new lines.
+- **+** - add the command to the current terminal line with a space (`pnpm` then `dev` → `pnpm dev`). Does not run.
+- **↵** - add the command on a new line. Does not run. Press Enter in the terminal when the line is ready.
 - **Copy** - copy the exact command to the clipboard.
 - **Duplicate** - clone the button, including its variants.
 - **Note / Edit** - inline-edit the note (for script buttons) or the command/args and note (for custom commands and variants).

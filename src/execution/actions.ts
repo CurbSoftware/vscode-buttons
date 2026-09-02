@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { composeChunk, withoutExecute, type AppendSep } from "./compose";
 
 const BUTTONS_TERMINAL_NAME = "Buttons";
 
@@ -17,6 +18,26 @@ function getOrCreateCurrentTerminal(cwd?: string): { terminal: vscode.Terminal; 
   return { terminal: vscode.window.createTerminal({ name: BUTTONS_TERMINAL_NAME, cwd }), fresh: true };
 }
 
+let composing = false;
+let composeTerminal: vscode.Terminal | undefined;
+
+export function resetCompose(): void {
+  composing = false;
+  composeTerminal = undefined;
+}
+
+export function registerTerminalComposeHooks(): vscode.Disposable[] {
+  const maybeReset = (terminal: vscode.Terminal): void => {
+    if (terminal === composeTerminal) {
+      resetCompose();
+    }
+  };
+  return [
+    vscode.window.onDidEndTerminalShellExecution((e) => maybeReset(e.terminal)),
+    vscode.window.onDidCloseTerminal(maybeReset),
+  ];
+}
+
 /**
  * Run a command in the current integrated terminal (reusing an open one if
  * present). Commands are written relative to the button's directory, and a
@@ -27,6 +48,7 @@ function getOrCreateCurrentTerminal(cwd?: string): { terminal: vscode.Terminal; 
  * worth it - fix by switching the workspace onto one drive if this bites.
  */
 export function runInCurrentTerminal(command: string, cwd?: string): void {
+  resetCompose();
   const { terminal, fresh } = getOrCreateCurrentTerminal(cwd);
   terminal.show(true);
   if (!fresh && cwd) {
@@ -37,6 +59,7 @@ export function runInCurrentTerminal(command: string, cwd?: string): void {
 
 /** Run a command in a fresh integrated terminal instance. */
 export function runInNewTerminal(command: string, cwd?: string, label?: string): void {
+  resetCompose();
   const firstToken = command.trim().split(/\s+/)[0];
   const name = label ? `Buttons: ${label}` : firstToken ? `Buttons: ${firstToken}` : BUTTONS_TERMINAL_NAME;
   const terminal = vscode.window.createTerminal({ name, cwd });
@@ -54,12 +77,19 @@ export async function copyToClipboard(command: string): Promise<void> {
   }
 }
 
-/** Write a command into the current terminal without executing it. */
-export function insertInCurrentTerminal(command: string, cwd?: string): void {
-  const { terminal, fresh } = getOrCreateCurrentTerminal(cwd);
+/**
+ * Append a token to the current prompt without running it.
+ * `space` joins onto the same line (`pnpm` then `dev` → `pnpm dev`).
+ * `newline` inserts a line break via bracketed paste so the previous token
+ * is not submitted. Press Enter in the terminal to run.
+ */
+export function appendToCurrentTerminal(command: string, sep: AppendSep): void {
+  const { terminal } = getOrCreateCurrentTerminal();
   terminal.show(true);
-  if (!fresh && cwd) {
-    terminal.sendText(`cd "${cwd}"`, false);
+  if (composeTerminal && composeTerminal !== terminal) {
+    composing = false;
   }
-  terminal.sendText(command, false);
+  terminal.sendText(withoutExecute(composeChunk(composing, command, sep)), false);
+  composing = true;
+  composeTerminal = terminal;
 }
