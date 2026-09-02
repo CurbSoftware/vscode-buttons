@@ -21,11 +21,6 @@ export function emptyButtonsFile(): ButtonsFile {
   return { version: 1, buttons: [] };
 }
 
-/** Build an initial project file that includes scripts from root-level files only. */
-export function generateButtonsFile(discovered: DiscoveredScript[]): ButtonsFile {
-  return { version: 1, buttons: discovered.filter((s) => s.packageDir === "").map((s) => toScriptButton(s)) };
-}
-
 function toScriptButton(s: DiscoveredScript, note?: string, id?: string): ScriptButton {
   return {
     type: "script",
@@ -221,6 +216,11 @@ export function addScriptFile(file: ButtonsFile, scripts: readonly DiscoveredScr
     }
   }
   return additions.length === 0 ? file : { ...file, buttons: [...file.buttons, ...additions] };
+}
+
+/** Build or refresh a project file with every root-level script. Existing custom commands, notes, variants, and extra scripts are kept. */
+export function generateButtonsFile(discovered: DiscoveredScript[], existing?: ButtonsFile): ButtonsFile {
+  return addScriptFile(existing ?? emptyButtonsFile(), discovered.filter((s) => s.packageDir === ""));
 }
 
 /** Remove every script entry whose `file` equals `filePath`. */

@@ -109,7 +109,7 @@ The scan is capped at **5000** matching files per scope. Overlapping scopes are 
 
 Two related but distinct actions:
 
-- **Generate** - creates the project's `.buttons.json` from scratch with every **root-level** discovered script. It only appears when no project file exists yet. Use it the first time you open a project.
+- **Generate** - first time, creates `.buttons.json` with every **root-level** discovered script. If the file already exists, adds any missing root-level scripts. Custom commands, notes, variants, and extra opted-in scripts stay.
 - **Rescan** - re-runs the scanner against the **existing** file. It:
   - keeps your included scripts and notes,
   - recomputes their commands (e.g. after a package-manager change),
@@ -117,6 +117,6 @@ Two related but distinct actions:
   - leaves newly-discovered scripts unchecked for you to opt in,
   - never touches custom command entries.
 
-In short: **Generate** seeds the file; **Rescan** updates it in place without overriding your custom commands or selections.
+In short: **Generate** fills in root-level scripts; **Rescan** updates commands in place without changing what you have selected.
 
 [Back to index](index.md)

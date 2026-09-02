@@ -29,9 +29,9 @@ Both open the same panel - the Activity Bar version is a compact sidebar, and th
 
 On a fresh project, the **Project scripts** tab shows every script discovered in the scan scope (the project root's top level, plus any scan directories), with its checkboxes disabled, plus a **Generate buttons file** button.
 
-Click **Generate**. Buttons writes `<workspace root>/.buttons.json` containing every root-level script. Scripts found in scan directories are left unchecked for you to opt in.
+Click **Generate**. Buttons writes `<workspace root>/.buttons.json` containing every root-level script. Scripts found in scan directories are left unchecked for you to opt in. Click **Generate** again later to add any missing root-level scripts; custom commands and your edits stay.
 
-> Opening a project never writes a file on its own - **Generate** is the only thing that creates the initial file. See [Script scanning](scanning.md#generate-vs-rescan) for the difference between Generate and Rescan.
+> Opening a project never writes a file on its own. See [Script scanning](scanning.md#generate-vs-rescan) for the difference between Generate and Rescan.
 
 ## 5. Fine-tune
 

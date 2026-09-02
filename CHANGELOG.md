@@ -4,6 +4,13 @@ All notable changes to the Buttons extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.1.2] - 2026-09-02
+
+### Changed
+
+- **✕** asks for a second click. The first click shows a **Confirm** tooltip; click again while it is showing to delete. Click anywhere else to cancel.
+- **Generate** on an existing file adds any missing root-level scripts and leaves custom commands, notes, variants, and extra opted-in scripts in place.
+
 ## [2.1.1] - 2026-09-02
 
 ### Changed

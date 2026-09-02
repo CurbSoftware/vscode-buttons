@@ -51,6 +51,6 @@ For monorepo scripts, the terminal's working directory is set to the script's `p
 
 ## What's the difference between Generate and Rescan?
 
-**Generate** creates the file from scratch with every root-level script (first use). **Rescan** updates the existing file in place, preserving your inclusions and notes, marking missing scripts, and leaving new scripts unchecked. See [Generate vs Rescan](scanning.md#generate-vs-rescan).
+**Generate** writes every root-level script into `.buttons.json` (and later adds any that are missing). Custom commands, notes, variants, and extra opted-in scripts stay. **Rescan** updates the existing file in place, preserving your inclusions and notes, marking missing scripts, and leaving new scripts unchecked. See [Generate vs Rescan](scanning.md#generate-vs-rescan).
 
 [Back to index](index.md)

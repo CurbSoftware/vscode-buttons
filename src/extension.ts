@@ -466,7 +466,7 @@ async function handlePanelMessage(panelId: PanelId, message: PanelActionMessage)
         return;
       }
       const state = await refreshState();
-      await writeButtonsFile(fileUri, generateButtonsFile(state.discovered));
+      await writeButtonsFile(fileUri, generateButtonsFile(state.discovered, state.projectFile));
       editingByPanel.clear();
       addingByPanel.clear();
       await refreshState(true);

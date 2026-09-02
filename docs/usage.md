@@ -46,7 +46,7 @@ Every row (or card) offers the same actions:
 | **Copy** | Copies the exact command to the clipboard and shows a confirmation. |
 | **Duplicate** | Clones the button (and its variants) as a new row you can change independently. |
 | **Note / Edit** | Opens inline editing. For a **script** button you can edit only the note; for a **custom command** or **args** variant you can edit the command or args and the note. |
-| **✕** | Removes the button from its file. |
+| **✕** | First click shows **Confirm**. Click again while that tooltip is showing to remove the button. Click anywhere else to cancel. |
 
 Drag the gripper on a row to reorder it among its siblings. Order is saved in `.buttons.json`.
 

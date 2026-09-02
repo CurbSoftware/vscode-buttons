@@ -49,7 +49,7 @@ Detailed guides live in the [`docs/`](docs/index.md) directory:
 
 ### Generate, don't assume
 
-Opening a project **never** writes a file. Click **Generate** to scan the project and create the initial `.buttons.json` with the root-level discovered scripts. After that, **Rescan** keeps it current without losing your choices (see [Generate vs Rescan](#generate-vs-rescan)).
+Opening a project **never** writes a file. Click **Generate** to create `.buttons.json` with the root-level discovered scripts. Click it again later to add any missing root-level scripts; custom commands and your edits stay (see [Generate vs Rescan](#generate-vs-rescan)).
 
 ### Scan directories
 
@@ -92,7 +92,7 @@ Every button gives you:
 - **Copy** - copy the exact command to the clipboard.
 - **Duplicate** - clone the button, including its variants.
 - **Note / Edit** - inline-edit the note (for script buttons) or the command/args and note (for custom commands and variants).
-- **✕** - remove the button.
+- **✕** - first click shows Confirm; click again to remove.
 
 Parents expand to parameter options (extra args, or nested commands/scripts). Drag the gripper to reorder.
 
@@ -154,10 +154,10 @@ Custom commands are stored verbatim and are never rewritten by scanning.
 
 Buttons distinguishes two scan actions so you never lose work:
 
-- **Generate** - creates the project's `.buttons.json` from scratch, including **every root-level** discovered script. Use it the first time you open a project (it only appears when no file exists yet).
+- **Generate** - first time, creates the project's `.buttons.json` with **every root-level** discovered script. If the file already exists, it adds any missing root-level scripts and leaves custom commands, notes, variants, and extra opted-in scripts in place.
 - **Rescan** - re-runs the scanner against the *existing* file. It keeps your included scripts and notes, recomputes their commands, marks scripts that no longer exist as "not found", and leaves newly-discovered scripts unchecked for you to opt in.
 
-In other words: **Generate** seeds the file; **Rescan** updates it in place without overriding your custom commands or selections.
+In other words: **Generate** fills in root-level scripts; **Rescan** updates commands in place without changing what you have selected.
 
 ---
 

@@ -172,6 +172,31 @@ describe("generateButtonsFile", () => {
   it("returns an empty file for no discovered scripts", () => {
     assert.deepEqual(generateButtonsFile([]), { version: 1, buttons: [] });
   });
+
+  it("keeps custom commands, notes, and extra scripts when the file already exists", () => {
+    const existing: ButtonsFile = {
+      version: 1,
+      buttons: [
+        { type: "command", command: "docker ps", note: "containers" },
+        { type: "script", file: "packages/app/package.json", script: "dev", packageDir: "packages/app", packageManager: "pnpm" },
+        { type: "script", file: "package.json", script: "dev", packageDir: "", packageManager: "pnpm", note: "local", children: [{ args: "--filter app" }] },
+      ],
+    };
+    const file = generateButtonsFile(
+      [
+        script(),
+        script({ file: "Makefile", script: "build", command: "make build", packageManager: "make", packageDir: "" }),
+        script({ file: "packages/app/package.json", script: "dev", command: "pnpm --dir packages/app dev", packageManager: "pnpm", packageDir: "packages/app" }),
+      ],
+      existing,
+    );
+    assert.deepEqual(file.buttons, [
+      { type: "command", command: "docker ps", note: "containers" },
+      { type: "script", file: "packages/app/package.json", script: "dev", packageDir: "packages/app", packageManager: "pnpm" },
+      { type: "script", file: "package.json", script: "dev", packageDir: "", packageManager: "pnpm", note: "local", children: [{ args: "--filter app" }] },
+      { type: "script", file: "Makefile", script: "build", packageDir: "", packageManager: "make" },
+    ]);
+  });
 });
 
 describe("setAllScripts", () => {

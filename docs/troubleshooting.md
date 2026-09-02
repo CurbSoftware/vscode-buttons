@@ -44,9 +44,9 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 
 Buttons watches the script files and buttons files and re-renders automatically, but the update is debounced (≈300 ms). If it still looks stale, run **Rescan** to force a refresh.
 
-## The Generate button is missing
+## Generate deleted my custom commands
 
-**Generate** only appears when no project `.buttons.json` exists yet. If the file already exists, use **Rescan** instead. See [Generate vs Rescan](scanning.md#generate-vs-rescan).
+It should not. **Generate** adds any missing root-level scripts and leaves custom commands, notes, variants, and extra opted-in scripts in place. **Rescan** refreshes commands for scripts you already have. See [Generate vs Rescan](scanning.md#generate-vs-rescan).
 
 ## My global buttons aren't updating immediately
 

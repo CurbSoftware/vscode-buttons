@@ -53,6 +53,15 @@ describe("renderHtml", () => {
     assert.match(html, /Add variant/);
     assert.match(html, /--btn-bg: var\(--vscode-button-background\)/);
     assert.match(html, /pnpm dev --include app1/);
+    assert.match(html, /title="Remove"/);
+    assert.match(html, /\.btn\.danger\.confirming::after/);
+    assert.match(html, /setAttribute\("title", "Confirm"\)/);
+  });
+
+  it("keeps Generate available after the file exists", () => {
+    const html = renderHtml(state({ projectFileExists: true }), "codicons.css");
+    assert.match(html, /data-action="generate"/);
+    assert.match(html, /Custom commands and your edits stay/);
   });
 
   it("applies custom button colors", () => {

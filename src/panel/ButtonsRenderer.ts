@@ -46,10 +46,10 @@ export function renderHtml(state: WebviewState, codiconUri: string, variant: Ren
 }
 
 function renderHeader(state: WebviewState): string {
-  // The Scripts tab shows its own Generate CTA; keep the header button off it
-  // so the no-file state doesn't stack two primary buttons.
-  const generateButton = state.activeTab === "buttons" && state.hasWorkspace && !state.projectFileExists
-    ? `<button class="btn primary" data-action="generate" title="Scan and create the project .buttons.json"><span class="codicon codicon-wand" aria-hidden="true"></span> Generate</button>`
+  // First-time Generate is also a CTA on the Scripts tab; keep this header
+  // button off that tab so the empty-file state doesn't stack two primaries.
+  const generateButton = state.hasWorkspace && !(state.activeTab === "scripts" && !state.projectFileExists)
+    ? `<button class="btn${state.projectFileExists ? "" : " primary"}" data-action="generate" title="${state.projectFileExists ? "Include any missing root-level scripts. Custom commands and your edits stay." : "Scan and create the project .buttons.json"}"><span class="codicon codicon-wand" aria-hidden="true"></span> Generate</button>`
     : "";
   return `<header class="header">
   <div class="header-title">Buttons</div>
@@ -287,7 +287,7 @@ function renderRowActions(source: ButtonsSource, button: ResolvedButton): string
   return `${runActions}
     <button class="btn" data-action="duplicate" ${ds} title="Duplicate this button">Duplicate</button>
     <button class="btn" data-action="start-edit" ${ds}>${editLabel}</button>
-    <button class="btn danger" data-action="remove" ${ds} title="Remove">✕</button>`;
+    <button class="btn danger" data-action="remove" ${ds} title="Remove" aria-label="Remove">✕</button>`;
 }
 
 function renderAddVariant(state: WebviewState, source: ButtonsSource, parent: ResolvedButton): string {
@@ -536,6 +536,27 @@ body {
 .btn.primary { background: var(--btn-bg); color: var(--btn-fg); border-color: transparent; }
 .btn.primary:hover { background: var(--btn-hover); }
 .btn.danger:hover { border-color: var(--danger); color: var(--danger); background: transparent; }
+.btn.danger.confirming {
+  position: relative;
+  z-index: 2;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.btn.danger.confirming::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 6px;
+  background: var(--vscode-editorWidget-background, var(--bg));
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 0.85em;
+  white-space: nowrap;
+  pointer-events: none;
+}
 .error {
   border: 1px solid var(--danger);
   color: var(--danger);
@@ -835,6 +856,12 @@ document.addEventListener("change", (event) => {
 
 document.addEventListener("click", (event) => {
   const el = event.target && event.target.closest ? event.target.closest("[data-action]") : null;
+  const confirming = document.querySelector('[data-action="remove"].confirming');
+  if (confirming && el !== confirming) {
+    confirming.classList.remove("confirming");
+    confirming.setAttribute("title", "Remove");
+    confirming.setAttribute("aria-label", "Remove");
+  }
   if (!el) { return; }
 
   const action = el.dataset.action;
@@ -891,7 +918,15 @@ document.addEventListener("click", (event) => {
       });
       break;
     }
-    case "remove": post({ type: "remove", source, path }); break;
+    case "remove":
+      if (!el.classList.contains("confirming")) {
+        el.classList.add("confirming");
+        el.setAttribute("title", "Confirm");
+        el.setAttribute("aria-label", "Confirm");
+        break;
+      }
+      post({ type: "remove", source, path });
+      break;
     case "start-add": clearDrafts(); post({ type: "start-add", source }); break;
     case "start-add-child": clearDrafts(); post({ type: "start-add-child", source, path }); break;
     case "cancel-add": clearDrafts(); post({ type: "cancel-add" }); break;
