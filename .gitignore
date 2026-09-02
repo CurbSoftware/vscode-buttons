@@ -1,26 +1,44 @@
+# build
 node_modules/
 dist/
 release/
 *.vsix
-
-.DS_Store
-Thumbs.db
-
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-.vscode-test/
-
-.env
-.env.*
-!.env.example
-
+*.map
+*.tsbuildinfo
 coverage/
 .nyc_output/
 
-*.tsbuildinfo
+# logs / os
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode-test/
 
-.claude/settings.local.json
+# secrets
+.env
+.env.*
+!.env.example
+*.pem
+.npmrc
+
+# local project state (not the product schema)
+.buttons.json
+
+# editor: keep shared F5 launch/tasks only
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+*.code-workspace
+
+# agent instructions and local tooling
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+.claude/
+.cursor/
+.codex/
+.agents/
+.github/copilot-instructions.md
+.github/instructions/
