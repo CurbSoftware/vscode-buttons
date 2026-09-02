@@ -4,6 +4,22 @@ All notable changes to the Buttons extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.1.0] - 2026-09-02
+
+### Added
+
+- **Command variants**: a button can nest one level of children in `.buttons.json`. Args children (`{ "args": "--include app1 app2" }`) append flags to the parent's live command, so they stay in sync if the package manager changes. Full command and script children are also allowed. The panel shows them as an expandable list of parameter options, with **+ Add variant**.
+- **Insert** and **Insert selected**: write one or more commands into the current terminal as new lines **without running them**. Custom commands accept multi-line text.
+- **Duplicate**: clone a button (including its variants) as a separate row.
+- **Drag and drop** reorder among siblings; order is saved in `.buttons.json`.
+- **`buttons.colors.background` / `foreground` / `hoverBackground`**: optional colors for Run buttons and launcher cards. Empty values inherit the active VS Code theme.
+
+### Changed
+
+- Panel actions now target a button by path so duplicates and nested variants stay distinct.
+
+Buttons 2.0.1 and earlier drop `children`, `args`, and `id` if they write the file. Upgrade before editing a file that uses variants.
+
 ## [2.0.1] - 2026-08-20
 
 ### Changed

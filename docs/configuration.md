@@ -1,6 +1,6 @@
 # Configuration & settings
 
-Buttons contributes three settings. `buttons.textSize` and `buttons.scriptFiles` are `window`-scoped (User or Workspace level); `buttons.scanDirectories` is `resource`-scoped (per workspace folder, saved at Workspace level when you use the panel).
+Buttons contributes settings for text size, which script types to scan, extra scan directories, and optional button colors. `buttons.textSize`, `buttons.scriptFiles`, and `buttons.colors.*` are `window`-scoped (User or Workspace level); `buttons.scanDirectories` is `resource`-scoped (per workspace folder, saved at Workspace level when you use the panel).
 
 To open the settings page: click the **gear icon** in the panel header, or use **Command Palette → Preferences: Open Settings** and search "Buttons".
 
@@ -62,6 +62,21 @@ Extra directories to scan, on top of the always-scanned project root (top level 
 
 Paths are normalized (backslashes fixed, trailing slashes dropped). Relative entries must stay inside the workspace: `..` escapes, glob metacharacters, hidden directories, ignore-listed names (e.g. `build`, `dist`), and duplicates are ignored. Absolute entries (for directories outside the workspace) are allowed and only reject glob metacharacters and `..` segments. The **Scan directories** card in the **Project scripts** tab edits this setting for you through its paste-a-path Add field. See [Script scanning](scanning.md#scan-directories) for the scope model.
 
+## `buttons.colors.background` / `foreground` / `hoverBackground`
+
+Optional colors for **Run** buttons and launcher cards.
+
+| Setting | Applies to |
+| --- | --- |
+| `buttons.colors.background` | Run button background and launcher card background/border. |
+| `buttons.colors.foreground` | Run button text and launcher card text. |
+| `buttons.colors.hoverBackground` | Run button hover background. |
+
+- **Type:** string (`format: color`, a color picker in the settings UI)
+- **Default:** `""` (empty)
+
+When a value is empty, Buttons inherits VS Code's current theme (`--vscode-button-background`, `--vscode-button-foreground`, `--vscode-button-hoverBackground`, and the panel/card tokens). Set only the colors you want to override.
+
 ## Where settings live
 
 Changes are stored in VS Code's own settings (`settings.json`), not in `.buttons.json`. You can also edit them directly:
@@ -70,7 +85,9 @@ Changes are stored in VS Code's own settings (`settings.json`), not in `.buttons
 {
   "buttons.textSize": "plus2",
   "buttons.scriptFiles": ["package.json", "shell", "python", "Makefile", "justfile"],
-  "buttons.scanDirectories": [{ "path": "packages", "recursive": true }]
+  "buttons.scanDirectories": [{ "path": "packages", "recursive": true }],
+  "buttons.colors.background": "#3d2b1f",
+  "buttons.colors.foreground": "#f4e8d4"
 }
 ```
 

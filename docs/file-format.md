@@ -7,7 +7,7 @@ Buttons stores its configuration in JSON files:
 | Project | `<workspace root>/.buttons.json` | The current workspace. |
 | Global | `~/.buttons.json` | Every project you open. |
 
-Both files use the same format: a `version` field and a flat `buttons` array.
+Both files use the same format: a `version` field and a `buttons` array. Entries can nest one level of children for parameterized variants.
 
 ```json
 {
@@ -22,7 +22,20 @@ Both files use the same format: a `version` field and a flat `buttons` array.
     { "type": "script", "file": "scripts/migrate.sh", "script": "scripts/migrate.sh", "packageDir": "scripts", "packageManager": "shell" },
     { "type": "script", "file": "app.py", "script": "app.py", "packageDir": "", "packageManager": "python" },
     { "type": "script", "file": "venv", "script": "Activate venv", "packageDir": "", "packageManager": "python" },
-    { "type": "command", "command": "docker ps", "note": "List running containers" }
+    { "type": "command", "command": "docker ps", "note": "List running containers" },
+    {
+      "type": "script",
+      "file": "package.json",
+      "script": "dev",
+      "packageDir": "",
+      "packageManager": "pnpm",
+      "note": "dev server",
+      "children": [
+        { "args": "--include app1 app2", "note": "app1 + app2" },
+        { "type": "command", "command": "pnpm dev --filter web", "note": "web only" },
+        { "type": "script", "file": "apps/web/package.json", "script": "dev", "packageDir": "apps/web", "packageManager": "pnpm" }
+      ]
+    }
   ]
 }
 ```
@@ -43,6 +56,9 @@ A live reference to a script the scanner found. The command is **recomputed on e
 | `packageDir` | no | The script file's directory relative to the workspace root (`""` = root). This is the terminal working directory when the script runs. |
 | `packageManager` | no | One of `npm`, `pnpm`, `yarn`, `bun`, `make`, `composer`, `just`, `shell`, `python`. Invalid values are normalized to `npm`. |
 | `note` | no | An optional note shown next to the button. |
+| `id` | no | Stable identity. Assigned when you add or duplicate a button in the UI. |
+| `args` | no | Extra flags appended to the recomputed script command. |
+| `children` | no | One level of nested variants. See [Children](#children). |
 
 ### Command entries (`type: "command"`)
 
@@ -53,6 +69,25 @@ A literal custom command, not tied to any file. Stored verbatim and never rewrit
 | `type` | yes | Always `"command"`. |
 | `command` | yes | The literal command to run. Must be a non-empty string. |
 | `note` | no | An optional note shown next to the button. |
+| `id` | no | Stable identity. Assigned when you add or duplicate a button in the UI. |
+| `args` | no | Extra flags appended to the stored command. |
+| `children` | no | One level of nested variants. See [Children](#children). |
+
+## Children
+
+A top-level script or command can list `children`. The panel shows them as an expandable set of parameter options. Nested `children` on a child are ignored.
+
+| Child shape | Meaning |
+| --- | --- |
+| `{ "args": "--include app1 app2", "note": "..." }` | Appends `args` to the **parent's live command**. If the parent is a script, this stays in sync when the package manager changes (`pnpm dev --include ...` becomes `bun dev --include ...`). |
+| `{ "type": "command", "command": "..." }` | A literal command, independent of the parent. |
+| `{ "type": "script", "file": "...", "script": "..." }` | Another script reference, resolved on its own. |
+
+Args-only objects are only valid as children, not as top-level buttons. Empty `args` is rejected.
+
+Use **+ Add variant** in the panel to create an args child. Full command or script children can also be added by editing the JSON (or by duplicating a button and editing it).
+
+Buttons 2.0.1 and earlier drop `children`, `args`, and `id` if they **write** the file. Upgrade before editing a file that uses variants.
 
 ## Validation
 
@@ -67,9 +102,10 @@ When a buttons file is read, it is parsed and validated. If it fails, Buttons sh
 | A `buttons[i]` element isn't an object | `buttons[i] must be an object.` |
 | Script entry missing string `file`/`script` | `buttons[i] script entry requires string "file" and "script".` |
 | Command entry with empty/non-string `command` | `buttons[i] command entry requires a non-empty "command".` |
+| Args child with empty/non-string `args` | `buttons[i].children[j] args entry requires a non-empty "args".` |
 | Unknown entry `type` | `buttons[i] has unknown type: <v>. Expected "script" or "command".` |
 
-The `version` field is optional when absent (it defaults to `1`), and `note` is only kept when it is a string.
+The `version` field is optional when absent (it defaults to `1`). `note`, `id`, `args`, and `children` are only kept when they are valid.
 
 ## Editing by hand
 

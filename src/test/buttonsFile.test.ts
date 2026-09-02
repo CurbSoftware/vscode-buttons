@@ -1,14 +1,17 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  addArgsChild,
   addCommandButton,
   addScriptButton,
   addScriptFile,
+  duplicateButton,
   emptyButtonsFile,
   generateButtonsFile,
   hasScriptButton,
   parseButtonsFile,
   removeButton,
+  reorderButtons,
   resolveButtons,
   removeScriptButton,
   removeScriptFile,
@@ -218,25 +221,25 @@ describe("command mutations", () => {
 
   it("updateCommandButton patches command and note", () => {
     const base = addCommandButton(emptyButtonsFile(), "docker ps", "list");
-    const next = updateCommandButton(base, 0, { command: "docker ps -a", note: "all" });
+    const next = updateCommandButton(base, [0], { command: "docker ps -a", note: "all" });
     assert.deepEqual(next.buttons[0], { type: "command", command: "docker ps -a", note: "all" });
   });
 
   it("updateCommandButton is a no-op on script entries", () => {
     const base = addScriptButton(emptyButtonsFile(), script());
-    const next = updateCommandButton(base, 0, { command: "changed" });
+    const next = updateCommandButton(base, [0], { command: "changed" });
     assert.equal(next, base);
   });
 
   it("setButtonNote updates the note on any entry", () => {
     const base = addScriptButton(emptyButtonsFile(), script());
-    const next = setButtonNote(base, 0, "Vite dev server");
+    const next = setButtonNote(base, [0], "Vite dev server");
     assert.equal(next.buttons[0].note, "Vite dev server");
   });
 
   it("removeButton splices by index", () => {
     const base = addCommandButton(addCommandButton(emptyButtonsFile(), "a"), "b");
-    const next = removeButton(base, 0);
+    const next = removeButton(base, [0]);
     assert.deepEqual(next.buttons, [{ type: "command", command: "b" }]);
   });
 });
@@ -348,5 +351,176 @@ describe("resolveButtons", () => {
 
     const vanished = resolveButtons(file, []);
     assert.equal(vanished[0].missing, true);
+  });
+});
+
+describe("children and args", () => {
+  it("parses args children, command children, and script children", () => {
+    const result = parseButtonsFile(
+      JSON.stringify({
+        version: 1,
+        buttons: [
+          {
+            type: "script",
+            file: "package.json",
+            script: "dev",
+            packageManager: "pnpm",
+            children: [
+              { args: "--include app1 app2", note: "apps" },
+              { type: "command", command: "pnpm dev --filter web", note: "web" },
+              { type: "script", file: "apps/web/package.json", script: "dev", packageDir: "apps/web", packageManager: "pnpm" },
+            ],
+          },
+        ],
+      }),
+    );
+    if (!result.ok) {
+      assert.fail(result.error);
+    }
+    assert.equal(result.file.buttons[0].children?.length, 3);
+    assert.deepEqual(result.file.buttons[0].children?.[0], { args: "--include app1 app2", note: "apps" });
+  });
+
+  it("rejects empty args children", () => {
+    const result = parseButtonsFile(
+      JSON.stringify({ version: 1, buttons: [{ type: "command", command: "echo", children: [{ args: "  " }] }] }),
+    );
+    assert.equal(result.ok, false);
+  });
+
+  it("rejects args-only entries at the top level", () => {
+    const result = parseButtonsFile(JSON.stringify({ version: 1, buttons: [{ args: "--x" }] }));
+    assert.equal(result.ok, false);
+  });
+
+  it("ignores nested children on a child", () => {
+    const result = parseButtonsFile(
+      JSON.stringify({
+        version: 1,
+        buttons: [
+          {
+            type: "command",
+            command: "echo a",
+            children: [{ type: "command", command: "echo b", children: [{ args: "--nope" }] }],
+          },
+        ],
+      }),
+    );
+    if (!result.ok) {
+      assert.fail(result.error);
+    }
+    const child = result.file.buttons[0].children?.[0];
+    assert.ok(child && "type" in child && child.type === "command");
+    assert.equal("children" in child && Boolean(child.children), false);
+  });
+
+  it("resolves args children against the live parent command", () => {
+    const file: ButtonsFile = {
+      version: 1,
+      buttons: [
+        {
+          type: "script",
+          file: "package.json",
+          script: "dev",
+          packageDir: "",
+          packageManager: "npm",
+          children: [{ args: "--include app1 app2" }],
+        },
+      ],
+    };
+    const resolved = resolveButtons(file, [script({ command: "pnpm dev", packageManager: "pnpm" })]);
+    assert.equal(resolved[0].command, "pnpm dev");
+    assert.equal(resolved[0].children[0].command, "pnpm dev --include app1 app2");
+    assert.equal(resolved[0].children[0].kind, "args");
+    assert.deepEqual(resolved[0].children[0].path, [0, 0]);
+  });
+
+  it("resolves command children verbatim and script children from the scan", () => {
+    const file: ButtonsFile = {
+      version: 1,
+      buttons: [
+        {
+          type: "command",
+          command: "echo parent",
+          children: [
+            { type: "command", command: "echo child" },
+            { type: "script", file: "apps/web/package.json", script: "dev", packageDir: "apps/web", packageManager: "pnpm" },
+          ],
+        },
+      ],
+    };
+    const resolved = resolveButtons(file, [
+      script({
+        file: "apps/web/package.json",
+        script: "dev",
+        command: "pnpm dev",
+        packageDir: "apps/web",
+      }),
+    ]);
+    assert.equal(resolved[0].children[0].command, "echo child");
+    assert.equal(resolved[0].children[1].command, "pnpm dev");
+    assert.equal(resolved[0].children[1].missing, false);
+  });
+
+  it("removeScriptButton removes every top-level copy of a script key", () => {
+    const two = duplicateButton(addScriptButton(emptyButtonsFile(), script()), [0]);
+    assert.equal(two.buttons.length, 2);
+    assert.equal(hasScriptButton(two, "package.json:dev"), true);
+    const removed = removeScriptButton(two, "package.json:dev");
+    assert.equal(removed.buttons.length, 0);
+  });
+});
+
+describe("duplicateButton", () => {
+  it("inserts a clone with a new id after the original", () => {
+    const base = addCommandButton(emptyButtonsFile(), "echo hi", "one", "id-a");
+    const next = duplicateButton(base, [0]);
+    assert.equal(next.buttons.length, 2);
+    assert.equal(next.buttons[0].id, "id-a");
+    assert.notEqual(next.buttons[1].id, "id-a");
+    assert.equal(next.buttons[1].type, "command");
+    if (next.buttons[1].type === "command") {
+      assert.equal(next.buttons[1].command, "echo hi");
+    }
+  });
+
+  it("assigns an id to the original when it had none", () => {
+    const base = addCommandButton(emptyButtonsFile(), "echo hi");
+    const next = duplicateButton(base, [0]);
+    assert.ok(next.buttons[0].id);
+    assert.ok(next.buttons[1].id);
+    assert.notEqual(next.buttons[0].id, next.buttons[1].id);
+  });
+});
+
+describe("addArgsChild", () => {
+  it("appends an args child on a top-level parent", () => {
+    const base = addCommandButton(emptyButtonsFile(), "pnpm dev");
+    const next = addArgsChild(base, [0], "--include app1");
+    assert.deepEqual(next.buttons[0].children, [{ args: "--include app1" }]);
+  });
+
+  it("is a no-op for empty args or a child path", () => {
+    const base = addCommandButton(emptyButtonsFile(), "pnpm dev");
+    assert.equal(addArgsChild(base, [0], "  "), base);
+    assert.equal(addArgsChild(base, [0, 0], "--x"), base);
+  });
+});
+
+describe("reorderButtons", () => {
+  it("reorders top-level siblings", () => {
+    const base = addCommandButton(addCommandButton(emptyButtonsFile(), "a"), "b");
+    const next = reorderButtons(base, [0], [1]);
+    assert.equal(next.buttons[0].type === "command" ? next.buttons[0].command : "", "b");
+    assert.equal(next.buttons[1].type === "command" ? next.buttons[1].command : "", "a");
+  });
+
+  it("reorders children and no-ops across parents", () => {
+    const withKids = addArgsChild(addArgsChild(addCommandButton(emptyButtonsFile(), "p"), [0], "--a"), [0], "--b");
+    const swapped = reorderButtons(withKids, [0, 0], [0, 1]);
+    const first = swapped.buttons[0].children?.[0];
+    assert.equal(first && "args" in first ? first.args : "", "--b");
+    const other = addCommandButton(withKids, "q");
+    assert.equal(reorderButtons(other, [0, 0], [1, 0]), other);
   });
 });

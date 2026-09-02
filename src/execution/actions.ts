@@ -53,3 +53,13 @@ export async function copyToClipboard(command: string): Promise<void> {
     void vscode.window.showErrorMessage("Failed to copy command to clipboard.");
   }
 }
+
+/** Write a command into the current terminal without executing it. */
+export function insertInCurrentTerminal(command: string, cwd?: string): void {
+  const { terminal, fresh } = getOrCreateCurrentTerminal(cwd);
+  terminal.show(true);
+  if (!fresh && cwd) {
+    terminal.sendText(`cd "${cwd}"`, false);
+  }
+  terminal.sendText(command, false);
+}

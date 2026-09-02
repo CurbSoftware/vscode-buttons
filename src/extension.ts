@@ -2,35 +2,37 @@ import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import {
+  addArgsChild,
   addCommandButton,
   addScriptButton,
   addScriptFile,
-  buttonId,
+  duplicateButton,
   emptyButtonsFile,
+  findResolved,
   generateButtonsFile,
   removeButton,
   removeScriptButton,
   removeScriptFile,
+  reorderButtons,
   setAllScripts,
-  setButtonNote,
-  updateCommandButton,
+  updateButton,
 } from "./config/buttonsFile";
-import { getScanDirectories, loadRuntimeState, writeButtonsFile } from "./config/buttonsStore";
+import { getButtonColors, getScanDirectories, loadRuntimeState, writeButtonsFile } from "./config/buttonsStore";
 import { getGlobalButtonsFileUri, getProjectButtonsFileUri, getWorkspaceFolderUri } from "./config/findButtonsFile";
-import { copyToClipboard, runInCurrentTerminal, runInNewTerminal } from "./execution/actions";
+import { copyToClipboard, insertInCurrentTerminal, runInCurrentTerminal, runInNewTerminal } from "./execution/actions";
 import { ButtonsPanel } from "./panel/ButtonsPanel";
 import { ButtonsSidebarProvider } from "./panel/ButtonsSidebarProvider";
 import { isAbsolutePosix, normalizeScanDirectories, SCAN_FILE_GLOB, type ScanDirectory } from "./scanner/scanScope";
 import { fileEntryScript, scriptKey, shouldIgnoreDir, type DiscoveredScript } from "./scanner/types";
-import type { ButtonsFile, ButtonsSource, ButtonsTab, PanelActionMessage, ResolvedButton, RuntimeState, WebviewState } from "./models/types";
+import { isScriptButton, type ButtonsFile, type ButtonsSource, type ButtonsTab, type PanelActionMessage, type ResolvedButton, type RuntimeState, type WebviewState } from "./models/types";
 
 type PanelId = "sidebar" | "editor";
 
 let currentState: RuntimeState | undefined;
 let sidebarProvider: ButtonsSidebarProvider | undefined;
 let mainPanel: ButtonsPanel | undefined;
-const editingByPanel = new Map<PanelId, { source: ButtonsSource; id: string }>();
-const addingByPanel = new Map<PanelId, ButtonsSource>();
+const editingByPanel = new Map<PanelId, { source: ButtonsSource; path: number[] }>();
+const addingByPanel = new Map<PanelId, { source: ButtonsSource; parentPath?: number[] }>();
 const activeTabByPanel = new Map<PanelId, ButtonsTab>();
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -151,7 +153,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // React to settings changes: text size re-renders, scan settings re-scan.
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration("buttons.textSize")) {
+      if (e.affectsConfiguration("buttons.textSize") || e.affectsConfiguration("buttons.colors")) {
         void refreshWebview();
       }
       if (e.affectsConfiguration("buttons.scriptFiles") || e.affectsConfiguration("buttons.scanDirectories")) {
@@ -237,11 +239,13 @@ async function buildWebviewState(panelId: PanelId): Promise<WebviewState> {
     hasWorkspace: Boolean(getWorkspaceFolderUri()),
     parseError: state.parseError,
     editing: editingByPanel.get(panelId),
-    addingSource: addingByPanel.get(panelId),
+    addingSource: addingByPanel.get(panelId)?.source,
+    addingChildPath: addingByPanel.get(panelId)?.parentPath,
     textSizePx: textSizePx(),
     projectFileExists: state.projectFileExists,
     activeTab: activeTabByPanel.get(panelId) ?? "buttons",
     scanDirectories: getScanDirectories(getWorkspaceFolderUri()),
+    buttonColors: getButtonColors(),
   };
 }
 
@@ -260,9 +264,9 @@ function selectedScriptKeys(state: RuntimeState): string[] {
   return state.projectFile.buttons.filter((b) => b.type === "script").map((b) => scriptKey(b));
 }
 
-function findButton(state: RuntimeState, source: ButtonsSource, index: number): ResolvedButton | undefined {
+function findButton(state: RuntimeState, source: ButtonsSource, path: number[]): ResolvedButton | undefined {
   const list = source === "project" ? state.projectButtons : state.globalButtons;
-  return list.find((b) => b.index === index);
+  return findResolved(list, path);
 }
 
 /** Stable path identity for a file: workspace-relative when inside the project, absolute posix otherwise. */
@@ -416,18 +420,17 @@ function buttonCwd(button: ResolvedButton): string | undefined {
   if (!root) {
     return undefined;
   }
-  if (button.entry.type === "script" && button.entry.packageDir) {
-    // Absolute package dirs (scripts outside the workspace) are used as-is.
-    if (isAbsolutePosix(button.entry.packageDir)) {
-      return button.entry.packageDir;
+  if (button.packageDir) {
+    if (isAbsolutePosix(button.packageDir)) {
+      return button.packageDir;
     }
-    return path.join(root.fsPath, ...button.entry.packageDir.split("/"));
+    return path.join(root.fsPath, ...button.packageDir.split("/"));
   }
   return root.fsPath;
 }
 
 function buttonLabel(button: ResolvedButton): string | undefined {
-  return button.entry.type === "script" ? button.entry.script : undefined;
+  return isScriptButton(button.entry) ? button.entry.script : button.note;
 }
 
 function fileUriFor(source: ButtonsSource): vscode.Uri | undefined {
@@ -545,7 +548,7 @@ async function handlePanelMessage(panelId: PanelId, message: PanelActionMessage)
     case "run-current":
     case "run-new": {
       const state = await refreshState();
-      const button = findButton(state, message.source, message.index);
+      const button = findButton(state, message.source, message.path);
       if (!button || button.missing) {
         return;
       }
@@ -558,9 +561,35 @@ async function handlePanelMessage(panelId: PanelId, message: PanelActionMessage)
       return;
     }
 
+    case "insert": {
+      const state = await refreshState();
+      const button = findButton(state, message.source, message.path);
+      if (!button || button.missing) {
+        return;
+      }
+      insertInCurrentTerminal(button.command, buttonCwd(button));
+      return;
+    }
+
+    case "insert-selected": {
+      const state = await refreshState();
+      const lines: string[] = [];
+      for (const path of message.paths) {
+        const button = findButton(state, message.source, path);
+        if (button && !button.missing) {
+          lines.push(button.command);
+        }
+      }
+      if (lines.length === 0) {
+        return;
+      }
+      insertInCurrentTerminal(lines.join("\n"));
+      return;
+    }
+
     case "copy": {
       const state = await refreshState();
-      const button = findButton(state, message.source, message.index);
+      const button = findButton(state, message.source, message.path);
       if (!button || button.missing) {
         return;
       }
@@ -570,11 +599,11 @@ async function handlePanelMessage(panelId: PanelId, message: PanelActionMessage)
 
     case "start-edit": {
       const state = await refreshState();
-      const button = findButton(state, message.source, message.index);
+      const button = findButton(state, message.source, message.path);
       if (!button) {
         return;
       }
-      editingByPanel.set(panelId, { source: message.source, id: button.id });
+      editingByPanel.set(panelId, { source: message.source, path: message.path });
       await refreshWebview();
       return;
     }
@@ -591,20 +620,11 @@ async function handlePanelMessage(panelId: PanelId, message: PanelActionMessage)
       }
       const state = await refreshState();
       const file = message.source === "project" ? state.projectFile : state.globalFile;
-      const index = file.buttons.findIndex((entry) => buttonId(entry) === message.id);
-      if (index < 0) {
-        return;
-      }
-      const entry = file.buttons[index];
-      let next: ButtonsFile;
-      if (entry.type === "command") {
-        next = updateCommandButton(file, index, {
-          command: message.command?.trim() || entry.command,
-          note: message.note,
-        });
-      } else {
-        next = setButtonNote(file, index, message.note);
-      }
+      const next = updateButton(file, message.path, {
+        command: message.command,
+        args: message.args,
+        note: message.note,
+      });
       await writeButtonsFile(fileUri, next);
       editingByPanel.delete(panelId);
       await refreshState(true);
@@ -619,11 +639,16 @@ async function handlePanelMessage(panelId: PanelId, message: PanelActionMessage)
       }
       const state = await refreshState();
       const file = message.source === "project" ? state.projectFile : state.globalFile;
-      const removedEntry = file.buttons[message.index];
-      const next = removeButton(file, message.index);
+      const removed = findButton(state, message.source, message.path);
+      const next = removeButton(file, message.path);
       await writeButtonsFile(fileUri, next);
       const currentEditing = editingByPanel.get(panelId);
-      if (removedEntry && currentEditing?.source === message.source && currentEditing.id === buttonId(removedEntry)) {
+      if (
+        removed &&
+        currentEditing?.source === message.source &&
+        currentEditing.path.length === message.path.length &&
+        currentEditing.path.every((n, i) => n === message.path[i])
+      ) {
         editingByPanel.delete(panelId);
       }
       await refreshState(true);
@@ -631,8 +656,39 @@ async function handlePanelMessage(panelId: PanelId, message: PanelActionMessage)
       return;
     }
 
+    case "duplicate": {
+      const fileUri = fileUriFor(message.source);
+      if (!fileUri) {
+        return;
+      }
+      const state = await refreshState();
+      const file = message.source === "project" ? state.projectFile : state.globalFile;
+      await writeButtonsFile(fileUri, duplicateButton(file, message.path));
+      await refreshState(true);
+      await refreshWebview();
+      return;
+    }
+
+    case "reorder": {
+      const fileUri = fileUriFor(message.source);
+      if (!fileUri) {
+        return;
+      }
+      const state = await refreshState();
+      const file = message.source === "project" ? state.projectFile : state.globalFile;
+      await writeButtonsFile(fileUri, reorderButtons(file, message.from, message.to));
+      await refreshState(true);
+      await refreshWebview();
+      return;
+    }
+
     case "start-add":
-      addingByPanel.set(panelId, message.source);
+      addingByPanel.set(panelId, { source: message.source });
+      await refreshWebview();
+      return;
+
+    case "start-add-child":
+      addingByPanel.set(panelId, { source: message.source, parentPath: message.path });
       await refreshWebview();
       return;
 
@@ -652,7 +708,26 @@ async function handlePanelMessage(panelId: PanelId, message: PanelActionMessage)
       }
       const state = await refreshState();
       const file = message.source === "project" ? state.projectFile : state.globalFile;
-      const next = addCommandButton(file, command, message.note.trim() || undefined);
+      const next = addCommandButton(file, command, message.note.trim() || undefined, crypto.randomUUID());
+      await writeButtonsFile(fileUri, next);
+      addingByPanel.delete(panelId);
+      await refreshState(true);
+      await refreshWebview();
+      return;
+    }
+
+    case "save-add-child": {
+      const fileUri = fileUriFor(message.source);
+      if (!fileUri) {
+        return;
+      }
+      const args = message.args.trim();
+      if (!args) {
+        return;
+      }
+      const state = await refreshState();
+      const file = message.source === "project" ? state.projectFile : state.globalFile;
+      const next = addArgsChild(file, message.path, args, message.note.trim() || undefined, crypto.randomUUID());
       await writeButtonsFile(fileUri, next);
       addingByPanel.delete(panelId);
       await refreshState(true);

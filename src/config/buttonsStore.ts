@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
-import type { ButtonsFile, RuntimeState, ScriptButton } from "../models/types";
+import type { ButtonColors, ButtonsFile, RuntimeState } from "../models/types";
 import { normalizeScanDirectories, type ScanDirectory } from "../scanner/scanScope";
 import { scanWorkspaceScripts } from "../scanner/scriptScanner";
 import { isScriptFileType, scriptFileTypeOf, type ScriptFileType } from "../scanner/types";
-import { emptyButtonsFile, parseButtonsFile, resolveButtons, serializeButtonsFile } from "./buttonsFile";
+import { emptyButtonsFile, parseButtonsFile, resolveButtons, scriptEntryFiles, serializeButtonsFile } from "./buttonsFile";
 import { getGlobalButtonsFileUri, getProjectButtonsFileUri, getWorkspaceFolderUri } from "./findButtonsFile";
 
 /** Read a `.buttons.json` file, returning an empty file (and optional error) when missing or malformed. */
@@ -41,6 +41,26 @@ export function getScanDirectories(resource?: vscode.Uri): ScanDirectory[] {
   return normalizeScanDirectories(vscode.workspace.getConfiguration("buttons", resource).get("scanDirectories"));
 }
 
+const CSS_COLOR = /^(#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|rgba?\(\s*[\d.]+\s*(,\s*[\d.]+\s*){2,3}\))$/;
+
+function sanitizeCssColor(value: unknown): string {
+  if (typeof value !== "string") {
+    return "";
+  }
+  const trimmed = value.trim();
+  return CSS_COLOR.test(trimmed) ? trimmed : "";
+}
+
+/** Empty strings mean the webview should inherit VS Code button theme tokens. */
+export function getButtonColors(): ButtonColors {
+  const cfg = vscode.workspace.getConfiguration("buttons");
+  return {
+    background: sanitizeCssColor(cfg.get("colors.background")),
+    foreground: sanitizeCssColor(cfg.get("colors.foreground")),
+    hoverBackground: sanitizeCssColor(cfg.get("colors.hoverBackground")),
+  };
+}
+
 /** Load project + global files, scan the workspace, and resolve both button lists. */
 export async function loadRuntimeState(): Promise<RuntimeState> {
   const projectUri = getProjectButtonsFileUri();
@@ -53,9 +73,7 @@ export async function loadRuntimeState(): Promise<RuntimeState> {
   // Standalone file entries (project + global) resolve without a matching scan
   // scope; the scanner stats them directly. Global absolute paths give buttons
   // that follow the user into every workspace.
-  const entryFilePaths = [...project.file.buttons, ...global.file.buttons]
-    .filter((b): b is ScriptButton => b.type === "script")
-    .map((b) => b.file);
+  const entryFilePaths = [...scriptEntryFiles(project.file), ...scriptEntryFiles(global.file)];
   const allDiscovered = workspaceUri
     ? await scanWorkspaceScripts(workspaceUri, getScanDirectories(workspaceUri), entryFilePaths)
     : [];

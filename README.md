@@ -87,18 +87,22 @@ Every button gives you:
 
 - **Run** - run in the current integrated terminal (reusing it, or a dedicated `Buttons` terminal).
 - **New Terminal** - run in a fresh terminal named `Buttons: <label>`.
+- **Insert** - write the command into the terminal without running it. **Insert selected** strings several checked commands as new lines.
 - **Copy** - copy the exact command to the clipboard.
-- **Note / Edit** - inline-edit the note (for script buttons) or the command and note (for custom commands).
+- **Duplicate** - clone the button, including its variants.
+- **Note / Edit** - inline-edit the note (for script buttons) or the command/args and note (for custom commands and variants).
 - **✕** - remove the button.
+
+Parents expand to parameter options (extra args, or nested commands/scripts). Drag the gripper to reorder.
 
 ### Layouts that fit
 
 - **Sidebar** renders each button as a compact card (command/note on one row, actions on the next).
 - **Editor panel** renders the full table (Command | Note | Actions).
 
-### Configurable text size
+### Configurable text size and colors
 
-Set the UI text size to VS Code default, +2px, or +4px via `buttons.textSize` - or click the gear icon in the panel header to jump straight to the setting (see [Settings](#settings)).
+Set the UI text size to VS Code default, +2px, or +4px via `buttons.textSize`. Optional `buttons.colors.*` tint Run buttons and cards; leave them empty to inherit the active VS Code theme. The gear icon in the panel header jumps to settings (see [Settings](#settings)).
 
 ### Global profile
 
@@ -179,13 +183,16 @@ Disabling a file type stops *offering* its scripts in the **Project scripts** ta
 
 ## Settings
 
-Buttons contributes three settings, configurable at **User** and **Workspace** scope:
+Buttons contributes these settings, configurable at **User** and **Workspace** scope:
 
 | Setting | Type | Default | Description |
 | --- | --- | --- | --- |
 | `buttons.textSize` | `string` (`default` / `plus2` / `plus4`) | `default` | Text size in the Buttons UI, relative to VS Code's font size. |
 | `buttons.scriptFiles` | `string[]` (checkbox list) | `["package.json", "shell", "python"]` | Which script file types to scan for commands. |
 | `buttons.scanDirectories` | `{ path, recursive }[]` | `[]` | Extra directories to scan; the project root is always scanned at its top level. |
+| `buttons.colors.background` | color string | `""` | Run button and card background. Empty inherits the VS Code theme. |
+| `buttons.colors.foreground` | color string | `""` | Run button and card text. Empty inherits the VS Code theme. |
+| `buttons.colors.hoverBackground` | color string | `""` | Run button hover background. Empty inherits the VS Code theme. |
 
 You can open the settings page from the gear icon in the panel header, or via **Command Palette → Preferences: Open Settings** and searching "Buttons".
 

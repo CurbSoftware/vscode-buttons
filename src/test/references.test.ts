@@ -26,6 +26,8 @@ describe("resolveButtons", () => {
     assert.equal(resolved[0].command, "pnpm dev");
     assert.equal(resolved[0].missing, false);
     assert.equal(resolved[0].index, 0);
+    assert.deepEqual(resolved[0].path, [0]);
+    assert.deepEqual(resolved[0].children, []);
   });
 
   it("marks a script entry missing when no longer in the scan", () => {
@@ -79,6 +81,10 @@ describe("resolveButtons", () => {
 });
 
 describe("buttonId", () => {
+  it("prefers an explicit id", () => {
+    assert.equal(buttonId({ type: "command", command: "echo hi", id: "abc" }), "abc");
+  });
+
   it("keys script entries by script key", () => {
     const entry = {
       type: "script" as const,

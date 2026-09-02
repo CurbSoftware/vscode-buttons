@@ -2,7 +2,7 @@
   "name": "buttons-vscode",
   "displayName": "Buttons",
   "description": "Scan your project's scripts - package.json, Makefile, composer.json, justfile, shell, and Python files - into a clickable command launcher. Pick the directories to scan, run, copy, and manage commands in VS Code.",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "publisher": "CurbSoftware",
   "license": "MIT",
   "pricing": "Free",
@@ -186,6 +186,27 @@
           "default": [],
           "description": "Extra directories to scan for scripts. The project root is always scanned at its top level. Paths outside the workspace must be absolute.",
           "scope": "resource"
+        },
+        "buttons.colors.background": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Background color for Run buttons and launcher cards. Leave empty to inherit the VS Code button theme.",
+          "scope": "window"
+        },
+        "buttons.colors.foreground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Foreground color for Run buttons and launcher cards. Leave empty to inherit the VS Code button theme.",
+          "scope": "window"
+        },
+        "buttons.colors.hoverBackground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Hover background for Run buttons. Leave empty to inherit the VS Code button theme.",
+          "scope": "window"
         }
       }
     }

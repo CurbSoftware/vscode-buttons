@@ -41,22 +41,30 @@ Every row (or card) offers the same actions:
 | --- | --- |
 | **Run** | Runs the command in the current integrated terminal. Reuses the active terminal if one is open; otherwise reuses a terminal named `Buttons`, or creates one. |
 | **New Terminal** | Runs the command in a fresh terminal named `Buttons: <label>`, where `<label>` is the script name (or the first word of the command). |
+| **Insert** | Writes the command into the current terminal **without running it**, so you can edit or string several commands first. |
 | **Copy** | Copies the exact command to the clipboard and shows a confirmation. |
-| **Note / Edit** | Opens inline editing. For a **script** button you can edit only the note; for a **custom command** you can edit both the command and the note. |
+| **Duplicate** | Clones the button (and its variants) as a new row you can change independently. |
+| **Note / Edit** | Opens inline editing. For a **script** button you can edit only the note; for a **custom command** or **args** variant you can edit the command or args and the note. |
 | **✕** | Removes the button from its file. |
+
+Checkboxes on each row plus **Insert selected** in the section header write every checked command into the terminal as separate lines, still without running them.
+
+Drag the gripper on a row to reorder it among its siblings. Order is saved in `.buttons.json`.
+
+Parents with a chevron expand to show **parameter options** (children) and **+ Add variant**, which appends extra args to the parent's live command. The parent's **Run** still runs the base command.
 
 > Script buttons with a **missing** reference (the script no longer exists in the scan) are shown but cannot be run. See [Troubleshooting](troubleshooting.md#a-script-shows-not-found).
 
 ## Adding a custom command
 
 1. Click **+ Add command** in the **Project buttons** or **Global buttons** section.
-2. Enter the command (e.g. `docker ps`) and an optional note.
+2. Enter the command (multi-line is allowed) and an optional note.
 3. Click **Save**.
 
 Custom commands are stored verbatim and are never rewritten by scanning. This is also how you run anything Buttons can't parse (see [Script scanning](scanning.md#what-is-discovered)).
 
-## Text size
+## Text size and colors
 
-Click the gear icon in the panel header to open the settings page for `buttons.textSize`, or change it directly - see [Configuration](configuration.md#buttonstextsize).
+Click the gear icon in the panel header to open Buttons settings. `buttons.textSize` changes the UI size. `buttons.colors.background`, `buttons.colors.foreground`, and `buttons.colors.hoverBackground` tint Run buttons and launcher cards; leave them empty to inherit VS Code's current color theme. See [Configuration](configuration.md).
 
 [Back to index](index.md)
