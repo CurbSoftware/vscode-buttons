@@ -257,9 +257,14 @@ function renderDragHandle(): string {
   return `<span class="drag-handle" draggable="true" title="Drag to reorder" aria-label="Drag to reorder"><span class="codicon codicon-gripper" aria-hidden="true"></span></span>`;
 }
 
-function renderVariantToggle(source: ButtonsSource, path: number[]): string {
+function renderVariantToggle(source: ButtonsSource, path: number[], variantCount: number): string {
+  const count =
+    variantCount > 0
+      ? `<span class="badge variant-count" aria-label="${variantCount} variant${variantCount === 1 ? "" : "s"}">${variantCount}</span>`
+      : "";
   return `<button type="button" class="scan-group-toggle variant-toggle" data-action="toggle-variants" ${sourcePathAttrs(source, path)} aria-expanded="false" title="Show parameter options">
     <span class="codicon codicon-chevron-right scan-group-caret" aria-hidden="true"></span>
+    ${count}
   </button>`;
 }
 
@@ -326,7 +331,7 @@ function renderCardRow(state: WebviewState, source: ButtonsSource, button: Resol
 
 function renderCardDisplayRow(source: ButtonsSource, button: ResolvedButton, isChild: boolean): string {
   const note = button.note ? `<div class="note">${escapeHtml(button.note)}</div>` : "";
-  const toggle = isChild ? "" : renderVariantToggle(source, button.path);
+  const toggle = isChild ? "" : renderVariantToggle(source, button.path, button.children.length);
   return `<div class="button-card${isChild ? " child" : ""}" ${sourcePathAttrs(source, button.path)}>
   <div class="button-card-head">
     ${renderDragHandle()}
@@ -389,7 +394,7 @@ function renderEditorRow(state: WebviewState, source: ButtonsSource, button: Res
 
 function renderDisplayRow(source: ButtonsSource, button: ResolvedButton, isParent: boolean): string {
   const note = button.note ? escapeHtml(button.note) : "";
-  const toggle = isParent ? renderVariantToggle(source, button.path) : "";
+  const toggle = isParent ? renderVariantToggle(source, button.path, button.children.length) : "";
   const ds = sourcePathAttrs(source, button.path);
   return `<tr ${ds}>
   <td class="cmd">
@@ -675,6 +680,8 @@ body {
 }
 .scan-group-toggle:hover { color: var(--vscode-focusBorder, var(--fg)); }
 .variant-toggle { flex: 0 0 auto; }
+.variant-count { margin-left: 0; }
+.button-block:not(.collapsed) .variant-count { display: none; }
 .scan-group-caret { transition: transform 0.1s ease; flex-shrink: 0; }
 .scan-group:not(.collapsed) .scan-group-caret,
 .button-block:not(.collapsed) .scan-group-caret { transform: rotate(90deg); }

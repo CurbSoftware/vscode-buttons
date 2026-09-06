@@ -51,6 +51,9 @@ describe("renderHtml", () => {
     assert.match(html, /Duplicate/);
     assert.match(html, /drag-handle/);
     assert.match(html, /Add variant/);
+    assert.match(html, /class="badge variant-count"/);
+    assert.match(html, /aria-label="1 variant"/);
+    assert.match(html, /variant-count"[^>]*>1</);
     assert.match(html, /--btn-bg: var\(--vscode-button-background\)/);
     assert.match(html, /pnpm dev --include app1/);
     assert.match(html, /title="Remove"/);
@@ -72,5 +75,11 @@ describe("renderHtml", () => {
     assert.match(html, /--btn-bg: #111111/);
     assert.match(html, /--btn-fg: #eeeeee/);
     assert.match(html, /--btn-hover: #222222/);
+  });
+
+  it("omits the variant count badge when a parent has no children", () => {
+    const lone: ResolvedButton = { ...parent, children: [], entry: { type: "command", command: "pnpm dev" } };
+    const html = renderHtml(state({ projectButtons: [lone] }), "codicons.css");
+    assert.doesNotMatch(html, /class="badge variant-count"/);
   });
 });

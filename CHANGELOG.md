@@ -4,6 +4,12 @@ All notable changes to the Buttons extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+
+- Closed parent chevrons show a badge with the number of variant commands.
+
 ## [2.1.2] - 2026-09-02
 
 ### Changed

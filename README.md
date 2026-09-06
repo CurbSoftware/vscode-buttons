@@ -94,7 +94,7 @@ Every button gives you:
 - **Note / Edit** - inline-edit the note (for script buttons) or the command/args and note (for custom commands and variants).
 - **✕** - first click shows Confirm; click again to remove.
 
-Parents expand to parameter options (extra args, or nested commands/scripts). Drag the gripper to reorder.
+Parents expand to parameter options (extra args, or nested commands/scripts). A closed chevron shows a badge with the variant count. Drag the gripper to reorder.
 
 ### Layouts that fit
 

@@ -50,7 +50,7 @@ Every row (or card) offers the same actions:
 
 Drag the gripper on a row to reorder it among its siblings. Order is saved in `.buttons.json`.
 
-Parents with a chevron expand to show **parameter options** (children) and **+ Add variant**, which appends extra args to the parent's live command. The parent's **Run** still runs the base command.
+Parents with a chevron expand to show **parameter options** (children) and **+ Add variant**, which appends extra args to the parent's live command. When the chevron is closed, a badge next to it shows how many variants the parent has. The parent's **Run** still runs the base command.
 
 > Script buttons with a **missing** reference (the script no longer exists in the scan) are shown but cannot be run. See [Troubleshooting](troubleshooting.md#a-script-shows-not-found).
 
