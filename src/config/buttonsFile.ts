@@ -112,14 +112,12 @@ function parseButtonValue(raw: unknown, label: string, asChild: boolean): ParseE
       ...id,
       ...args,
     };
-    if (!asChild) {
-      const children = parseChildren(entry.children, label);
-      if (!children.ok) {
-        return children;
-      }
-      if (children.children) {
-        script.children = children.children;
-      }
+    const children = parseChildren(entry.children, label);
+    if (!children.ok) {
+      return children;
+    }
+    if (children.children) {
+      script.children = children.children;
     }
     return { ok: true, entry: script };
   }
@@ -129,14 +127,12 @@ function parseButtonValue(raw: unknown, label: string, asChild: boolean): ParseE
       return { ok: false, error: `${label} command entry requires a non-empty "command".` };
     }
     const command: CommandButton = { type: "command", command: entry.command, ...note, ...id, ...args };
-    if (!asChild) {
-      const children = parseChildren(entry.children, label);
-      if (!children.ok) {
-        return children;
-      }
-      if (children.children) {
-        command.children = children.children;
-      }
+    const children = parseChildren(entry.children, label);
+    if (!children.ok) {
+      return children;
+    }
+    if (children.children) {
+      command.children = children.children;
     }
     return { ok: true, entry: command };
   }
@@ -242,21 +238,74 @@ export function addCommandButton(file: ButtonsFile, command: string, note?: stri
 }
 
 export function getAtPath(file: ButtonsFile, path: number[]): ButtonChild | undefined {
-  if (path.length === 0 || path.length > 2) {
+  if (path.length === 0) {
     return undefined;
   }
-  const top = file.buttons[path[0]];
-  if (!top) {
-    return undefined;
+  let current: ButtonChild | undefined = file.buttons[path[0]];
+  for (let i = 1; i < path.length; i++) {
+    if (!current || isArgsButton(current)) {
+      return undefined;
+    }
+    current = current.children?.[path[i]];
   }
-  if (path.length === 1) {
-    return top;
-  }
-  return top.children?.[path[1]];
+  return current;
 }
 
-function mapButtons(file: ButtonsFile, fn: (entry: ButtonEntry, index: number) => ButtonEntry): ButtonsFile {
-  return { ...file, buttons: file.buttons.map(fn) };
+function setChildren(parent: ButtonEntry, children: ButtonChild[]): ButtonEntry {
+  const next: ButtonEntry = { ...parent };
+  if (children.length === 0) {
+    delete next.children;
+  } else {
+    next.children = children;
+  }
+  return next;
+}
+
+/** Apply `fn` to the sibling array that contains `path`. */
+function mapSiblings(
+  buttons: ButtonEntry[],
+  path: number[],
+  fn: (siblings: ButtonChild[], index: number) => ButtonChild[] | undefined,
+): ButtonEntry[] | undefined {
+  if (path.length === 0) {
+    return undefined;
+  }
+
+  const walk = (siblings: ButtonChild[], rest: number[]): ButtonChild[] | undefined => {
+    const [head, ...tail] = rest;
+    if (head === undefined || head < 0 || head >= siblings.length) {
+      return undefined;
+    }
+    if (tail.length === 0) {
+      return fn(siblings, head);
+    }
+    const entry = siblings[head];
+    if (isArgsButton(entry) || !entry.children) {
+      return undefined;
+    }
+    const nextKids = walk(entry.children, tail);
+    if (!nextKids) {
+      return undefined;
+    }
+    const copy = siblings.slice();
+    copy[head] = setChildren(entry, nextKids);
+    return copy;
+  };
+
+  const walked = walk(buttons, path);
+  if (!walked || walked.some(isArgsButton)) {
+    return undefined;
+  }
+  return walked as ButtonEntry[];
+}
+
+function commit(
+  file: ButtonsFile,
+  path: number[],
+  fn: (siblings: ButtonChild[], index: number) => ButtonChild[] | undefined,
+): ButtonsFile {
+  const buttons = mapSiblings(file.buttons, path, fn);
+  return buttons ? { ...file, buttons } : file;
 }
 
 export function updateCommandButton(
@@ -323,51 +372,28 @@ export function updateButton(
 }
 
 function replaceAtPath(file: ButtonsFile, path: number[], next: ButtonChild): ButtonsFile {
-  if (path.length === 1) {
-    if (isArgsButton(next)) {
-      return file;
+  if (path.length === 1 && isArgsButton(next)) {
+    return file;
+  }
+  return commit(file, path, (siblings, index) => {
+    if (index < 0 || index >= siblings.length) {
+      return undefined;
     }
-    const buttons = file.buttons.slice();
-    buttons[path[0]] = next;
-    return { ...file, buttons };
-  }
-  if (path.length !== 2) {
-    return file;
-  }
-  const parent = file.buttons[path[0]];
-  if (!parent?.children) {
-    return file;
-  }
-  const children = parent.children.slice();
-  children[path[1]] = next;
-  return mapButtons(file, (entry, i) => (i === path[0] ? { ...parent, children } : entry));
+    const copy = siblings.slice();
+    copy[index] = next;
+    return copy;
+  });
 }
 
 export function removeButton(file: ButtonsFile, path: number[]): ButtonsFile {
-  if (path.length === 1) {
-    if (path[0] < 0 || path[0] >= file.buttons.length) {
-      return file;
+  return commit(file, path, (siblings, index) => {
+    if (index < 0 || index >= siblings.length) {
+      return undefined;
     }
-    const buttons = file.buttons.slice();
-    buttons.splice(path[0], 1);
-    return { ...file, buttons };
-  }
-  if (path.length !== 2) {
-    return file;
-  }
-  const parent = file.buttons[path[0]];
-  if (!parent?.children || path[1] < 0 || path[1] >= parent.children.length) {
-    return file;
-  }
-  const children = parent.children.slice();
-  children.splice(path[1], 1);
-  const nextParent: ButtonEntry = { ...parent };
-  if (children.length === 0) {
-    delete nextParent.children;
-  } else {
-    nextParent.children = children;
-  }
-  return mapButtons(file, (entry, i) => (i === path[0] ? nextParent : entry));
+    const copy = siblings.slice();
+    copy.splice(index, 1);
+    return copy;
+  });
 }
 
 function newId(): string {
@@ -398,43 +424,35 @@ export function duplicateButton(file: ButtonsFile, path: number[]): ButtonsFile 
   const clone = cloneWithNewIds(original);
   let next = original === entry ? file : replaceAtPath(file, path, original);
 
-  if (path.length === 1) {
-    if (isArgsButton(clone)) {
-      return file;
-    }
-    const buttons = next.buttons.slice();
-    buttons.splice(path[0] + 1, 0, clone);
-    return { ...next, buttons };
-  }
-
-  const parent = next.buttons[path[0]];
-  if (!parent?.children) {
+  if (path.length === 1 && isArgsButton(clone)) {
     return file;
   }
-  const children = parent.children.slice();
-  children.splice(path[1] + 1, 0, clone);
-  return mapButtons(next, (e, i) => (i === path[0] ? { ...parent, children } : e));
+
+  return commit(next, path, (siblings, index) => {
+    if (index < 0 || index >= siblings.length) {
+      return undefined;
+    }
+    const copy = siblings.slice();
+    copy.splice(index + 1, 0, clone);
+    return copy;
+  });
 }
 
 export function addArgsChild(file: ButtonsFile, parentPath: number[], args: string, note?: string, id?: string): ButtonsFile {
-  if (parentPath.length !== 1) {
+  const parent = getAtPath(file, parentPath);
+  if (!parent || isArgsButton(parent)) {
     return file;
   }
   const trimmed = args.trim();
   if (trimmed === "") {
     return file;
   }
-  const parent = file.buttons[parentPath[0]];
-  if (!parent) {
-    return file;
-  }
   const child: ArgsButton = { args: trimmed, ...(note !== undefined && note !== "" ? { note } : {}), ...(id !== undefined ? { id } : {}) };
-  const children = [...(parent.children ?? []), child];
-  return mapButtons(file, (entry, i) => (i === parentPath[0] ? { ...parent, children } : entry));
+  return replaceAtPath(file, parentPath, { ...parent, children: [...(parent.children ?? []), child] });
 }
 
 export function reorderButtons(file: ButtonsFile, fromPath: number[], toPath: number[]): ButtonsFile {
-  if (fromPath.length !== toPath.length || fromPath.length === 0 || fromPath.length > 2) {
+  if (fromPath.length !== toPath.length || fromPath.length === 0) {
     return file;
   }
   for (let i = 0; i < fromPath.length - 1; i++) {
@@ -458,28 +476,32 @@ export function reorderButtons(file: ButtonsFile, fromPath: number[], toPath: nu
     return { ...file, buttons };
   }
 
-  const parent = file.buttons[fromPath[0]];
-  if (!parent?.children || from >= parent.children.length || to >= parent.children.length) {
+  const parentPath = fromPath.slice(0, -1);
+  const parent = getAtPath(file, parentPath);
+  if (!parent || isArgsButton(parent) || !parent.children || from >= parent.children.length || to >= parent.children.length) {
     return file;
   }
   const children = parent.children.slice();
   const [item] = children.splice(from, 1);
   children.splice(to, 0, item);
-  return mapButtons(file, (entry, i) => (i === fromPath[0] ? { ...parent, children } : entry));
+  return replaceAtPath(file, parentPath, { ...parent, children });
 }
 
-/** File paths of every script entry, including one level of children. */
+/** File paths of every script entry, including nested children. */
 export function scriptEntryFiles(file: ButtonsFile): string[] {
   const files: string[] = [];
-  for (const entry of file.buttons) {
-    if (entry.type === "script") {
+  const visit = (entry: ButtonChild): void => {
+    if (isScriptButton(entry)) {
       files.push(entry.file);
     }
-    for (const child of entry.children ?? []) {
-      if (isScriptButton(child)) {
-        files.push(child.file);
+    if (!isArgsButton(entry)) {
+      for (const child of entry.children ?? []) {
+        visit(child);
       }
     }
+  };
+  for (const entry of file.buttons) {
+    visit(entry);
   }
   return files;
 }
@@ -532,7 +554,7 @@ function resolveOne(
 
   if (entry.type === "command") {
     const command = appendArgs(entry.command, entry.args);
-    const resolved: ResolvedButton = {
+    return {
       index,
       path,
       id,
@@ -540,19 +562,15 @@ function resolveOne(
       command,
       note: entry.note,
       entry,
-      children: [],
+      children: (entry.children ?? []).map((child, i) => resolveOne(child, [...path, i], byKey, command)),
     };
-    if (path.length === 1) {
-      resolved.children = (entry.children ?? []).map((child, i) => resolveOne(child, [...path, i], byKey, command));
-    }
-    return resolved;
   }
 
   const found = byKey.get(scriptKey(entry));
   const command = appendArgs(found ? found.command : scriptCommand(entry.packageManager, entry.script), entry.args);
   const missing = !found;
   const packageDir = entry.packageDir;
-  const resolved: ResolvedButton = {
+  return {
     index,
     path,
     id,
@@ -562,14 +580,10 @@ function resolveOne(
     entry,
     packageDir,
     missing,
-    children: [],
-  };
-  if (path.length === 1) {
-    resolved.children = (entry.children ?? []).map((child, i) =>
+    children: (entry.children ?? []).map((child, i) =>
       resolveOne(child, [...path, i], byKey, command, packageDir, missing),
-    );
-  }
-  return resolved;
+    ),
+  };
 }
 
 /** Resolve a file's entries into executable rows, recomputing script commands from the current scan. */
@@ -585,15 +599,12 @@ export function findResolved(list: ResolvedButton[], path: number[]): ResolvedBu
   if (path.length === 0) {
     return undefined;
   }
-  const top = list[path[0]];
-  if (!top) {
-    return undefined;
+  let current: ResolvedButton | undefined = list[path[0]];
+  for (let i = 1; i < path.length; i++) {
+    if (!current) {
+      return undefined;
+    }
+    current = current.children[path[i]];
   }
-  if (path.length === 1) {
-    return top;
-  }
-  if (path.length === 2) {
-    return top.children[path[1]];
-  }
-  return undefined;
+  return current;
 }

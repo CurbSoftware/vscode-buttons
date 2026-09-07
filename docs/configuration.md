@@ -62,20 +62,22 @@ Extra directories to scan, on top of the always-scanned project root (top level 
 
 Paths are normalized (backslashes fixed, trailing slashes dropped). Relative entries must stay inside the workspace: `..` escapes, glob metacharacters, hidden directories, ignore-listed names (e.g. `build`, `dist`), and duplicates are ignored. Absolute entries (for directories outside the workspace) are allowed and only reject glob metacharacters and `..` segments. The **Scan directories** card in the **Project scripts** tab edits this setting for you through its paste-a-path Add field. See [Script scanning](scanning.md#scan-directories) for the scope model.
 
-## `buttons.colors.background` / `foreground` / `hoverBackground`
+## `buttons.colors.actionBackground` / `actionForeground` / `commandForeground` / `rowBackground`
 
-Optional colors for **Run** buttons and launcher cards.
+Optional hex (or `rgb()` / `rgba()`) colors for the panel. Empty values inherit the VS Code theme.
 
 | Setting | Applies to |
 | --- | --- |
-| `buttons.colors.background` | Run button background and launcher card background/border. |
-| `buttons.colors.foreground` | Run button text and launcher card text. |
-| `buttons.colors.hoverBackground` | Run button hover background. |
+| `buttons.colors.actionBackground` | All action buttons (Run, Copy, header actions, Add variant, and the rest). |
+| `buttons.colors.actionForeground` | Text on those action buttons. |
+| `buttons.colors.commandForeground` | Command text. |
+| `buttons.colors.rowBackground` | Sidebar cards and editor command rows. |
+| `buttons.colors.hoverBackground` | Action-button hover background. |
 
 - **Type:** string (`format: color`, a color picker in the settings UI)
 - **Default:** `""` (empty)
 
-When a value is empty, Buttons inherits VS Code's current theme (`--vscode-button-background`, `--vscode-button-foreground`, `--vscode-button-hoverBackground`, and the panel/card tokens). Set only the colors you want to override.
+`buttons.colors.background` and `buttons.colors.foreground` are deprecated. If the new keys are empty, those older values still apply as a fallback (background to action/row fill, foreground to action/command text).
 
 ## Where settings live
 
@@ -86,8 +88,10 @@ Changes are stored in VS Code's own settings (`settings.json`), not in `.buttons
   "buttons.textSize": "plus2",
   "buttons.scriptFiles": ["package.json", "shell", "python", "Makefile", "justfile"],
   "buttons.scanDirectories": [{ "path": "packages", "recursive": true }],
-  "buttons.colors.background": "#3d2b1f",
-  "buttons.colors.foreground": "#f4e8d4"
+  "buttons.colors.actionBackground": "#3d2b1f",
+  "buttons.colors.actionForeground": "#f4e8d4",
+  "buttons.colors.commandForeground": "#f4e8d4",
+  "buttons.colors.rowBackground": "#2a2118"
 }
 ```
 

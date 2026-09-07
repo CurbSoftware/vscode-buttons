@@ -51,6 +51,10 @@ export interface ButtonColors {
   background: string;
   foreground: string;
   hoverBackground: string;
+  actionBackground: string;
+  actionForeground: string;
+  commandForeground: string;
+  rowBackground: string;
 }
 
 /** A button resolved to its executable form, plus UI bookkeeping. */
@@ -132,6 +136,7 @@ export type PanelActionMessage =
   | { type: "open-project-file" }
   | { type: "open-global-file" }
   | { type: "open-settings" }
+  | { type: "open-main-panel" }
   | { type: "generate" }
   | { type: "add-scan-dir"; path: string }
   | { type: "remove-scan-dir"; path: string }

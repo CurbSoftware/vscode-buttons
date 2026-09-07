@@ -58,6 +58,10 @@ export function getButtonColors(): ButtonColors {
     background: sanitizeCssColor(cfg.get("colors.background")),
     foreground: sanitizeCssColor(cfg.get("colors.foreground")),
     hoverBackground: sanitizeCssColor(cfg.get("colors.hoverBackground")),
+    actionBackground: sanitizeCssColor(cfg.get("colors.actionBackground")),
+    actionForeground: sanitizeCssColor(cfg.get("colors.actionForeground")),
+    commandForeground: sanitizeCssColor(cfg.get("colors.commandForeground")),
+    rowBackground: sanitizeCssColor(cfg.get("colors.rowBackground")),
   };
 }
 

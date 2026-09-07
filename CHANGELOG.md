@@ -4,6 +4,18 @@ All notable changes to the Buttons extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.2.0] - 2026-09-07
+
+### Added
+
+- Command and script variants can nest to any depth, so a button can be both a parent and a child.
+- Color pickers for action-button fill, action-button text, command text, and command-row background.
+- Sidebar **Open in editor** control (header and view title) to open the full Buttons panel.
+
+### Changed
+
+- Variant dropdowns indent further from the parent row.
+
 ## [2.1.3] - 2026-09-05
 
 ### Added

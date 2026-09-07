@@ -20,6 +20,10 @@ function pathsEqual(a?: number[], b?: number[]): boolean {
   return Boolean(a && b && a.length === b.length && a.every((n, i) => n === b[i]));
 }
 
+function pathIsPrefix(prefix: number[], full?: number[]): boolean {
+  return Boolean(full && full.length >= prefix.length && prefix.every((n, i) => n === full[i]));
+}
+
 function sourcePathAttrs(source: ButtonsSource, path: number[]): string {
   return `data-source="${source}" data-path="${pathAttr(path)}"`;
 }
@@ -36,7 +40,7 @@ export function renderHtml(state: WebviewState, codiconUri: string, variant: Ren
 <style>${css(variant, state.textSizePx, state.buttonColors)}</style>
 </head>
 <body>
-  ${renderHeader(state)}
+  ${renderHeader(state, variant)}
   ${renderTabs(state)}
   ${state.parseError ? renderError(state.parseError) : ""}
   ${state.activeTab === "scripts" ? renderScanSection(state) : renderButtonsPage(state, variant)}
@@ -45,16 +49,20 @@ export function renderHtml(state: WebviewState, codiconUri: string, variant: Ren
 </html>`;
 }
 
-function renderHeader(state: WebviewState): string {
+function renderHeader(state: WebviewState, variant: RenderVariant): string {
   // First-time Generate is also a CTA on the Scripts tab; keep this header
   // button off that tab so the empty-file state doesn't stack two primaries.
   const generateButton = state.hasWorkspace && !(state.activeTab === "scripts" && !state.projectFileExists)
     ? `<button class="btn${state.projectFileExists ? "" : " primary"}" data-action="generate" title="${state.projectFileExists ? "Include any missing root-level scripts. Custom commands and your edits stay." : "Scan and create the project .buttons.json"}"><span class="codicon codicon-wand" aria-hidden="true"></span> Generate</button>`
     : "";
+  const openEditor = variant === "sidebar"
+    ? `<button class="btn" data-action="open-main-panel" title="Open in editor" aria-label="Open in editor"><span class="codicon codicon-window" aria-hidden="true"></span></button>`
+    : "";
   return `<header class="header">
   <div class="header-title">Buttons</div>
   <div class="header-actions">
     ${generateButton}
+    ${openEditor}
     <button class="btn" data-action="rescan" title="Rescan project scripts"><span class="codicon codicon-refresh" aria-hidden="true"></span> Rescan</button>
     <button class="btn" data-action="open-project-file" title="Open the project .buttons.json file" aria-label="Open the project .buttons.json file"><span class="codicon codicon-file-code" aria-hidden="true"></span></button>
     <button class="btn" data-action="open-global-file" title="Open the global ~/.buttons.json file" aria-label="Open the global ~/.buttons.json file"><span class="codicon codicon-home" aria-hidden="true"></span></button>
@@ -310,11 +318,14 @@ function renderAddVariant(state: WebviewState, source: ButtonsSource, parent: Re
 }
 
 function renderCardBlock(state: WebviewState, source: ButtonsSource, button: ResolvedButton): string {
-  const forceOpen = pathsEqual(state.addingChildPath, button.path);
+  const forceOpen = pathIsPrefix(button.path, state.addingChildPath);
   const collapsed = forceOpen ? "" : " collapsed";
-  const children = button.children.map((child) => renderCardRow(state, source, child, true)).join("");
+  const isChild = button.path.length > 1;
+  const children = button.children.map((child) =>
+    child.kind === "args" ? renderCardRow(state, source, child, true) : renderCardBlock(state, source, child),
+  ).join("");
   return `<div class="button-block${collapsed}" ${sourcePathAttrs(source, button.path)}>
-  ${renderCardRow(state, source, button, false)}
+  ${renderCardRow(state, source, button, isChild)}
   <div class="button-variants">
     ${children}
     ${renderAddVariant(state, source, button)}
@@ -331,7 +342,7 @@ function renderCardRow(state: WebviewState, source: ButtonsSource, button: Resol
 
 function renderCardDisplayRow(source: ButtonsSource, button: ResolvedButton, isChild: boolean): string {
   const note = button.note ? `<div class="note">${escapeHtml(button.note)}</div>` : "";
-  const toggle = isChild ? "" : renderVariantToggle(source, button.path, button.children.length);
+  const toggle = button.kind === "args" ? "" : renderVariantToggle(source, button.path, button.children.length);
   return `<div class="button-card${isChild ? " child" : ""}" ${sourcePathAttrs(source, button.path)}>
   <div class="button-card-head">
     ${renderDragHandle()}
@@ -372,16 +383,25 @@ function renderCardAddRow(source: ButtonsSource): string {
 </div>`;
 }
 
-function renderEditorBlock(state: WebviewState, source: ButtonsSource, button: ResolvedButton): string {
-  const forceOpen = pathsEqual(state.addingChildPath, button.path);
+function renderEditorBlock(state: WebviewState, source: ButtonsSource, button: ResolvedButton, wrap: "tbody" | "table" = "tbody"): string {
+  const forceOpen = pathIsPrefix(button.path, state.addingChildPath);
   const collapsed = forceOpen ? "" : " collapsed";
-  const childRows = button.children.map((child) => renderEditorRow(state, source, child)).join("");
+  const childRows = button.children.map((child) =>
+    child.kind === "args"
+      ? renderEditorRow(state, source, child)
+      : `<tr><td colspan="3">${renderEditorBlock(state, source, child, "table")}</td></tr>`,
+  ).join("");
   const add = renderEditorAddVariant(state, source, button);
-  return `<tbody class="button-block${collapsed}" ${sourcePathAttrs(source, button.path)}>
-  ${renderEditorRow(state, source, button, true)}
+  const inner = `${renderEditorRow(state, source, button, true)}
   <tr class="variants-row"><td colspan="3">
     <table class="buttons-table nested">${childRows}${add}</table>
-  </td></tr>
+  </td></tr>`;
+  const attrs = sourcePathAttrs(source, button.path);
+  if (wrap === "table") {
+    return `<table class="buttons-table nested button-block${collapsed}" ${attrs}>${inner}</table>`;
+  }
+  return `<tbody class="button-block${collapsed}" ${attrs}>
+  ${inner}
 </tbody>`;
 }
 
@@ -394,7 +414,7 @@ function renderEditorRow(state: WebviewState, source: ButtonsSource, button: Res
 
 function renderDisplayRow(source: ButtonsSource, button: ResolvedButton, isParent: boolean): string {
   const note = button.note ? escapeHtml(button.note) : "";
-  const toggle = isParent ? renderVariantToggle(source, button.path, button.children.length) : "";
+  const toggle = button.kind === "args" ? "" : renderVariantToggle(source, button.path, button.children.length);
   const ds = sourcePathAttrs(source, button.path);
   return `<tr ${ds}>
   <td class="cmd">
@@ -449,12 +469,15 @@ function renderEditorAddVariant(state: WebviewState, source: ButtonsSource, pare
 
 function css(variant: RenderVariant, textSizePx: number, colors: ButtonColors): string {
   const bg = variant === "editor" ? "var(--vscode-editor-background)" : "var(--vscode-sideBar-background)";
-  const btnBg = colors.background || "var(--vscode-button-background)";
-  const btnFg = colors.foreground || "var(--vscode-button-foreground)";
+  const actionBg = colors.actionBackground;
+  const actionFg = colors.actionForeground;
+  const btnBg = actionBg || colors.background || "var(--vscode-button-background)";
+  const btnFg = actionFg || colors.foreground || "var(--vscode-button-foreground)";
   const btnHover = colors.hoverBackground || "var(--vscode-button-hoverBackground)";
-  const cardBg = colors.background || "transparent";
-  const cardFg = colors.foreground || "inherit";
-  const cardBorder = colors.background || "var(--border)";
+  const rowBg = colors.rowBackground || colors.background || "transparent";
+  const cmdFg = colors.commandForeground || colors.foreground || "inherit";
+  const cardBorder = colors.rowBackground || colors.background || "var(--border)";
+  const allActionHover = actionBg ? "var(--btn-hover)" : "var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.1))";
   return `
 :root {
   color-scheme: light dark;
@@ -466,9 +489,13 @@ function css(variant: RenderVariant, textSizePx: number, colors: ButtonColors): 
   --btn-bg: ${btnBg};
   --btn-fg: ${btnFg};
   --btn-hover: ${btnHover};
-  --card-bg: ${cardBg};
-  --card-fg: ${cardFg};
+  --action-bg: ${actionBg || "transparent"};
+  --action-fg: ${actionFg || "var(--fg)"};
+  --cmd-fg: ${cmdFg};
+  --card-bg: ${rowBg};
+  --card-fg: inherit;
   --card-border: ${cardBorder};
+  --row-bg: ${rowBg};
 }
 * { box-sizing: border-box; }
 body {
@@ -527,8 +554,8 @@ body {
 .btn {
   appearance: none;
   border: 1px solid var(--border);
-  background: transparent;
-  color: var(--fg);
+  background: var(--action-bg);
+  color: var(--action-fg);
   padding: 3px 8px;
   border-radius: 3px;
   font-size: 0.9em;
@@ -537,7 +564,7 @@ body {
   cursor: pointer;
   white-space: nowrap;
 }
-.btn:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.1)); }
+.btn:hover { background: ${allActionHover}; }
 .btn.primary { background: var(--btn-bg); color: var(--btn-fg); border-color: transparent; }
 .btn.primary:hover { background: var(--btn-hover); }
 .btn.danger:hover { border-color: var(--danger); color: var(--danger); background: transparent; }
@@ -681,10 +708,12 @@ body {
 .scan-group-toggle:hover { color: var(--vscode-focusBorder, var(--fg)); }
 .variant-toggle { flex: 0 0 auto; }
 .variant-count { margin-left: 0; }
-.button-block:not(.collapsed) .variant-count { display: none; }
+.button-block:not(.collapsed) > .button-card .variant-count,
+.button-block:not(.collapsed) > tr:first-child .variant-count { display: none; }
 .scan-group-caret { transition: transform 0.1s ease; flex-shrink: 0; }
 .scan-group:not(.collapsed) .scan-group-caret,
-.button-block:not(.collapsed) .scan-group-caret { transform: rotate(90deg); }
+.button-block:not(.collapsed) > .button-card .scan-group-caret,
+.button-block:not(.collapsed) > tr:first-child .scan-group-caret { transform: rotate(90deg); }
 .scan-group-title {
   font-weight: 600;
   flex: 1;
@@ -696,11 +725,13 @@ body {
 .scan-group-count { color: var(--muted); font-size: 0.8em; flex-shrink: 0; }
 .scan-group-body { display: flex; flex-direction: column; padding-left: 18px; }
 .scan-group.collapsed .scan-group-body { display: none; }
-.button-block.collapsed .button-variants,
-.button-block.collapsed .variants-row { display: none; }
-.button-variants { display: flex; flex-direction: column; gap: 6px; padding: 0 0 0 18px; }
+.button-block.collapsed > .button-variants,
+.button-block.collapsed > tr.variants-row { display: none; }
+.button-variants { display: flex; flex-direction: column; gap: 6px; padding: 0 0 0 32px; }
+.button-variants .button-variants { padding-left: 24px; }
 .buttons-table { width: 100%; border-collapse: collapse; }
-.buttons-table.nested { margin: 0; }
+.buttons-table.nested { margin: 0; padding-left: 32px; }
+.buttons-table.nested .buttons-table.nested { padding-left: 24px; }
 .buttons-table th {
   text-align: left;
   font-size: 0.8em;
@@ -712,12 +743,14 @@ body {
   border-bottom: 1px solid var(--border);
 }
 .buttons-table td { padding: 6px; vertical-align: top; border-bottom: 1px solid var(--border); }
+.buttons-table tbody tr { background: var(--row-bg); }
 .cmd-head { display: flex; align-items: flex-start; gap: 6px; }
 .cmd code, .button-card-main code {
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 1em;
   word-break: break-word;
   white-space: pre-wrap;
+  color: var(--cmd-fg);
 }
 .badge {
   display: inline-block;
@@ -903,6 +936,7 @@ document.addEventListener("click", (event) => {
     case "open-project-file": post({ type: "open-project-file" }); break;
     case "open-global-file": post({ type: "open-global-file" }); break;
     case "open-settings": post({ type: "open-settings" }); break;
+    case "open-main-panel": post({ type: "open-main-panel" }); break;
     case "run-current": post({ type: "run-current", source, path }); break;
     case "run-new": post({ type: "run-new", source, path }); break;
     case "append": post({ type: "append", source, path, sep: el.dataset.sep === "newline" ? "newline" : "space" }); break;

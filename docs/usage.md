@@ -4,7 +4,7 @@ The Buttons panel has two tabs and renders differently depending on where you op
 
 ## Where to open it
 
-- **Activity Bar** - click the Buttons icon in the left sidebar. Renders as a compact card layout.
+- **Activity Bar** - click the Buttons icon in the left sidebar. Renders as a compact card layout. The window icon in the header (and on the sidebar title bar) opens the full editor panel.
 - **Editor title bar** - click the Buttons icon in the top-right. Renders as a full-width table.
 
 Both panels show the same data and stay in sync; you can use both at once.
@@ -50,7 +50,7 @@ Every row (or card) offers the same actions:
 
 Drag the gripper on a row to reorder it among its siblings. Order is saved in `.buttons.json`.
 
-Parents with a chevron expand to show **parameter options** (children) and **+ Add variant**, which appends extra args to the parent's live command. When the chevron is closed, a badge next to it shows how many variants the parent has. The parent's **Run** still runs the base command.
+Parents with a chevron expand to show **parameter options** (children) and **+ Add variant**, which appends extra args to the parent's live command. Command and script children can have their own chevron and variants. When the chevron is closed, a badge next to it shows how many variants the parent has. The parent's **Run** still runs the base command.
 
 > Script buttons with a **missing** reference (the script no longer exists in the scan) are shown but cannot be run. See [Troubleshooting](troubleshooting.md#a-script-shows-not-found).
 
@@ -64,6 +64,6 @@ Custom commands are stored verbatim and are never rewritten by scanning. This is
 
 ## Text size and colors
 
-Click the gear icon in the panel header to open Buttons settings. `buttons.textSize` changes the UI size. `buttons.colors.background`, `buttons.colors.foreground`, and `buttons.colors.hoverBackground` tint Run buttons and launcher cards; leave them empty to inherit VS Code's current color theme. See [Configuration](configuration.md).
+Click the gear icon in the panel header to open Buttons settings. `buttons.textSize` changes the UI size. Hex color pickers tint action buttons, command text, and command-row backgrounds; leave them empty to inherit VS Code's current color theme. See [Configuration](configuration.md).
 
 [Back to index](index.md)

@@ -741,7 +741,11 @@ async function handlePanelMessage(panelId: PanelId, message: PanelActionMessage)
       return;
 
     case "open-settings":
-      await vscode.commands.executeCommand("workbench.action.openSettings", "buttons.textSize");
+      await vscode.commands.executeCommand("workbench.action.openSettings", "buttons");
+      return;
+
+    case "open-main-panel":
+      await vscode.commands.executeCommand("buttons.openMainPanel");
       return;
   }
 }

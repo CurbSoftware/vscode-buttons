@@ -7,7 +7,7 @@ Buttons stores its configuration in JSON files:
 | Project | `<workspace root>/.buttons.json` | The current workspace. |
 | Global | `~/.buttons.json` | Every project you open. |
 
-Both files use the same format: a `version` field and a `buttons` array. Entries can nest one level of children for parameterized variants.
+Both files use the same format: a `version` field and a `buttons` array. Command and script entries can nest `children` at any depth. Args-only variants are leaves.
 
 ```json
 {
@@ -58,7 +58,7 @@ A live reference to a script the scanner found. The command is **recomputed on e
 | `note` | no | An optional note shown next to the button. |
 | `id` | no | Stable identity. Assigned when you add or duplicate a button in the UI. |
 | `args` | no | Extra flags appended to the recomputed script command. |
-| `children` | no | One level of nested variants. See [Children](#children). |
+| `children` | no | Nested variants. See [Children](#children). |
 
 ### Command entries (`type: "command"`)
 
@@ -71,11 +71,11 @@ A literal custom command, not tied to any file. Stored verbatim and never rewrit
 | `note` | no | An optional note shown next to the button. |
 | `id` | no | Stable identity. Assigned when you add or duplicate a button in the UI. |
 | `args` | no | Extra flags appended to the stored command. |
-| `children` | no | One level of nested variants. See [Children](#children). |
+| `children` | no | Nested variants. See [Children](#children). |
 
 ## Children
 
-A top-level script or command can list `children`. The panel shows them as an expandable set of parameter options. Nested `children` on a child are ignored.
+A script or command can list `children`, including when it is itself a child. The panel shows them as an expandable set of parameter options. Args-only objects cannot have children.
 
 | Child shape | Meaning |
 | --- | --- |

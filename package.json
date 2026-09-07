@@ -2,7 +2,7 @@
   "name": "buttons-vscode",
   "displayName": "Buttons",
   "description": "Scan your project's scripts - package.json, Makefile, composer.json, justfile, shell, and Python files - into a clickable command launcher. Pick the directories to scan, run, copy, and manage commands in VS Code.",
-  "version": "2.1.3",
+  "version": "2.2.0",
   "publisher": "CurbSoftware",
   "license": "MIT",
   "pricing": "Free",
@@ -107,6 +107,13 @@
           "when": "true"
         }
       ],
+      "view/title": [
+        {
+          "command": "buttons.openMainPanel",
+          "group": "navigation",
+          "when": "view == buttons.sidebarView"
+        }
+      ],
       "explorer/context": [
         {
           "command": "buttons.addFileButton",
@@ -187,25 +194,55 @@
           "description": "Extra directories to scan for scripts. The project root is always scanned at its top level. Paths outside the workspace must be absolute.",
           "scope": "resource"
         },
+        "buttons.colors.actionBackground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Background color for all action buttons (Run, Copy, header actions, and the rest). Leave empty to inherit the VS Code theme.",
+          "scope": "window"
+        },
+        "buttons.colors.actionForeground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Text color for all action buttons. Leave empty to inherit the VS Code theme.",
+          "scope": "window"
+        },
+        "buttons.colors.commandForeground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Color of command text in the panel. Leave empty to inherit the editor foreground.",
+          "scope": "window"
+        },
+        "buttons.colors.rowBackground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Background color for command cards and table rows. Leave empty for a transparent row.",
+          "scope": "window"
+        },
         "buttons.colors.background": {
           "type": "string",
           "format": "color",
           "default": "",
-          "description": "Background color for Run buttons and launcher cards. Leave empty to inherit the VS Code button theme.",
+          "description": "Deprecated. Used as a fallback for action and row background when the dedicated settings are empty.",
+          "markdownDeprecationMessage": "Use `#buttons.colors.actionBackground#` and `#buttons.colors.rowBackground#` instead.",
           "scope": "window"
         },
         "buttons.colors.foreground": {
           "type": "string",
           "format": "color",
           "default": "",
-          "description": "Foreground color for Run buttons and launcher cards. Leave empty to inherit the VS Code button theme.",
+          "description": "Deprecated. Used as a fallback for action and command text when the dedicated settings are empty.",
+          "markdownDeprecationMessage": "Use `#buttons.colors.actionForeground#` and `#buttons.colors.commandForeground#` instead.",
           "scope": "window"
         },
         "buttons.colors.hoverBackground": {
           "type": "string",
           "format": "color",
           "default": "",
-          "description": "Hover background for Run buttons. Leave empty to inherit the VS Code button theme.",
+          "description": "Hover background for action buttons. Leave empty to inherit the VS Code button theme.",
           "scope": "window"
         }
       }

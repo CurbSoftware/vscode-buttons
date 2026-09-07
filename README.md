@@ -94,16 +94,16 @@ Every button gives you:
 - **Note / Edit** - inline-edit the note (for script buttons) or the command/args and note (for custom commands and variants).
 - **✕** - first click shows Confirm; click again to remove.
 
-Parents expand to parameter options (extra args, or nested commands/scripts). A closed chevron shows a badge with the variant count. Drag the gripper to reorder.
+Parents expand to parameter options (extra args, or nested commands/scripts). Command and script children can nest further. A closed chevron shows a badge with the variant count. Drag the gripper to reorder.
 
 ### Layouts that fit
 
-- **Sidebar** renders each button as a compact card (command/note on one row, actions on the next).
+- **Sidebar** renders each button as a compact card (command/note on one row, actions on the next). Use the window icon in the sidebar header to open the full editor panel.
 - **Editor panel** renders the full table (Command | Note | Actions).
 
 ### Configurable text size and colors
 
-Set the UI text size to VS Code default, +2px, or +4px via `buttons.textSize`. Optional `buttons.colors.*` tint Run buttons and cards; leave them empty to inherit the active VS Code theme. The gear icon in the panel header jumps to settings (see [Settings](#settings)).
+Set the UI text size to VS Code default, +2px, or +4px via `buttons.textSize`. Optional `buttons.colors.*` hex values tint action buttons, command text, and command-row backgrounds; leave them empty to inherit the active VS Code theme. The gear icon in the panel header jumps to settings (see [Settings](#settings)).
 
 ### Global profile
 
@@ -191,9 +191,11 @@ Buttons contributes these settings, configurable at **User** and **Workspace** s
 | `buttons.textSize` | `string` (`default` / `plus2` / `plus4`) | `default` | Text size in the Buttons UI, relative to VS Code's font size. |
 | `buttons.scriptFiles` | `string[]` (checkbox list) | `["package.json", "shell", "python"]` | Which script file types to scan for commands. |
 | `buttons.scanDirectories` | `{ path, recursive }[]` | `[]` | Extra directories to scan; the project root is always scanned at its top level. |
-| `buttons.colors.background` | color string | `""` | Run button and card background. Empty inherits the VS Code theme. |
-| `buttons.colors.foreground` | color string | `""` | Run button and card text. Empty inherits the VS Code theme. |
-| `buttons.colors.hoverBackground` | color string | `""` | Run button hover background. Empty inherits the VS Code theme. |
+| `buttons.colors.actionBackground` | color string | `""` | All action-button backgrounds. Empty inherits the VS Code theme. |
+| `buttons.colors.actionForeground` | color string | `""` | All action-button text. Empty inherits the VS Code theme. |
+| `buttons.colors.commandForeground` | color string | `""` | Command text. Empty inherits the editor foreground. |
+| `buttons.colors.rowBackground` | color string | `""` | Command card and table-row background. Empty is transparent. |
+| `buttons.colors.hoverBackground` | color string | `""` | Action-button hover background. Empty inherits the VS Code theme. |
 
 You can open the settings page from the gear icon in the panel header, or via **Command Palette → Preferences: Open Settings** and searching "Buttons".
 

@@ -418,7 +418,7 @@ describe("children and args", () => {
     assert.equal(result.ok, false);
   });
 
-  it("ignores nested children on a child", () => {
+  it("keeps nested children on a command child", () => {
     const result = parseButtonsFile(
       JSON.stringify({
         version: 1,
@@ -426,7 +426,7 @@ describe("children and args", () => {
           {
             type: "command",
             command: "echo a",
-            children: [{ type: "command", command: "echo b", children: [{ args: "--nope" }] }],
+            children: [{ type: "command", command: "echo b", children: [{ args: "--ok" }] }],
           },
         ],
       }),
@@ -436,7 +436,7 @@ describe("children and args", () => {
     }
     const child = result.file.buttons[0].children?.[0];
     assert.ok(child && "type" in child && child.type === "command");
-    assert.equal("children" in child && Boolean(child.children), false);
+    assert.deepEqual(child.children, [{ args: "--ok" }]);
   });
 
   it("resolves args children against the live parent command", () => {
@@ -487,6 +487,23 @@ describe("children and args", () => {
     assert.equal(resolved[0].children[1].missing, false);
   });
 
+  it("resolves nested args against the intermediate parent command", () => {
+    const file: ButtonsFile = {
+      version: 1,
+      buttons: [
+        {
+          type: "command",
+          command: "echo a",
+          children: [{ type: "command", command: "echo b", children: [{ args: "--x" }] }],
+        },
+      ],
+    };
+    const resolved = resolveButtons(file, []);
+    assert.equal(resolved[0].children[0].command, "echo b");
+    assert.equal(resolved[0].children[0].children[0].command, "echo b --x");
+    assert.deepEqual(resolved[0].children[0].children[0].path, [0, 0, 0]);
+  });
+
   it("removeScriptButton removes every top-level copy of a script key", () => {
     const two = duplicateButton(addScriptButton(emptyButtonsFile(), script()), [0]);
     assert.equal(two.buttons.length, 2);
@@ -525,10 +542,21 @@ describe("addArgsChild", () => {
     assert.deepEqual(next.buttons[0].children, [{ args: "--include app1" }]);
   });
 
-  it("is a no-op for empty args or a child path", () => {
+  it("is a no-op for empty args or a missing child path", () => {
     const base = addCommandButton(emptyButtonsFile(), "pnpm dev");
     assert.equal(addArgsChild(base, [0], "  "), base);
     assert.equal(addArgsChild(base, [0, 0], "--x"), base);
+  });
+
+  it("appends an args child on a nested command parent", () => {
+    const nested: ButtonsFile = {
+      version: 1,
+      buttons: [{ type: "command", command: "echo a", children: [{ type: "command", command: "echo b" }] }],
+    };
+    const next = addArgsChild(nested, [0, 0], "--x");
+    const child = next.buttons[0].children?.[0];
+    assert.ok(child && "type" in child && child.type === "command");
+    assert.deepEqual(child.children, [{ args: "--x" }]);
   });
 });
 
@@ -547,5 +575,33 @@ describe("reorderButtons", () => {
     assert.equal(first && "args" in first ? first.args : "", "--b");
     const other = addCommandButton(withKids, "q");
     assert.equal(reorderButtons(other, [0, 0], [1, 0]), other);
+  });
+
+  it("reorders grandchildren under the same nested parent", () => {
+    const file: ButtonsFile = {
+      version: 1,
+      buttons: [
+        {
+          type: "command",
+          command: "echo a",
+          children: [
+            {
+              type: "command",
+              command: "echo b",
+              children: [{ args: "--a" }, { args: "--b" }],
+            },
+          ],
+        },
+      ],
+    };
+    const swapped = reorderButtons(file, [0, 0, 0], [0, 0, 1]);
+    const kids = swapped.buttons[0].children?.[0];
+    assert.ok(kids && "type" in kids && kids.type === "command");
+    const first = kids.children?.[0];
+    assert.equal(first && "args" in first ? first.args : "", "--b");
+    const removed = removeButton(file, [0, 0, 0]);
+    const after = removed.buttons[0].children?.[0];
+    assert.ok(after && "type" in after && after.type === "command");
+    assert.equal(after.children?.length, 1);
   });
 });
