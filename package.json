@@ -1,8 +1,8 @@
 {
   "name": "buttons-vscode",
   "displayName": "Buttons",
-  "description": "Scan your project's scripts - package.json, Makefile, composer.json, justfile, shell, and Python files - into a clickable command launcher. Pick the directories to scan, run, copy, and manage commands in VS Code.",
-  "version": "2.2.0",
+  "description": "Scan your project's scripts - package.json, Cargo.toml, go.mod, Makefile, composer.json, justfile, shell, and Python files - into a clickable command launcher. Pick the directories to scan, run, copy, and manage commands in VS Code.",
+  "version": "2.2.2",
   "publisher": "CurbSoftware",
   "license": "MIT",
   "pricing": "Free",
@@ -32,6 +32,9 @@
     "bash",
     "python",
     "venv",
+    "rust",
+    "cargo",
+    "go",
     "automation"
   ],
   "engines": {
@@ -118,7 +121,7 @@
         {
           "command": "buttons.addFileButton",
           "group": "buttons",
-          "when": "resourceFilename =~ /^(.*\\.sh|app\\.py|main\\.py|manage\\.py|run\\.py|server\\.py|package\\.json|Makefile|justfile|composer\\.json)$/"
+          "when": "resourceFilename =~ /^(.*\\.sh|app\\.py|main\\.py|manage\\.py|run\\.py|server\\.py|package\\.json|Makefile|justfile|composer\\.json|Cargo\\.toml|go\\.mod)$/"
         }
       ]
     },
@@ -150,6 +153,8 @@
               "Makefile",
               "composer.json",
               "justfile",
+              "Cargo.toml",
+              "go.mod",
               "shell",
               "python"
             ],
@@ -158,6 +163,8 @@
               "Makefile targets",
               "composer.json scripts",
               "justfile recipes",
+              "Cargo.toml build, test, and run",
+              "go.mod build, test, and run",
               ".sh files in scan directories",
               "Python entry files (app.py, main.py, ...) and venv buttons"
             ]
@@ -165,10 +172,12 @@
           "default": [
             "package.json",
             "shell",
-            "python"
+            "python",
+            "Cargo.toml",
+            "go.mod"
           ],
           "uniqueItems": true,
-          "description": "Script file types to scan for runnable commands. shell covers .sh files; python covers Python entry files and venv activate/deactivate/install buttons.",
+          "description": "Script file types to scan for runnable commands. shell covers .sh files; python covers Python entry files and venv buttons; Cargo.toml and go.mod offer build/test/run.",
           "scope": "window"
         },
         "buttons.scanDirectories": {
@@ -194,32 +203,200 @@
           "description": "Extra directories to scan for scripts. The project root is always scanned at its top level. Paths outside the workspace must be absolute.",
           "scope": "resource"
         },
+        "buttons.colors.runBackground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Background color for the Run button. Empty falls back to actionBackground.",
+          "scope": "window"
+        },
+        "buttons.colors.runForeground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Text color for the Run button. Empty falls back to actionForeground.",
+          "scope": "window"
+        },
+        "buttons.colors.newTerminalBackground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Background color for the New Terminal button. Empty falls back to actionBackground.",
+          "scope": "window"
+        },
+        "buttons.colors.newTerminalForeground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Text color for the New Terminal button. Empty falls back to actionForeground.",
+          "scope": "window"
+        },
+        "buttons.colors.appendBackground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Background color for the + (append with space) button. Empty falls back to actionBackground.",
+          "scope": "window"
+        },
+        "buttons.colors.appendForeground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Text color for the + button. Empty falls back to actionForeground.",
+          "scope": "window"
+        },
+        "buttons.colors.newlineBackground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Background color for the ↵ (append newline) button. Empty falls back to actionBackground.",
+          "scope": "window"
+        },
+        "buttons.colors.newlineForeground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Text color for the ↵ button. Empty falls back to actionForeground.",
+          "scope": "window"
+        },
+        "buttons.colors.copyBackground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Background color for the Copy button. Empty falls back to actionBackground.",
+          "scope": "window"
+        },
+        "buttons.colors.copyForeground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Text color for the Copy button. Empty falls back to actionForeground.",
+          "scope": "window"
+        },
+        "buttons.colors.duplicateBackground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Background color for the Duplicate button. Empty falls back to actionBackground.",
+          "scope": "window"
+        },
+        "buttons.colors.duplicateForeground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Text color for the Duplicate button. Empty falls back to actionForeground.",
+          "scope": "window"
+        },
+        "buttons.colors.editBackground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Background color for the Note/Edit button. Empty falls back to actionBackground.",
+          "scope": "window"
+        },
+        "buttons.colors.editForeground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Text color for the Note/Edit button. Empty falls back to actionForeground.",
+          "scope": "window"
+        },
+        "buttons.colors.removeBackground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Background color for the ✕ remove button. Empty falls back to actionBackground.",
+          "scope": "window"
+        },
+        "buttons.colors.removeForeground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Text color for the ✕ remove button. Empty falls back to actionForeground.",
+          "scope": "window"
+        },
         "buttons.colors.actionBackground": {
           "type": "string",
           "format": "color",
           "default": "",
-          "description": "Background color for all action buttons (Run, Copy, header actions, and the rest). Leave empty to inherit the VS Code theme.",
+          "description": "Fallback background for action buttons and fill for header actions (Generate, Rescan, Add command). Per-button colors override this.",
           "scope": "window"
         },
         "buttons.colors.actionForeground": {
           "type": "string",
           "format": "color",
           "default": "",
-          "description": "Text color for all action buttons. Leave empty to inherit the VS Code theme.",
+          "description": "Fallback text color for action buttons and header actions. Per-button colors override this.",
           "scope": "window"
         },
         "buttons.colors.commandForeground": {
           "type": "string",
           "format": "color",
           "default": "",
-          "description": "Color of command text in the panel. Leave empty to inherit the editor foreground.",
+          "description": "Color of command text. Empty inherits the editor foreground.",
+          "scope": "window"
+        },
+        "buttons.colors.commandBackground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Background color behind command text. Empty is transparent.",
+          "scope": "window"
+        },
+        "buttons.colors.variantCommandForeground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Color of variant command text. Empty falls back to commandForeground.",
+          "scope": "window"
+        },
+        "buttons.colors.variantCommandBackground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Background color behind variant command text. Empty falls back to commandBackground.",
           "scope": "window"
         },
         "buttons.colors.rowBackground": {
           "type": "string",
           "format": "color",
           "default": "",
-          "description": "Background color for command cards and table rows. Leave empty for a transparent row.",
+          "description": "Fallback background for command cards and table rows. Empty is transparent.",
+          "scope": "window"
+        },
+        "buttons.colors.rowOddBackground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Background for odd command rows. Empty falls back to rowBackground.",
+          "scope": "window"
+        },
+        "buttons.colors.rowEvenBackground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Background for even command rows. Empty falls back to rowBackground.",
+          "scope": "window"
+        },
+        "buttons.colors.variantRowBackground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Fallback background for variant rows. Empty falls back to rowBackground.",
+          "scope": "window"
+        },
+        "buttons.colors.variantRowOddBackground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Background for odd variant rows. Empty falls back to variantRowBackground.",
+          "scope": "window"
+        },
+        "buttons.colors.variantRowEvenBackground": {
+          "type": "string",
+          "format": "color",
+          "default": "",
+          "description": "Background for even variant rows. Empty falls back to variantRowBackground.",
           "scope": "window"
         },
         "buttons.colors.background": {

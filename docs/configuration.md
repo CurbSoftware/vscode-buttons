@@ -24,6 +24,8 @@ Controls which script file types are scanned for commands.
 | Value | Format |
 | --- | --- |
 | `package.json` | Node.js / TypeScript package scripts. |
+| `Cargo.toml` | Rust `cargo build`, `cargo test`, `cargo run`. |
+| `go.mod` | Go `go build`, `go test`, `go run .`. |
 | `Makefile` | Make targets. |
 | `composer.json` | PHP Composer scripts. |
 | `justfile` | `just` recipes. |
@@ -31,10 +33,10 @@ Controls which script file types are scanned for commands.
 | `python` | Python entry files (`app.py`, `main.py`, `manage.py`, `run.py`, `server.py`) and venv buttons. |
 
 - **Type:** array (rendered as a checkbox list)
-- **Default:** `["package.json", "shell", "python"]`
+- **Default:** `["package.json", "shell", "python", "Cargo.toml", "go.mod"]`
 - **`uniqueItems`:** `true`
 
-`Makefile`, `composer.json`, and `justfile` are opt-in. Only these types can be parsed - anything else is added as a custom command instead.
+`Makefile`, `composer.json`, and `justfile` are opt-in. Only these types can be discovered - anything else is added as a custom command instead.
 
 > Disabling a type here stops *offering* its scripts in the **Project scripts** tab, but it never removes buttons already present in your `.buttons.json`. See [Script scanning](scanning.md#what-is-discovered) for details.
 
@@ -62,22 +64,42 @@ Extra directories to scan, on top of the always-scanned project root (top level 
 
 Paths are normalized (backslashes fixed, trailing slashes dropped). Relative entries must stay inside the workspace: `..` escapes, glob metacharacters, hidden directories, ignore-listed names (e.g. `build`, `dist`), and duplicates are ignored. Absolute entries (for directories outside the workspace) are allowed and only reject glob metacharacters and `..` segments. The **Scan directories** card in the **Project scripts** tab edits this setting for you through its paste-a-path Add field. See [Script scanning](scanning.md#scan-directories) for the scope model.
 
-## `buttons.colors.actionBackground` / `actionForeground` / `commandForeground` / `rowBackground`
+## `buttons.colors.*`
 
-Optional hex (or `rgb()` / `rgba()`) colors for the panel. Empty values inherit the VS Code theme.
+Optional hex (or `rgb()` / `rgba()`) colors for the panel. Empty values inherit the VS Code theme, or the fallback listed below. Each setting is `format: color` (a color picker in the settings UI).
+
+### Action buttons
 
 | Setting | Applies to |
 | --- | --- |
-| `buttons.colors.actionBackground` | All action buttons (Run, Copy, header actions, Add variant, and the rest). |
-| `buttons.colors.actionForeground` | Text on those action buttons. |
-| `buttons.colors.commandForeground` | Command text. |
-| `buttons.colors.rowBackground` | Sidebar cards and editor command rows. |
-| `buttons.colors.hoverBackground` | Action-button hover background. |
+| `buttons.colors.runBackground` / `runForeground` | **Run** |
+| `buttons.colors.newTerminalBackground` / `newTerminalForeground` | **New Terminal** |
+| `buttons.colors.appendBackground` / `appendForeground` | **+** (append with a space) |
+| `buttons.colors.newlineBackground` / `newlineForeground` | **↵** (append on a new line) |
+| `buttons.colors.copyBackground` / `copyForeground` | **Copy** |
+| `buttons.colors.duplicateBackground` / `duplicateForeground` | **Duplicate** |
+| `buttons.colors.editBackground` / `editForeground` | **Note** / **Edit** |
+| `buttons.colors.removeBackground` / `removeForeground` | **✕** |
+| `buttons.colors.actionBackground` / `actionForeground` | Fallback for the buttons above, and fill for header actions (Generate, Rescan, Add command) |
+| `buttons.colors.hoverBackground` | Hover background for action buttons |
 
-- **Type:** string (`format: color`, a color picker in the settings UI)
-- **Default:** `""` (empty)
+### Command text
 
-`buttons.colors.background` and `buttons.colors.foreground` are deprecated. If the new keys are empty, those older values still apply as a fallback (background to action/row fill, foreground to action/command text).
+| Setting | Applies to |
+| --- | --- |
+| `buttons.colors.commandForeground` / `commandBackground` | Command text and the background behind it |
+| `buttons.colors.variantCommandForeground` / `variantCommandBackground` | The same pair for variant commands. Empty falls back to the command colors |
+
+### Rows
+
+| Setting | Applies to |
+| --- | --- |
+| `buttons.colors.rowOddBackground` / `rowEvenBackground` | Alternating top-level command cards and table rows |
+| `buttons.colors.rowBackground` | Fallback for both odd and even rows |
+| `buttons.colors.variantRowOddBackground` / `variantRowEvenBackground` | Alternating variant rows |
+| `buttons.colors.variantRowBackground` | Fallback for both variant rows, then `rowBackground` |
+
+`buttons.colors.background` and `buttons.colors.foreground` are deprecated. If the newer keys are empty, those older values still apply as a fallback (background to action/row fill, foreground to action/command text).
 
 ## Where settings live
 
@@ -86,12 +108,14 @@ Changes are stored in VS Code's own settings (`settings.json`), not in `.buttons
 ```jsonc
 {
   "buttons.textSize": "plus2",
-  "buttons.scriptFiles": ["package.json", "shell", "python", "Makefile", "justfile"],
+  "buttons.scriptFiles": ["package.json", "shell", "python", "Cargo.toml", "go.mod", "Makefile", "justfile"],
   "buttons.scanDirectories": [{ "path": "packages", "recursive": true }],
-  "buttons.colors.actionBackground": "#3d2b1f",
-  "buttons.colors.actionForeground": "#f4e8d4",
+  "buttons.colors.runBackground": "#3d2b1f",
+  "buttons.colors.runForeground": "#f4e8d4",
   "buttons.colors.commandForeground": "#f4e8d4",
-  "buttons.colors.rowBackground": "#2a2118"
+  "buttons.colors.commandBackground": "#1f1914",
+  "buttons.colors.rowOddBackground": "#2a2118",
+  "buttons.colors.rowEvenBackground": "#241c16"
 }
 ```
 

@@ -1,6 +1,6 @@
 # Buttons Documentation
 
-**Buttons** scans the directories you choose for scripts - `package.json`, shell and Python files, plus opt-in `Makefile`, `composer.json`, and `justfile` - and turns them into a clickable command launcher in VS Code and VSCodium.
+**Buttons** scans the directories you choose for scripts - `package.json`, `Cargo.toml`, `go.mod`, shell and Python files, plus opt-in `Makefile`, `composer.json`, and `justfile` - and turns them into a clickable command launcher in VS Code and VSCodium.
 
 This directory holds the detailed user guides. For a quick overview, start with the [README](../README.md).
 

@@ -16,7 +16,9 @@ import {
   parseMakefileText,
   parsePackageJsonText,
   fileEntryScript,
+  isToolchainFile,
   scriptKey,
+  toolchainButtons,
   VENV_DIR_NAMES,
   type DiscoveredScript,
   type PackageManager,
@@ -139,6 +141,10 @@ export async function scanWorkspaceScripts(
     const entry = fileEntryScript(base, file);
     if (entry) {
       add([entry]);
+      return;
+    }
+    if (isToolchainFile(base)) {
+      add(toolchainButtons(file, base));
       return;
     }
 

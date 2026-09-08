@@ -34,13 +34,15 @@ You can also add a single file without scanning its folder:
 - right-click a `.sh` or Python entry file in the Explorer and choose **Add to Buttons**, or
 - paste the file's path into the Add field (full path when it lives outside the project).
 
-Standalone file entries are stored in `.buttons.json`, so they travel with the project file, and they keep working even when their directory is not a scan scope. Right-clicking a manifest (`package.json`, `Makefile`, `justfile`, `composer.json`) adds its folder as a scan directory instead, since its scripts come from scanning.
+Standalone file entries are stored in `.buttons.json`, so they travel with the project file, and they keep working even when their directory is not a scan scope. Right-clicking a manifest (`package.json`, `Makefile`, `justfile`, `composer.json`, `Cargo.toml`, `go.mod`) adds its folder as a scan directory instead, since its scripts come from scanning.
 
 ## What is discovered
 
 | Kind | Found where | Run as |
 | --- | --- | --- |
 | `package.json` scripts | any scan scope | `npm run dev` / `pnpm dev` / `yarn test` / `bun dev` |
+| `Cargo.toml` | any scan scope | `cargo build` / `cargo test` / `cargo run` |
+| `go.mod` | any scan scope | `go build` / `go test` / `go run .` |
 | `Makefile` targets | any scan scope | `make build` |
 | `composer.json` scripts | any scan scope | `composer test` |
 | `justfile` recipes | any scan scope | `just build` |
@@ -49,9 +51,9 @@ Standalone file entries are stored in `.buttons.json`, so they travel with the p
 
 Every command runs with the terminal's working directory set to the script file's directory, and file paths in the command are relative to that directory - so `scripts/migrate.sh` runs as `bash migrate.sh` inside `scripts/`, exactly like a `pnpm dev` button for a nested package runs inside that package.
 
-The file formats above are controlled by the [`buttons.scriptFiles`](configuration.md#buttonsscriptfiles) setting; `package.json`, `shell`, and `python` are enabled by default, `Makefile` / `composer.json` / `justfile` are opt-in.
+The file formats above are controlled by the [`buttons.scriptFiles`](configuration.md#buttonsscriptfiles) setting; `package.json`, `shell`, `python`, `Cargo.toml`, and `go.mod` are enabled by default, `Makefile` / `composer.json` / `justfile` are opt-in.
 
-For `package.json`, the script body (and for `Makefile`/`justfile`, a preceding `#` comment) is captured as a description shown with the button. Other ecosystems (Python `pyproject.toml`, Rust `Cargo.toml`, .NET, etc.) are not auto-detected - add their commands with **+ Add command** instead (see [Using the panel](usage.md#adding-a-custom-command)).
+For `package.json`, the script body (and for `Makefile`/`justfile`, a preceding `#` comment) is captured as a description shown with the button. `Cargo.toml` and `go.mod` offer a fixed build/test/run set rather than parsing every target. Other ecosystems (Python `pyproject.toml`, .NET, etc.) are not auto-detected - add their commands with **+ Add command** instead (see [Using the panel](usage.md#adding-a-custom-command)).
 
 ## Virtual environments
 
@@ -80,7 +82,7 @@ The runner used for `package.json` scripts is detected from the **root lockfiles
 
 If none is found, it defaults to `npm`. The detected manager applies to **all** `package.json` files in the workspace (monorepos are assumed to use one manager). Because script entries are references, switching lockfiles and rescanning updates every command automatically - `npm run dev` becomes `pnpm dev`, etc.
 
-`Makefile`, `composer.json`, and `justfile` targets always use their fixed runner (`make`, `composer`, `just`) regardless of the detected package manager.
+`Makefile`, `composer.json`, `justfile`, `Cargo.toml`, and `go.mod` always use their fixed runner (`make`, `composer`, `just`, `cargo`, `go`) regardless of the detected package manager.
 
 ## Monorepos
 

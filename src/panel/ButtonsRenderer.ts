@@ -66,6 +66,7 @@ function renderHeader(state: WebviewState, variant: RenderVariant): string {
     <button class="btn" data-action="rescan" title="Rescan project scripts"><span class="codicon codicon-refresh" aria-hidden="true"></span> Rescan</button>
     <button class="btn" data-action="open-project-file" title="Open the project .buttons.json file" aria-label="Open the project .buttons.json file"><span class="codicon codicon-file-code" aria-hidden="true"></span></button>
     <button class="btn" data-action="open-global-file" title="Open the global ~/.buttons.json file" aria-label="Open the global ~/.buttons.json file"><span class="codicon codicon-home" aria-hidden="true"></span></button>
+    <button class="btn" data-action="export-skill" title="Copy or add the Buttons AI skill" aria-label="Copy or add the Buttons AI skill"><span class="codicon codicon-markdown" aria-hidden="true"></span></button>
     <button class="btn" data-action="open-settings" title="Open Buttons settings" aria-label="Open Buttons settings"><span class="codicon codicon-settings-gear" aria-hidden="true"></span></button>
   </div>
 </header>`;
@@ -321,9 +322,7 @@ function renderCardBlock(state: WebviewState, source: ButtonsSource, button: Res
   const forceOpen = pathIsPrefix(button.path, state.addingChildPath);
   const collapsed = forceOpen ? "" : " collapsed";
   const isChild = button.path.length > 1;
-  const children = button.children.map((child) =>
-    child.kind === "args" ? renderCardRow(state, source, child, true) : renderCardBlock(state, source, child),
-  ).join("");
+  const children = button.children.map((child) => renderCardBlock(state, source, child)).join("");
   return `<div class="button-block${collapsed}" ${sourcePathAttrs(source, button.path)}>
   ${renderCardRow(state, source, button, isChild)}
   <div class="button-variants">
@@ -342,7 +341,7 @@ function renderCardRow(state: WebviewState, source: ButtonsSource, button: Resol
 
 function renderCardDisplayRow(source: ButtonsSource, button: ResolvedButton, isChild: boolean): string {
   const note = button.note ? `<div class="note">${escapeHtml(button.note)}</div>` : "";
-  const toggle = button.kind === "args" ? "" : renderVariantToggle(source, button.path, button.children.length);
+  const toggle = renderVariantToggle(source, button.path, button.children.length);
   return `<div class="button-card${isChild ? " child" : ""}" ${sourcePathAttrs(source, button.path)}>
   <div class="button-card-head">
     ${renderDragHandle()}
@@ -383,38 +382,41 @@ function renderCardAddRow(source: ButtonsSource): string {
 </div>`;
 }
 
+function nestIndentPx(path: number[]): number {
+  return path.length <= 1 ? 0 : 32 + (path.length - 2) * 24;
+}
+
 function renderEditorBlock(state: WebviewState, source: ButtonsSource, button: ResolvedButton, wrap: "tbody" | "table" = "tbody"): string {
   const forceOpen = pathIsPrefix(button.path, state.addingChildPath);
   const collapsed = forceOpen ? "" : " collapsed";
   const childRows = button.children.map((child) =>
-    child.kind === "args"
-      ? renderEditorRow(state, source, child)
-      : `<tr><td colspan="3">${renderEditorBlock(state, source, child, "table")}</td></tr>`,
+    `<tr class="nested-block-row"><td colspan="3">${renderEditorBlock(state, source, child, "table")}</td></tr>`,
   ).join("");
   const add = renderEditorAddVariant(state, source, button);
-  const inner = `${renderEditorRow(state, source, button, true)}
+  const childIndent = nestIndentPx([...button.path, 0]);
+  const inner = `${renderEditorRow(state, source, button)}
   <tr class="variants-row"><td colspan="3">
-    <table class="buttons-table nested">${childRows}${add}</table>
+    <table class="buttons-table nested" style="--nest-indent:${childIndent}px">${childRows}${add}</table>
   </td></tr>`;
   const attrs = sourcePathAttrs(source, button.path);
   if (wrap === "table") {
-    return `<table class="buttons-table nested button-block${collapsed}" ${attrs}>${inner}</table>`;
+    return `<table class="buttons-table nested button-block${collapsed}" style="--nest-indent:${nestIndentPx(button.path)}px" ${attrs}>${inner}</table>`;
   }
   return `<tbody class="button-block${collapsed}" ${attrs}>
   ${inner}
 </tbody>`;
 }
 
-function renderEditorRow(state: WebviewState, source: ButtonsSource, button: ResolvedButton, isParent = false): string {
+function renderEditorRow(state: WebviewState, source: ButtonsSource, button: ResolvedButton): string {
   if (pathsEqual(state.editing?.path, button.path) && state.editing?.source === source) {
     return renderEditRow(source, button);
   }
-  return renderDisplayRow(source, button, isParent);
+  return renderDisplayRow(source, button);
 }
 
-function renderDisplayRow(source: ButtonsSource, button: ResolvedButton, isParent: boolean): string {
+function renderDisplayRow(source: ButtonsSource, button: ResolvedButton): string {
   const note = button.note ? escapeHtml(button.note) : "";
-  const toggle = button.kind === "args" ? "" : renderVariantToggle(source, button.path, button.children.length);
+  const toggle = renderVariantToggle(source, button.path, button.children.length);
   const ds = sourcePathAttrs(source, button.path);
   return `<tr ${ds}>
   <td class="cmd">
@@ -464,7 +466,7 @@ function renderEditorAddVariant(state: WebviewState, source: ButtonsSource, pare
   </td>
 </tr>`;
   }
-  return `<tr><td colspan="3"><button class="btn" data-action="start-add-child" ${sourcePathAttrs(source, parent.path)}>+ Add variant</button></td></tr>`;
+  return `<tr class="add-variant-row"><td colspan="3"><button class="btn" data-action="start-add-child" ${sourcePathAttrs(source, parent.path)}>+ Add variant</button></td></tr>`;
 }
 
 function css(variant: RenderVariant, textSizePx: number, colors: ButtonColors): string {
@@ -476,8 +478,35 @@ function css(variant: RenderVariant, textSizePx: number, colors: ButtonColors): 
   const btnHover = colors.hoverBackground || "var(--vscode-button-hoverBackground)";
   const rowBg = colors.rowBackground || colors.background || "transparent";
   const cmdFg = colors.commandForeground || colors.foreground || "inherit";
+  const cmdBg = colors.commandBackground || "transparent";
+  const variantCmdFg = colors.variantCommandForeground || cmdFg;
+  const variantCmdBg = colors.variantCommandBackground || cmdBg;
+  const rowOdd = colors.rowOddBackground || rowBg;
+  const rowEven = colors.rowEvenBackground || rowBg;
+  const variantRowFallback = colors.variantRowBackground || rowBg;
+  const variantRowOdd = colors.variantRowOddBackground || variantRowFallback;
+  const variantRowEven = colors.variantRowEvenBackground || variantRowFallback;
   const cardBorder = colors.rowBackground || colors.background || "var(--border)";
   const allActionHover = actionBg ? "var(--btn-hover)" : "var(--vscode-toolbar-hoverBackground, rgba(128, 128, 128, 0.1))";
+  const actionRule = (sel: string, specificBg: string, specificFg: string): string => {
+    if (!specificBg && !specificFg) {
+      return "";
+    }
+    const fill = specificBg || actionBg || colors.background;
+    const text = specificFg || actionFg || colors.foreground;
+    const parts = [fill && `background:${fill}`, fill && "border-color:transparent", text && `color:${text}`].filter(Boolean);
+    return `${sel}{${parts.join(";")}}`;
+  };
+  const actionOverrides = [
+    actionRule('.btn[data-action="run-current"]', colors.runBackground, colors.runForeground),
+    actionRule('.btn[data-action="run-new"]', colors.newTerminalBackground, colors.newTerminalForeground),
+    actionRule('.btn[data-action="append"][data-sep="space"]', colors.appendBackground, colors.appendForeground),
+    actionRule('.btn[data-action="append"][data-sep="newline"]', colors.newlineBackground, colors.newlineForeground),
+    actionRule('.btn[data-action="copy"]', colors.copyBackground, colors.copyForeground),
+    actionRule('.btn[data-action="duplicate"]', colors.duplicateBackground, colors.duplicateForeground),
+    actionRule('.btn[data-action="start-edit"]', colors.editBackground, colors.editForeground),
+    actionRule('.btn[data-action="remove"]', colors.removeBackground, colors.removeForeground),
+  ].join("");
   return `
 :root {
   color-scheme: light dark;
@@ -492,10 +521,19 @@ function css(variant: RenderVariant, textSizePx: number, colors: ButtonColors): 
   --action-bg: ${actionBg || "transparent"};
   --action-fg: ${actionFg || "var(--fg)"};
   --cmd-fg: ${cmdFg};
+  --cmd-bg: ${cmdBg};
+  --cmd-pad: ${colors.commandBackground ? "0 4px" : "0"};
+  --variant-cmd-fg: ${variantCmdFg};
+  --variant-cmd-bg: ${variantCmdBg};
+  --variant-cmd-pad: ${colors.variantCommandBackground || colors.commandBackground ? "0 4px" : "0"};
   --card-bg: ${rowBg};
   --card-fg: inherit;
   --card-border: ${cardBorder};
   --row-bg: ${rowBg};
+  --row-odd: ${rowOdd};
+  --row-even: ${rowEven};
+  --variant-row-odd: ${variantRowOdd};
+  --variant-row-even: ${variantRowEven};
 }
 * { box-sizing: border-box; }
 body {
@@ -729,9 +767,8 @@ body {
 .button-block.collapsed > tr.variants-row { display: none; }
 .button-variants { display: flex; flex-direction: column; gap: 6px; padding: 0 0 0 32px; }
 .button-variants .button-variants { padding-left: 24px; }
-.buttons-table { width: 100%; border-collapse: collapse; }
-.buttons-table.nested { margin: 0; padding-left: 32px; }
-.buttons-table.nested .buttons-table.nested { padding-left: 24px; }
+.buttons-table { width: 100%; border-collapse: collapse; --nest-indent: 0px; }
+.buttons-table.nested { margin: 0; width: 100%; }
 .buttons-table th {
   text-align: left;
   font-size: 0.8em;
@@ -743,7 +780,23 @@ body {
   border-bottom: 1px solid var(--border);
 }
 .buttons-table td { padding: 6px; vertical-align: top; border-bottom: 1px solid var(--border); }
-.buttons-table tbody tr { background: var(--row-bg); }
+.buttons-table tr.variants-row > td,
+.buttons-table tr.nested-block-row > td {
+  border-bottom: none;
+  padding: 0;
+}
+.buttons-table tr[data-path] > td:first-child,
+.buttons-table tr.add-row > td:first-child,
+.buttons-table tr.add-variant-row > td {
+  padding-left: calc(6px + var(--nest-indent));
+}
+.buttons-table > tbody:nth-of-type(odd) > tr:first-child { background: var(--row-odd); }
+.buttons-table > tbody:nth-of-type(even) > tr:first-child { background: var(--row-even); }
+.buttons-table.nested > tr:nth-child(odd) { background: var(--variant-row-odd); }
+.buttons-table.nested > tr:nth-child(even) { background: var(--variant-row-even); }
+.buttons-table tr[data-path]:hover > td {
+  background: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.08));
+}
 .cmd-head { display: flex; align-items: flex-start; gap: 6px; }
 .cmd code, .button-card-main code {
   font-family: var(--vscode-editor-font-family, monospace);
@@ -751,6 +804,15 @@ body {
   word-break: break-word;
   white-space: pre-wrap;
   color: var(--cmd-fg);
+  background: var(--cmd-bg);
+  border-radius: 3px;
+  padding: var(--cmd-pad);
+}
+.button-card.child .button-card-main code,
+.buttons-table.nested .cmd code {
+  color: var(--variant-cmd-fg);
+  background: var(--variant-cmd-bg);
+  padding: var(--variant-cmd-pad);
 }
 .badge {
   display: inline-block;
@@ -779,6 +841,15 @@ body {
   flex-direction: column;
   gap: 6px;
 }
+.button-card-list > .button-block:nth-child(odd) > .button-card { background: var(--row-odd); }
+.button-card-list > .button-block:nth-child(even) > .button-card { background: var(--row-even); }
+.button-variants > .button-card:nth-child(odd),
+.button-variants > .button-block:nth-child(odd) > .button-card { background: var(--variant-row-odd); }
+.button-variants > .button-card:nth-child(even),
+.button-variants > .button-block:nth-child(even) > .button-card { background: var(--variant-row-even); }
+.button-card[data-path]:hover {
+  background: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.08));
+}
 .button-card.child { border-style: dashed; }
 .button-card.editing, .button-card.add-row { border-color: var(--vscode-focusBorder, var(--fg)); }
 .button-card.empty { border-style: dashed; }
@@ -802,7 +873,7 @@ input[type="text"], textarea {
   font-size: 0.9em;
 }
 textarea { resize: vertical; min-height: 2.4em; font-family: var(--vscode-editor-font-family, monospace); }
-`;
+` + actionOverrides;
 }
 
 function js(): string {
@@ -937,6 +1008,7 @@ document.addEventListener("click", (event) => {
     case "open-global-file": post({ type: "open-global-file" }); break;
     case "open-settings": post({ type: "open-settings" }); break;
     case "open-main-panel": post({ type: "open-main-panel" }); break;
+    case "export-skill": post({ type: "export-skill" }); break;
     case "run-current": post({ type: "run-current", source, path }); break;
     case "run-new": post({ type: "run-new", source, path }); break;
     case "append": post({ type: "append", source, path, sep: el.dataset.sep === "newline" ? "newline" : "space" }); break;
@@ -1087,7 +1159,7 @@ document.querySelectorAll(".button-block").forEach((block) => {
   const key = block.dataset.source + ":" + block.dataset.path;
   if (expandedButtons.has(key)) {
     block.classList.remove("collapsed");
-    const btn = block.querySelector("[data-action='toggle-variants']");
+    const btn = block.querySelector(":scope > .button-card [data-action='toggle-variants'], :scope > tr:first-child [data-action='toggle-variants']");
     if (btn) { btn.setAttribute("aria-expanded", "true"); }
   }
 });

@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { renderHtml } from "../panel/ButtonsRenderer";
-import type { ResolvedButton, WebviewState } from "../models/types";
+import { emptyButtonColors, type ResolvedButton, type WebviewState } from "../models/types";
 
 function state(overrides: Partial<WebviewState> = {}): WebviewState {
   return {
@@ -14,15 +14,7 @@ function state(overrides: Partial<WebviewState> = {}): WebviewState {
     projectFileExists: true,
     activeTab: "buttons",
     scanDirectories: [],
-    buttonColors: {
-      background: "",
-      foreground: "",
-      hoverBackground: "",
-      actionBackground: "",
-      actionForeground: "",
-      commandForeground: "",
-      rowBackground: "",
-    },
+    buttonColors: emptyButtonColors(),
     ...overrides,
   };
 }
@@ -60,6 +52,7 @@ describe("renderHtml", () => {
     assert.match(html, /drag-handle/);
     assert.match(html, /padding: 0 0 0 32px/);
     assert.match(html, /data-action="open-main-panel"/);
+    assert.match(html, /data-action="export-skill"/);
     assert.match(html, /class="badge variant-count"/);
     assert.match(html, /aria-label="1 variant"/);
     assert.match(html, /variant-count"[^>]*>1</);
@@ -80,13 +73,10 @@ describe("renderHtml", () => {
     const html = renderHtml(
       state({
         buttonColors: {
+          ...emptyButtonColors(),
           background: "#111111",
           foreground: "#eeeeee",
           hoverBackground: "#222222",
-          actionBackground: "",
-          actionForeground: "",
-          commandForeground: "",
-          rowBackground: "",
         },
       }),
       "codicons.css",
@@ -101,8 +91,7 @@ describe("renderHtml", () => {
     const html = renderHtml(
       state({
         buttonColors: {
-          background: "",
-          foreground: "",
+          ...emptyButtonColors(),
           hoverBackground: "#222222",
           actionBackground: "#aaaaaa",
           actionForeground: "#bbbbbb",
@@ -117,6 +106,36 @@ describe("renderHtml", () => {
     assert.match(html, /--cmd-fg: #cccccc/);
     assert.match(html, /--row-bg: #dddddd/);
     assert.match(html, /--btn-bg: #aaaaaa/);
+  });
+
+  it("applies per-action, command background, variant, and striped row colors", () => {
+    const html = renderHtml(
+      state({
+        buttonColors: {
+          ...emptyButtonColors(),
+          runBackground: "#111111",
+          runForeground: "#eeeeee",
+          copyBackground: "#222222",
+          commandBackground: "#333333",
+          variantCommandForeground: "#444444",
+          variantCommandBackground: "#555555",
+          rowOddBackground: "#666666",
+          rowEvenBackground: "#777777",
+          variantRowOddBackground: "#888888",
+          variantRowEvenBackground: "#999999",
+        },
+      }),
+      "codicons.css",
+    );
+    assert.match(html, /data-action="run-current"\]\{background:#111111/);
+    assert.match(html, /data-action="copy"\]\{background:#222222/);
+    assert.match(html, /--cmd-bg: #333333/);
+    assert.match(html, /--variant-cmd-fg: #444444/);
+    assert.match(html, /--variant-cmd-bg: #555555/);
+    assert.match(html, /--row-odd: #666666/);
+    assert.match(html, /--row-even: #777777/);
+    assert.match(html, /--variant-row-odd: #888888/);
+    assert.match(html, /--variant-row-even: #999999/);
   });
 
   it("omits the variant count badge when a parent has no children", () => {
@@ -150,5 +169,20 @@ describe("renderHtml", () => {
     assert.match(html, /echo b --x/);
     const editor = renderHtml(state({ projectButtons: [root] }), "codicons.css", "editor");
     assert.doesNotMatch(editor, /data-action="open-main-panel"/);
+    assert.match(editor, /data-action="export-skill"/);
+  });
+
+  it("lets an args variant nest further with its own chevron and add-variant", () => {
+    const html = renderHtml(state({ projectButtons: [parent] }), "codicons.css");
+    assert.match(html, /data-path="\[0,0\]"/);
+    assert.match(html, /data-action="start-add-child"[^>]*data-path="\[0,0\]"/);
+    assert.match(html, /data-action="toggle-variants"[^>]*data-path="\[0,0\]"/);
+    const editor = renderHtml(state({ projectButtons: [parent] }), "codicons.css", "editor");
+    assert.match(editor, /data-action="start-add-child"[^>]*data-path="\[0,0\]"/);
+    assert.match(editor, /class="nested-block-row"/);
+    assert.match(editor, /--nest-indent:32px/);
+    assert.match(editor, /padding-left: calc\(6px \+ var\(--nest-indent\)\)/);
+    assert.match(editor, /tr\[data-path\]:hover > td/);
+    assert.match(editor, /class="add-variant-row"/);
   });
 });

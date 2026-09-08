@@ -13,6 +13,7 @@ import {
   scriptFileTypeOf,
   scriptKey,
   shouldIgnoreDir,
+  toolchainButtons,
 } from "../scanner/types";
 
 describe("shouldIgnoreDir", () => {
@@ -43,6 +44,10 @@ describe("scriptCommand", () => {
     assert.equal(scriptCommand("make", "build"), "make build");
     assert.equal(scriptCommand("composer", "test"), "composer test");
     assert.equal(scriptCommand("just", "build"), "just build");
+    assert.equal(scriptCommand("cargo", "build"), "cargo build");
+    assert.equal(scriptCommand("cargo", "run"), "cargo run");
+    assert.equal(scriptCommand("go", "test"), "go test");
+    assert.equal(scriptCommand("go", "run"), "go run .");
   });
 
   it("runs file entries through their interpreter", () => {
@@ -113,11 +118,15 @@ describe("script file types", () => {
       "Makefile",
       "composer.json",
       "justfile",
+      "Cargo.toml",
+      "go.mod",
       "shell",
       "python",
     ]);
     assert.equal(isScriptFileType("package.json"), true);
     assert.equal(isScriptFileType("justfile"), true);
+    assert.equal(isScriptFileType("Cargo.toml"), true);
+    assert.equal(isScriptFileType("go.mod"), true);
     assert.equal(isScriptFileType("shell"), true);
     assert.equal(isScriptFileType("python"), true);
     assert.equal(isScriptFileType("pyproject.toml"), false);
@@ -127,6 +136,10 @@ describe("script file types", () => {
     assert.equal(scriptFileTypeOf({ file: "package.json" }), "package.json");
     assert.equal(scriptFileTypeOf({ file: "packages/api/composer.json" }), "composer.json");
     assert.equal(scriptFileTypeOf({ file: "Makefile" }), "Makefile");
+    assert.equal(scriptFileTypeOf({ file: "Cargo.toml" }), "Cargo.toml");
+    assert.equal(scriptFileTypeOf({ file: "crates/cli/Cargo.toml" }), "Cargo.toml");
+    assert.equal(scriptFileTypeOf({ file: "go.mod" }), "go.mod");
+    assert.equal(scriptFileTypeOf({ file: "services/api/go.mod" }), "go.mod");
     assert.equal(scriptFileTypeOf({ file: "scripts/deploy.sh" }), "shell");
     assert.equal(scriptFileTypeOf({ file: "app.py" }), "python");
     assert.equal(scriptFileTypeOf({ file: "services/api/main.py" }), "python");
@@ -217,5 +230,33 @@ describe("parseJustfileText", () => {
     assert.equal(scripts[0].packageManager, "just");
     assert.equal(scripts[0].packageDir, "scripts");
     assert.equal(scripts[0].command, "just deploy");
+  });
+});
+
+describe("toolchainButtons", () => {
+  it("offers cargo build, test, and run for Cargo.toml", () => {
+    const scripts = toolchainButtons("Cargo.toml", "Cargo.toml");
+    assert.deepEqual(
+      scripts.map((s) => [s.script, s.command, s.packageManager]),
+      [
+        ["build", "cargo build", "cargo"],
+        ["test", "cargo test", "cargo"],
+        ["run", "cargo run", "cargo"],
+      ],
+    );
+    assert.ok(scripts.every((s) => s.file === "Cargo.toml" && s.packageDir === ""));
+  });
+
+  it("offers go build, test, and go run . for go.mod, keyed on nested paths", () => {
+    const scripts = toolchainButtons("services/api/go.mod", "go.mod");
+    assert.deepEqual(
+      scripts.map((s) => [s.script, s.command]),
+      [
+        ["build", "go build"],
+        ["test", "go test"],
+        ["run", "go run ."],
+      ],
+    );
+    assert.ok(scripts.every((s) => s.packageManager === "go" && s.packageDir === "services/api" && s.file === "services/api/go.mod"));
   });
 });

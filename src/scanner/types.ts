@@ -3,10 +3,13 @@
  * `vscode` import so it can be unit-tested with the Node.js built-in test runner.
  */
 
-export type PackageManager = "npm" | "pnpm" | "yarn" | "bun" | "make" | "composer" | "just" | "shell" | "python";
+export type PackageManager = "npm" | "pnpm" | "yarn" | "bun" | "make" | "composer" | "just" | "shell" | "python" | "cargo" | "go";
 
 /** Manifest file basenames the scanner parses for named scripts. */
 export const MANIFEST_FILE_NAMES = ["package.json", "Makefile", "composer.json", "justfile"] as const;
+
+/** Toolchain manifests that offer a fixed set of build/test/run buttons. */
+export const TOOLCHAIN_FILE_NAMES = ["Cargo.toml", "go.mod"] as const;
 
 /** Python entry files offered as one-click buttons when discovered. */
 export const PYTHON_ENTRY_FILES = ["app.py", "main.py", "manage.py", "run.py", "server.py"] as const;
@@ -14,10 +17,14 @@ export const PYTHON_ENTRY_FILES = ["app.py", "main.py", "manage.py", "run.py", "
 /** Directory names treated as virtual environments for venv buttons. */
 export const VENV_DIR_NAMES = ["venv", ".venv"] as const;
 
-/** Script discovery kinds: the four manifests plus the file-entry types shell and python. */
-export type ScriptFileType = (typeof MANIFEST_FILE_NAMES)[number] | "shell" | "python";
+/** Script discovery kinds: parsed manifests, toolchain files, plus shell and python entries. */
+export type ScriptFileType = (typeof MANIFEST_FILE_NAMES)[number] | (typeof TOOLCHAIN_FILE_NAMES)[number] | "shell" | "python";
 
-export const SCRIPT_FILE_TYPES: ScriptFileType[] = [...MANIFEST_FILE_NAMES, "shell", "python"];
+export const SCRIPT_FILE_TYPES: ScriptFileType[] = [...MANIFEST_FILE_NAMES, ...TOOLCHAIN_FILE_NAMES, "shell", "python"];
+
+export function isToolchainFile(base: string): base is (typeof TOOLCHAIN_FILE_NAMES)[number] {
+  return (TOOLCHAIN_FILE_NAMES as readonly string[]).includes(base);
+}
 
 export function isScriptFileType(value: string): value is ScriptFileType {
   return (SCRIPT_FILE_TYPES as string[]).includes(value);
@@ -118,6 +125,10 @@ export function scriptCommand(pm: PackageManager, name: string): string {
       return `bash ${shellArg(name)}`;
     case "python":
       return `python ${shellArg(name)}`;
+    case "cargo":
+      return `cargo ${name}`;
+    case "go":
+      return name === "run" ? "go run ." : `go ${name}`;
   }
 }
 
@@ -160,6 +171,7 @@ export function shouldIgnoreDir(name: string): boolean {
 const SCRIPT_ICON_MAP: Record<string, string> = {
   build: "package",
   test: "beaker",
+  run: "play",
   dev: "play",
   start: "play",
   serve: "play",
@@ -170,6 +182,20 @@ const SCRIPT_ICON_MAP: Record<string, string> = {
   deploy: "cloud-upload",
   preview: "eye",
 };
+
+/** Build/test/run buttons for a Cargo.toml or go.mod found in a scan scope. */
+export function toolchainButtons(file: string, base: (typeof TOOLCHAIN_FILE_NAMES)[number]): DiscoveredScript[] {
+  const packageDir = dirOf(file);
+  const pm: PackageManager = base === "Cargo.toml" ? "cargo" : "go";
+  return (["build", "test", "run"] as const).map((script) => ({
+    file,
+    script,
+    command: scriptCommand(pm, script),
+    packageManager: pm,
+    packageDir,
+    icon: iconForScript(script),
+  }));
+}
 
 /** Map a script/target name to a codicon name, or undefined. */
 function iconForScript(name: string): string | undefined {

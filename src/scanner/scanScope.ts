@@ -4,7 +4,7 @@
  * unit-testable with the Node.js built-in test runner.
  */
 
-import { dirOf, EXCLUDE_DIRS, MANIFEST_FILE_NAMES, PYTHON_ENTRY_FILES, shellArg, type DiscoveredScript } from "./types";
+import { dirOf, EXCLUDE_DIRS, MANIFEST_FILE_NAMES, PYTHON_ENTRY_FILES, TOOLCHAIN_FILE_NAMES, shellArg, type DiscoveredScript } from "./types";
 
 export interface ScanDirectory {
   /** Posix-separated workspace-relative path, or an absolute path for a directory outside the workspace. */
@@ -19,7 +19,7 @@ export function isAbsolutePosix(p: string): boolean {
 }
 
 /** Basenames the scanner looks for inside every scan scope. */
-export const SCAN_FILE_GLOB = [...MANIFEST_FILE_NAMES, "*.sh", ...PYTHON_ENTRY_FILES].join(",");
+export const SCAN_FILE_GLOB = [...MANIFEST_FILE_NAMES, ...TOOLCHAIN_FILE_NAMES, "*.sh", ...PYTHON_ENTRY_FILES].join(",");
 
 /** Relative-path half of the validation: hidden, ignored, and glob-unsafe names are dropped. */
 function isScannableRelativePath(normalized: string): boolean {

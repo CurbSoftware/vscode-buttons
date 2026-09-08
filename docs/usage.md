@@ -5,7 +5,7 @@ The Buttons panel has two tabs and renders differently depending on where you op
 ## Where to open it
 
 - **Activity Bar** - click the Buttons icon in the left sidebar. Renders as a compact card layout. The window icon in the header (and on the sidebar title bar) opens the full editor panel.
-- **Editor title bar** - click the Buttons icon in the top-right. Renders as a full-width table.
+- **Editor title bar** - click the Buttons icon in the top-right. Renders as a full-width table. The editor tab uses the Buttons logo.
 
 Both panels show the same data and stay in sync; you can use both at once.
 
@@ -27,7 +27,7 @@ A list of every script Buttons discovered, with a checkbox next to each:
 
 The tab also holds the **Scan directories** card, which lists the extra directories scanned on top of the always-scanned project root (top level only). Each row has a **recursive** toggle for scanning the directory's whole tree. Type or paste a path into the Add field: relative paths resolve inside the project, full paths reach outside it. The card edits the [`buttons.scanDirectories`](configuration.md#buttonsscandirectories) workspace setting - see [Scan directories](scanning.md#scan-directories).
 
-In the Explorer, right-clicking a `.sh` or Python entry file offers **Add to Buttons**, which adds it as a standalone project button without scanning its folder.
+In the Explorer, right-clicking a `.sh` or Python entry file offers **Add to Buttons**, which adds it as a standalone project button without scanning its folder. Right-clicking a manifest (`package.json`, `Makefile`, `justfile`, `composer.json`, `Cargo.toml`, `go.mod`) adds that folder as a scan directory.
 
 Detected virtual environments (`venv/` or `.venv/`) also appear in this tab, grouped under the venv's path - see [Virtual environments](scanning.md#virtual-environments).
 
@@ -50,7 +50,7 @@ Every row (or card) offers the same actions:
 
 Drag the gripper on a row to reorder it among its siblings. Order is saved in `.buttons.json`.
 
-Parents with a chevron expand to show **parameter options** (children) and **+ Add variant**, which appends extra args to the parent's live command. Command and script children can have their own chevron and variants. When the chevron is closed, a badge next to it shows how many variants the parent has. The parent's **Run** still runs the base command.
+Parents with a chevron expand to show **parameter options** (children) and **+ Add variant**, which appends extra args to that row's live command. Variants can nest: a variant has its own chevron and **+ Add variant**. When the chevron is closed, a badge next to it shows how many variants the parent has. The parent's **Run** still runs the base command.
 
 > Script buttons with a **missing** reference (the script no longer exists in the scan) are shown but cannot be run. See [Troubleshooting](troubleshooting.md#a-script-shows-not-found).
 
@@ -64,6 +64,10 @@ Custom commands are stored verbatim and are never rewritten by scanning. This is
 
 ## Text size and colors
 
-Click the gear icon in the panel header to open Buttons settings. `buttons.textSize` changes the UI size. Hex color pickers tint action buttons, command text, and command-row backgrounds; leave them empty to inherit VS Code's current color theme. See [Configuration](configuration.md).
+Click the gear icon in the panel header to open Buttons settings. `buttons.textSize` changes the UI size. Hex color pickers tint each action button, command text and background, variant commands, and odd/even rows; leave them empty to inherit VS Code's current color theme. See [Configuration](configuration.md).
+
+## AI skill
+
+The markdown icon in the header (sidebar and editor) copies the Buttons AI skill to the clipboard, or writes `BUTTONS-SKILL.md` at the project root. Coding agents can use that file to create a complete `.buttons.json`. If the file already exists, Buttons asks before replacing it.
 
 [Back to index](index.md)

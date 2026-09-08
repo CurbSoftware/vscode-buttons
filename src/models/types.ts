@@ -10,6 +10,7 @@ export interface ArgsButton {
   args: string;
   note?: string;
   id?: string;
+  children?: ButtonChild[];
 }
 
 /** Live reference to a script discovered by the scanner. The command is recomputed on every rescan. */
@@ -53,8 +54,74 @@ export interface ButtonColors {
   hoverBackground: string;
   actionBackground: string;
   actionForeground: string;
+  runBackground: string;
+  runForeground: string;
+  newTerminalBackground: string;
+  newTerminalForeground: string;
+  appendBackground: string;
+  appendForeground: string;
+  newlineBackground: string;
+  newlineForeground: string;
+  copyBackground: string;
+  copyForeground: string;
+  duplicateBackground: string;
+  duplicateForeground: string;
+  editBackground: string;
+  editForeground: string;
+  removeBackground: string;
+  removeForeground: string;
   commandForeground: string;
+  commandBackground: string;
+  variantCommandForeground: string;
+  variantCommandBackground: string;
   rowBackground: string;
+  rowOddBackground: string;
+  rowEvenBackground: string;
+  variantRowBackground: string;
+  variantRowOddBackground: string;
+  variantRowEvenBackground: string;
+}
+
+export const BUTTON_COLOR_KEYS = [
+  "background",
+  "foreground",
+  "hoverBackground",
+  "actionBackground",
+  "actionForeground",
+  "runBackground",
+  "runForeground",
+  "newTerminalBackground",
+  "newTerminalForeground",
+  "appendBackground",
+  "appendForeground",
+  "newlineBackground",
+  "newlineForeground",
+  "copyBackground",
+  "copyForeground",
+  "duplicateBackground",
+  "duplicateForeground",
+  "editBackground",
+  "editForeground",
+  "removeBackground",
+  "removeForeground",
+  "commandForeground",
+  "commandBackground",
+  "variantCommandForeground",
+  "variantCommandBackground",
+  "rowBackground",
+  "rowOddBackground",
+  "rowEvenBackground",
+  "variantRowBackground",
+  "variantRowOddBackground",
+  "variantRowEvenBackground",
+] as const satisfies readonly (keyof ButtonColors)[];
+
+export function emptyButtonColors(): ButtonColors {
+  const colors = {} as ButtonColors;
+  for (const key of BUTTON_COLOR_KEYS) {
+    colors[key] = "";
+  }
+  return colors;
 }
 
 /** A button resolved to its executable form, plus UI bookkeeping. */
@@ -137,6 +204,7 @@ export type PanelActionMessage =
   | { type: "open-global-file" }
   | { type: "open-settings" }
   | { type: "open-main-panel" }
+  | { type: "export-skill" }
   | { type: "generate" }
   | { type: "add-scan-dir"; path: string }
   | { type: "remove-scan-dir"; path: string }

@@ -24,6 +24,7 @@ desktop.ini
 
 # local project state (not the product schema)
 .buttons.json
+BUTTONS-SKILL.md
 
 # editor: keep shared F5 launch/tasks only
 .vscode/*
@@ -37,7 +38,9 @@ CLAUDE.md
 AGENTS.md
 GEMINI.md
 .claude/
-.cursor/
+.cursor/*
+!.cursor/skills/
+!.cursor/skills/**
 .codex/
 .agents/
 .github/copilot-instructions.md

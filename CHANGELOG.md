@@ -4,13 +4,27 @@ All notable changes to the Buttons extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.2.2] - 2026-09-08
+
+### Added
+
+- Markdown icon in the sidebar and editor headers to copy the Buttons AI skill or write `BUTTONS-SKILL.md` in the project root.
+- Subtle hover highlight on command rows in the sidebar and the editor panel.
+
+### Fixed
+
+- Editor panel borders span the full row. Variant commands stay indented from the parent without shortening the line.
+- Nested editor tables no longer stack extra bottom borders.
+
 ## [2.2.0] - 2026-09-07
 
 ### Added
 
-- Command and script variants can nest to any depth, so a button can be both a parent and a child.
-- Color pickers for action-button fill, action-button text, command text, and command-row background.
+- Command and script variants can nest to any depth, so a button can be both a parent and a child. **+ Add variant** on a variant appends more args to that variant's command.
+- Color pickers for each action button, command text and background, the same pair for variants, odd/even command rows, and variant rows.
 - Sidebar **Open in editor** control (header and view title) to open the full Buttons panel.
+- The editor panel tab shows the Buttons logo.
+- `Cargo.toml` and `go.mod` offer `cargo` / `go` build, test, and run buttons. Both types are on by default.
 
 ### Changed
 

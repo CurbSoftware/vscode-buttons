@@ -27,6 +27,8 @@ export class ButtonsPanel {
         retainContextWhenHidden: true,
       },
     );
+    const icon = vscode.Uri.joinPath(this.extensionUri, "media", "buttons-icon.svg");
+    this.panel.iconPath = { light: icon, dark: icon };
 
     this.panel.webview.onDidReceiveMessage(async (message: PanelActionMessage) => {
       await this.onMessage(message);

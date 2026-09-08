@@ -1,6 +1,6 @@
 # Buttons
 
-**Buttons** is a VS Code and VSCodium extension that scans your project for scripts - `package.json` scripts, `Makefile` targets, PHP `composer.json` scripts, `justfile` recipes, shell `.sh` files, and Python entry files - and turns them into a clickable command launcher. You choose the directories to scan (the project root is always included); virtual environments get activate / deactivate / install-requirements buttons.
+**Buttons** is a VS Code and VSCodium extension that scans your project for scripts - `package.json` scripts, Rust `Cargo.toml`, Go `go.mod`, `Makefile` targets, PHP `composer.json` scripts, `justfile` recipes, shell `.sh` files, and Python entry files - and turns them into a clickable command launcher. You choose the directories to scan (the project root is always included); virtual environments get activate / deactivate / install-requirements buttons.
 
 Run any command in the current or a new integrated terminal, copy it to the clipboard, add your own custom commands, and manage everything from a single panel - no more digging through `package.json` or remembering the exact flags.
 
@@ -57,7 +57,7 @@ The **project root is always scanned** at its top level. Add more directories in
 
 ### Script scanning
 
-- Scans `package.json`, `Makefile`, `composer.json`, and `justfile`, plus standalone `.sh` files and common Python entry files (`app.py`, `main.py`, `manage.py`, `run.py`, `server.py`) - see [Script file types](#script-file-types).
+- Scans `package.json`, `Cargo.toml`, `go.mod`, `Makefile`, `composer.json`, and `justfile`, plus standalone `.sh` files and common Python entry files (`app.py`, `main.py`, `manage.py`, `run.py`, `server.py`) - see [Script file types](#script-file-types).
 - Offers **venv buttons** - `Activate venv`, `Deactivate`, and `Install requirements` - when a `venv/` or `.venv/` directory is detected.
 - Supports **monorepos** - add `packages/` (or `apps/`, …) as a recursive scan directory and nested manifests are found and scoped to their own directory.
 - Skips installed packages, VCS, and build output (`node_modules`, `dist`, `build`, `coverage`, `.git`, `vendor`, and more).
@@ -94,12 +94,13 @@ Every button gives you:
 - **Note / Edit** - inline-edit the note (for script buttons) or the command/args and note (for custom commands and variants).
 - **✕** - first click shows Confirm; click again to remove.
 
-Parents expand to parameter options (extra args, or nested commands/scripts). Command and script children can nest further. A closed chevron shows a badge with the variant count. Drag the gripper to reorder.
+Parents expand to parameter options (extra args, or nested commands/scripts). Variants can nest further with their own chevron and **+ Add variant**. A closed chevron shows a badge with the variant count. Drag the gripper to reorder.
 
 ### Layouts that fit
 
 - **Sidebar** renders each button as a compact card (command/note on one row, actions on the next). Use the window icon in the sidebar header to open the full editor panel.
-- **Editor panel** renders the full table (Command | Note | Actions).
+- **Editor panel** renders the full table (Command | Note | Actions). The editor tab shows the Buttons logo.
+- **AI skill** - the markdown icon in either header copies the Buttons skill or writes `BUTTONS-SKILL.md` at the project root so coding agents can create `.buttons.json` files.
 
 ### Configurable text size and colors
 
@@ -111,7 +112,7 @@ A `~/.buttons.json` file holds commands that apply to **every** project, so your
 
 ### Auto-update
 
-A **Rescan** button plus automatic file watchers keep commands current when `package.json`, `Makefile`, `composer.json`, `justfile`, `.sh` or Python entry files, `requirements.txt`, or your buttons files change.
+A **Rescan** button plus automatic file watchers keep commands current when `package.json`, `Cargo.toml`, `go.mod`, `Makefile`, `composer.json`, `justfile`, `.sh` or Python entry files, `requirements.txt`, or your buttons files change.
 
 ---
 
@@ -163,12 +164,14 @@ In other words: **Generate** fills in root-level scripts; **Rescan** updates com
 
 ## Script file types
 
-The **Buttons: Script Files** setting controls which file types are scanned. `package.json`, `shell`, and `python` are included by default; the others are opt-in checkboxes:
+The **Buttons: Script Files** setting controls which file types are scanned. `package.json`, `shell`, `python`, `Cargo.toml`, and `go.mod` are included by default; the others are opt-in checkboxes:
 
 | Type | Ecosystem | Run as |
 | --- | --- | --- |
 | `package.json` | Node.js / TypeScript | `pnpm dev`, `npm run dev`, `yarn test`, `bun dev` |
-| `Makefile` | C/C++, Go, generic | `make build` |
+| `Cargo.toml` | Rust | `cargo build`, `cargo test`, `cargo run` |
+| `go.mod` | Go | `go build`, `go test`, `go run .` |
+| `Makefile` | C/C++, generic | `make build` |
 | `composer.json` | PHP | `composer test` |
 | `justfile` | Universal task runner | `just build` |
 | `shell` | `.sh` files | `bash deploy.sh` |
@@ -176,7 +179,7 @@ The **Buttons: Script Files** setting controls which file types are scanned. `pa
 
 Commands run with the terminal's working directory set to the script file's directory, and their paths are relative to that directory - `scripts/migrate.sh` becomes `bash migrate.sh` inside `scripts/`.
 
-Only these formats are parsed. Other ecosystems (Python `pyproject.toml`, Rust `Cargo.toml`, .NET, etc.) aren't auto-parsed - add their commands with **+ Add command** instead.
+Only these formats are discovered. Other ecosystems (Python `pyproject.toml`, .NET, and so on) aren't auto-detected - add their commands with **+ Add command** instead.
 
 Disabling a file type stops *offering* its scripts in the **Project scripts** tab, but never removes buttons already in your `.buttons.json` - Rescan preserves your custom commands and scripts.
 
@@ -189,12 +192,14 @@ Buttons contributes these settings, configurable at **User** and **Workspace** s
 | Setting | Type | Default | Description |
 | --- | --- | --- | --- |
 | `buttons.textSize` | `string` (`default` / `plus2` / `plus4`) | `default` | Text size in the Buttons UI, relative to VS Code's font size. |
-| `buttons.scriptFiles` | `string[]` (checkbox list) | `["package.json", "shell", "python"]` | Which script file types to scan for commands. |
+| `buttons.scriptFiles` | `string[]` (checkbox list) | `["package.json", "shell", "python", "Cargo.toml", "go.mod"]` | Which script file types to scan for commands. |
 | `buttons.scanDirectories` | `{ path, recursive }[]` | `[]` | Extra directories to scan; the project root is always scanned at its top level. |
-| `buttons.colors.actionBackground` | color string | `""` | All action-button backgrounds. Empty inherits the VS Code theme. |
-| `buttons.colors.actionForeground` | color string | `""` | All action-button text. Empty inherits the VS Code theme. |
-| `buttons.colors.commandForeground` | color string | `""` | Command text. Empty inherits the editor foreground. |
-| `buttons.colors.rowBackground` | color string | `""` | Command card and table-row background. Empty is transparent. |
+| `buttons.colors.runBackground` / `runForeground` | color string | `""` | Run button. Same pair exists for `newTerminal`, `append`, `newline`, `copy`, `duplicate`, `edit`, and `remove`. Empty falls back to `actionBackground` / `actionForeground`. |
+| `buttons.colors.actionBackground` / `actionForeground` | color string | `""` | Fallback for action buttons, and fill for header actions. Empty inherits the VS Code theme. |
+| `buttons.colors.commandForeground` / `commandBackground` | color string | `""` | Command text and its background. |
+| `buttons.colors.variantCommandForeground` / `variantCommandBackground` | color string | `""` | Same pair for variant commands. Empty falls back to the command colors. |
+| `buttons.colors.rowOddBackground` / `rowEvenBackground` | color string | `""` | Alternating command rows. Empty falls back to `rowBackground`. |
+| `buttons.colors.variantRowOddBackground` / `variantRowEvenBackground` | color string | `""` | Alternating variant rows. Empty falls back to `variantRowBackground`, then `rowBackground`. |
 | `buttons.colors.hoverBackground` | color string | `""` | Action-button hover background. Empty inherits the VS Code theme. |
 
 You can open the settings page from the gear icon in the panel header, or via **Command Palette → Preferences: Open Settings** and searching "Buttons".
@@ -232,7 +237,7 @@ The file has a flat `buttons` array. Each entry is either a **script reference**
 | `file` | The script file, relative to the workspace root (e.g. `package.json`, `packages/api/package.json`). |
 | `script` | The script/target name (e.g. `dev`, `build`). For standalone `.sh` and Python entry files this is the file's relative path. |
 | `packageDir` | The directory of the script file relative to the workspace root (empty string = root). This is where the terminal's working directory is set when you run it. |
-| `packageManager` | One of `npm`, `pnpm`, `yarn`, `bun`, `make`, `composer`, `just`, `shell`, `python`. |
+| `packageManager` | One of `npm`, `pnpm`, `yarn`, `bun`, `make`, `composer`, `just`, `shell`, `python`, `cargo`, `go`. |
 | `note` | Optional human-readable note. |
 
 ### Command entry fields

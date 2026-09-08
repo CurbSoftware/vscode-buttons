@@ -17,6 +17,7 @@ import {
   setAllScripts,
   updateButton,
 } from "./config/buttonsFile";
+import { BUTTONS_SKILL_FILENAME, buttonsSkillDir, loadButtonsSkillMarkdown } from "./config/buttonsSkill";
 import { getButtonColors, getScanDirectories, loadRuntimeState, writeButtonsFile } from "./config/buttonsStore";
 import { getGlobalButtonsFileUri, getProjectButtonsFileUri, getWorkspaceFolderUri } from "./config/findButtonsFile";
 import {
@@ -34,6 +35,7 @@ import { isScriptButton, type ButtonsFile, type ButtonsSource, type ButtonsTab, 
 
 type PanelId = "sidebar" | "editor";
 
+let extensionRoot = "";
 let currentState: RuntimeState | undefined;
 let sidebarProvider: ButtonsSidebarProvider | undefined;
 let mainPanel: ButtonsPanel | undefined;
@@ -42,6 +44,7 @@ const addingByPanel = new Map<PanelId, { source: ButtonsSource; parentPath?: num
 const activeTabByPanel = new Map<PanelId, ButtonsTab>();
 
 export function activate(context: vscode.ExtensionContext): void {
+  extensionRoot = context.extensionPath;
   sidebarProvider = new ButtonsSidebarProvider(
     context.extensionUri,
     async () => buildWebviewState("sidebar"),
@@ -747,7 +750,63 @@ async function handlePanelMessage(panelId: PanelId, message: PanelActionMessage)
     case "open-main-panel":
       await vscode.commands.executeCommand("buttons.openMainPanel");
       return;
+
+    case "export-skill":
+      await exportButtonsSkill();
+      return;
   }
+}
+
+async function exportButtonsSkill(): Promise<void> {
+  let markdown: string;
+  try {
+    markdown = loadButtonsSkillMarkdown(buttonsSkillDir(extensionRoot));
+  } catch {
+    void vscode.window.showErrorMessage("Could not load the Buttons AI skill.");
+    return;
+  }
+
+  const pick = await vscode.window.showQuickPick(
+    [
+      { label: "$(copy) Copy skill", description: "Copy the full skill markdown to the clipboard", action: "copy" as const },
+      { label: "$(new-file) Add to project", description: "Write BUTTONS-SKILL.md in the workspace root", action: "add" as const },
+    ],
+    { placeHolder: "Copy the Buttons AI skill or add it to this project" },
+  );
+  if (!pick) {
+    return;
+  }
+
+  if (pick.action === "copy") {
+    try {
+      await vscode.env.clipboard.writeText(markdown);
+      void vscode.window.showInformationMessage("Copied Buttons skill to clipboard.");
+    } catch {
+      void vscode.window.showErrorMessage("Failed to copy the Buttons skill.");
+    }
+    return;
+  }
+
+  const root = getWorkspaceFolderUri();
+  if (!root) {
+    void vscode.window.showErrorMessage("No workspace folder is open.");
+    return;
+  }
+
+  const uri = vscode.Uri.joinPath(root, BUTTONS_SKILL_FILENAME);
+  try {
+    await vscode.workspace.fs.stat(uri);
+    const replace = await vscode.window.showWarningMessage("BUTTONS-SKILL.md already exists. Replace it?", { modal: true }, "Replace");
+    if (replace !== "Replace") {
+      return;
+    }
+  } catch {
+    // File is missing; write a new one.
+  }
+
+  await vscode.workspace.fs.writeFile(uri, Buffer.from(markdown, "utf8"));
+  const document = await vscode.workspace.openTextDocument(uri);
+  await vscode.window.showTextDocument(document);
 }
 
 async function openOrCreateFile(uri: vscode.Uri): Promise<void> {

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   isAbsolutePosix,
   normalizeScanDirectories,
+  SCAN_FILE_GLOB,
   scanScopePatterns,
   venvActivateCommand,
   venvButtons,
@@ -104,6 +105,8 @@ describe("scanScopePatterns", () => {
     const [root] = scanScopePatterns([]);
     assert.match(root, /^\{package\.json/);
     assert.ok(root.includes("Makefile"));
+    assert.ok(root.includes("Cargo.toml"));
+    assert.ok(root.includes("go.mod"));
     assert.ok(root.includes("*.sh"));
     for (const name of PYTHON_ENTRY_FILES) {
       assert.ok(root.includes(name), name);
@@ -114,19 +117,19 @@ describe("scanScopePatterns", () => {
   it("scans non-recursive directories at their top level only", () => {
     assert.deepEqual(scanScopePatterns([{ path: "scripts", recursive: false }]), [
       scanScopePatterns([])[0],
-      "scripts/{package.json,Makefile,composer.json,justfile,*.sh,app.py,main.py,manage.py,run.py,server.py}",
+      `scripts/{${SCAN_FILE_GLOB}}`,
     ]);
   });
 
   it("scans recursive directories with **", () => {
     const patterns = scanScopePatterns([{ path: "packages", recursive: true }]);
-    assert.equal(patterns[1], "packages/**/{package.json,Makefile,composer.json,justfile,*.sh,app.py,main.py,manage.py,run.py,server.py}");
+    assert.equal(patterns[1], `packages/**/{${SCAN_FILE_GLOB}}`);
   });
 
   it("skips absolute directories (they get their own base URI in the scanner)", () => {
     const patterns = scanScopePatterns([{ path: "/opt/tools", recursive: true }, { path: "scripts", recursive: false }]);
     assert.equal(patterns.length, 2);
-    assert.equal(patterns[1], "scripts/{package.json,Makefile,composer.json,justfile,*.sh,app.py,main.py,manage.py,run.py,server.py}");
+    assert.equal(patterns[1], `scripts/{${SCAN_FILE_GLOB}}`);
   });
 });
 

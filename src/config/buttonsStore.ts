@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import type { ButtonColors, ButtonsFile, RuntimeState } from "../models/types";
+import { BUTTON_COLOR_KEYS, emptyButtonColors, type ButtonColors, type ButtonsFile, type RuntimeState } from "../models/types";
 import { normalizeScanDirectories, type ScanDirectory } from "../scanner/scanScope";
 import { scanWorkspaceScripts } from "../scanner/scriptScanner";
 import { isScriptFileType, scriptFileTypeOf, type ScriptFileType } from "../scanner/types";
@@ -28,7 +28,13 @@ export async function writeButtonsFile(uri: vscode.Uri, file: ButtonsFile): Prom
 /** Read the `buttons.scriptFiles` setting, returning the enabled (and valid) file types. */
 function getEnabledScriptFiles(): ScriptFileType[] {
   const configured =
-    vscode.workspace.getConfiguration("buttons").get<string[]>("scriptFiles") ?? ["package.json", "shell", "python"];
+    vscode.workspace.getConfiguration("buttons").get<string[]>("scriptFiles") ?? [
+      "package.json",
+      "shell",
+      "python",
+      "Cargo.toml",
+      "go.mod",
+    ];
   return configured.filter(isScriptFileType);
 }
 
@@ -54,15 +60,11 @@ function sanitizeCssColor(value: unknown): string {
 /** Empty strings mean the webview should inherit VS Code button theme tokens. */
 export function getButtonColors(): ButtonColors {
   const cfg = vscode.workspace.getConfiguration("buttons");
-  return {
-    background: sanitizeCssColor(cfg.get("colors.background")),
-    foreground: sanitizeCssColor(cfg.get("colors.foreground")),
-    hoverBackground: sanitizeCssColor(cfg.get("colors.hoverBackground")),
-    actionBackground: sanitizeCssColor(cfg.get("colors.actionBackground")),
-    actionForeground: sanitizeCssColor(cfg.get("colors.actionForeground")),
-    commandForeground: sanitizeCssColor(cfg.get("colors.commandForeground")),
-    rowBackground: sanitizeCssColor(cfg.get("colors.rowBackground")),
-  };
+  const colors = emptyButtonColors();
+  for (const key of BUTTON_COLOR_KEYS) {
+    colors[key] = sanitizeCssColor(cfg.get(`colors.${key}`));
+  }
+  return colors;
 }
 
 /** Load project + global files, scan the workspace, and resolve both button lists. */

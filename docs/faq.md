@@ -53,4 +53,8 @@ For monorepo scripts, the terminal's working directory is set to the script's `p
 
 **Generate** writes every root-level script into `.buttons.json` (and later adds any that are missing). Custom commands, notes, variants, and extra opted-in scripts stay. **Rescan** updates the existing file in place, preserving your inclusions and notes, marking missing scripts, and leaving new scripts unchecked. See [Generate vs Rescan](scanning.md#generate-vs-rescan).
 
+## How do I give an AI the `.buttons.json` schema?
+
+Click the markdown icon in the sidebar or editor header. Copy the skill, or add `BUTTONS-SKILL.md` to the project root. See [AI skill](usage.md#ai-skill).
+
 [Back to index](index.md)

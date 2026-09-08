@@ -7,7 +7,7 @@ Buttons stores its configuration in JSON files:
 | Project | `<workspace root>/.buttons.json` | The current workspace. |
 | Global | `~/.buttons.json` | Every project you open. |
 
-Both files use the same format: a `version` field and a `buttons` array. Command and script entries can nest `children` at any depth. Args-only variants are leaves.
+Both files use the same format: a `version` field and a `buttons` array. Command, script, and args entries can nest `children` at any depth. Args-only objects are still invalid as top-level buttons.
 
 ```json
 {
@@ -54,7 +54,7 @@ A live reference to a script the scanner found. The command is **recomputed on e
 | `file` | yes | The script file, relative to the workspace root (e.g. `package.json`, `packages/api/package.json`, `scripts/deploy.sh`); for venv buttons, the venv directory (e.g. `venv`). |
 | `script` | yes | The script/target name (e.g. `dev`, `build`). For standalone `.sh` and Python entry files this is the file's relative path - that path is what the command is rebuilt from. |
 | `packageDir` | no | The script file's directory relative to the workspace root (`""` = root). This is the terminal working directory when the script runs. |
-| `packageManager` | no | One of `npm`, `pnpm`, `yarn`, `bun`, `make`, `composer`, `just`, `shell`, `python`. Invalid values are normalized to `npm`. |
+| `packageManager` | no | One of `npm`, `pnpm`, `yarn`, `bun`, `make`, `composer`, `just`, `shell`, `python`, `cargo`, `go`. Invalid values are normalized to `npm`. |
 | `note` | no | An optional note shown next to the button. |
 | `id` | no | Stable identity. Assigned when you add or duplicate a button in the UI. |
 | `args` | no | Extra flags appended to the recomputed script command. |
@@ -75,17 +75,17 @@ A literal custom command, not tied to any file. Stored verbatim and never rewrit
 
 ## Children
 
-A script or command can list `children`, including when it is itself a child. The panel shows them as an expandable set of parameter options. Args-only objects cannot have children.
+A script, command, or args variant can list `children`, including when it is itself a child. The panel shows them as an expandable set of parameter options.
 
 | Child shape | Meaning |
 | --- | --- |
-| `{ "args": "--include app1 app2", "note": "..." }` | Appends `args` to the **parent's live command**. If the parent is a script, this stays in sync when the package manager changes (`pnpm dev --include ...` becomes `bun dev --include ...`). |
+| `{ "args": "--include app1 app2", "note": "..." }` | Appends `args` to the **parent's live command**. Nested args append to that variant's resolved command (`pnpm dev --include app1` plus `--verbose` becomes `pnpm dev --include app1 --verbose`). If the parent is a script, this stays in sync when the package manager changes. |
 | `{ "type": "command", "command": "..." }` | A literal command, independent of the parent. |
 | `{ "type": "script", "file": "...", "script": "..." }` | Another script reference, resolved on its own. |
 
 Args-only objects are only valid as children, not as top-level buttons. Empty `args` is rejected.
 
-Use **+ Add variant** in the panel to create an args child. Full command or script children can also be added by editing the JSON (or by duplicating a button and editing it).
+Use **+ Add variant** on any row to create an args child of that row. Full command or script children can also be added by editing the JSON.
 
 Buttons 2.0.1 and earlier drop `children`, `args`, and `id` if they **write** the file. Upgrade before editing a file that uses variants.
 

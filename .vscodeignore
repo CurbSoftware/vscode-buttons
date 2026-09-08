@@ -2,12 +2,14 @@
 .git/**
 .github/**
 .claude/**
+.cursor/**
 src/**
 dist/test/**
 media/screenshots/**
 *.md
 !README.md
 !CHANGELOG.md
+!resources/**/*.md
 docs/**
 tsconfig.json
 .gitignore

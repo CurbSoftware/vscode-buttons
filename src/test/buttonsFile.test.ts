@@ -460,6 +460,32 @@ describe("children and args", () => {
     assert.deepEqual(resolved[0].children[0].path, [0, 0]);
   });
 
+  it("parses and resolves nested args on an args variant", () => {
+    const result = parseButtonsFile(
+      JSON.stringify({
+        version: 1,
+        buttons: [
+          {
+            type: "command",
+            command: "pnpm dev",
+            children: [{ args: "--include app1", children: [{ args: "--verbose" }] }],
+          },
+        ],
+      }),
+    );
+    if (!result.ok) {
+      assert.fail(result.error);
+    }
+    assert.deepEqual(result.file.buttons[0].children?.[0], {
+      args: "--include app1",
+      children: [{ args: "--verbose" }],
+    });
+    const resolved = resolveButtons(result.file, []);
+    assert.equal(resolved[0].children[0].command, "pnpm dev --include app1");
+    assert.equal(resolved[0].children[0].children[0].command, "pnpm dev --include app1 --verbose");
+    assert.deepEqual(resolved[0].children[0].children[0].path, [0, 0, 0]);
+  });
+
   it("resolves command children verbatim and script children from the scan", () => {
     const file: ButtonsFile = {
       version: 1,
@@ -557,6 +583,15 @@ describe("addArgsChild", () => {
     const child = next.buttons[0].children?.[0];
     assert.ok(child && "type" in child && child.type === "command");
     assert.deepEqual(child.children, [{ args: "--x" }]);
+  });
+
+  it("appends an args child on an args variant", () => {
+    const nested: ButtonsFile = {
+      version: 1,
+      buttons: [{ type: "command", command: "echo a", children: [{ args: "--include app1" }] }],
+    };
+    const next = addArgsChild(nested, [0, 0], "--verbose");
+    assert.deepEqual(next.buttons[0].children, [{ args: "--include app1", children: [{ args: "--verbose" }] }]);
   });
 });
 

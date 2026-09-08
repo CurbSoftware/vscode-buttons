@@ -43,6 +43,8 @@ const PACKAGE_MANAGERS: ReadonlySet<string> = new Set([
   "just",
   "shell",
   "python",
+  "cargo",
+  "go",
 ]);
 
 function normalizePackageManager(value: unknown): PackageManager {
@@ -95,7 +97,15 @@ function parseButtonValue(raw: unknown, label: string, asChild: boolean): ParseE
     if (typeof entry.args !== "string" || entry.args.trim() === "") {
       return { ok: false, error: `${label} args entry requires a non-empty "args".` };
     }
-    return { ok: true, entry: { args: entry.args.trim(), ...note, ...id } };
+    const argsEntry: ArgsButton = { args: entry.args.trim(), ...note, ...id };
+    const children = parseChildren(entry.children, label);
+    if (!children.ok) {
+      return children;
+    }
+    if (children.children) {
+      argsEntry.children = children.children;
+    }
+    return { ok: true, entry: argsEntry };
   }
 
   if (entry.type === "script") {
@@ -243,7 +253,7 @@ export function getAtPath(file: ButtonsFile, path: number[]): ButtonChild | unde
   }
   let current: ButtonChild | undefined = file.buttons[path[0]];
   for (let i = 1; i < path.length; i++) {
-    if (!current || isArgsButton(current)) {
+    if (!current) {
       return undefined;
     }
     current = current.children?.[path[i]];
@@ -251,8 +261,8 @@ export function getAtPath(file: ButtonsFile, path: number[]): ButtonChild | unde
   return current;
 }
 
-function setChildren(parent: ButtonEntry, children: ButtonChild[]): ButtonEntry {
-  const next: ButtonEntry = { ...parent };
+function setChildren(parent: ButtonChild, children: ButtonChild[]): ButtonChild {
+  const next = { ...parent };
   if (children.length === 0) {
     delete next.children;
   } else {
@@ -280,7 +290,7 @@ function mapSiblings(
       return fn(siblings, head);
     }
     const entry = siblings[head];
-    if (isArgsButton(entry) || !entry.children) {
+    if (!entry.children) {
       return undefined;
     }
     const nextKids = walk(entry.children, tail);
@@ -401,10 +411,7 @@ function newId(): string {
 }
 
 function cloneWithNewIds(entry: ButtonChild): ButtonChild {
-  if (isArgsButton(entry)) {
-    return { ...entry, id: newId() };
-  }
-  const clone: ButtonEntry = { ...entry, id: newId() };
+  const clone = { ...entry, id: newId() };
   if (clone.children) {
     clone.children = clone.children.map((child) => cloneWithNewIds(child));
   }
@@ -440,7 +447,7 @@ export function duplicateButton(file: ButtonsFile, path: number[]): ButtonsFile 
 
 export function addArgsChild(file: ButtonsFile, parentPath: number[], args: string, note?: string, id?: string): ButtonsFile {
   const parent = getAtPath(file, parentPath);
-  if (!parent || isArgsButton(parent)) {
+  if (!parent) {
     return file;
   }
   const trimmed = args.trim();
@@ -478,7 +485,7 @@ export function reorderButtons(file: ButtonsFile, fromPath: number[], toPath: nu
 
   const parentPath = fromPath.slice(0, -1);
   const parent = getAtPath(file, parentPath);
-  if (!parent || isArgsButton(parent) || !parent.children || from >= parent.children.length || to >= parent.children.length) {
+  if (!parent || !parent.children || from >= parent.children.length || to >= parent.children.length) {
     return file;
   }
   const children = parent.children.slice();
@@ -494,10 +501,8 @@ export function scriptEntryFiles(file: ButtonsFile): string[] {
     if (isScriptButton(entry)) {
       files.push(entry.file);
     }
-    if (!isArgsButton(entry)) {
-      for (const child of entry.children ?? []) {
-        visit(child);
-      }
+    for (const child of entry.children ?? []) {
+      visit(child);
     }
   };
   for (const entry of file.buttons) {
@@ -537,18 +542,20 @@ function resolveOne(
   const id = buttonId(entry);
 
   if (isArgsButton(entry)) {
-    const base = parentCommand ?? "";
+    const command = appendArgs(parentCommand ?? "", entry.args);
     return {
       index,
       path,
       id,
       kind: "args",
-      command: appendArgs(base, entry.args),
+      command,
       note: entry.note,
       entry,
       packageDir: parentPackageDir,
       missing: parentMissing,
-      children: [],
+      children: (entry.children ?? []).map((child, i) =>
+        resolveOne(child, [...path, i], byKey, command, parentPackageDir, parentMissing),
+      ),
     };
   }
 
