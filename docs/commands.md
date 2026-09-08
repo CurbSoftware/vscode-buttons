@@ -15,7 +15,7 @@ Buttons contributes these commands to the Command Palette (**Ctrl/Cmd+Shift+P**)
 
 - The **Activity Bar** icon (Buttons) opens the sidebar.
 - The **editor title bar** icon opens the editor panel.
-- The **Explorer context menu** (right-click a script file or manifest) offers **Add to Buttons**.
+- The **Explorer context menu** (right-click a script file or manifest) offers **Add to Buttons**. Manifests are `package.json`, `Makefile`, `justfile`, `composer.json`, `Cargo.toml`, and `go.mod`.
 - The **gear icon** inside the panel header opens the settings page (`Preferences: Open Settings` for `buttons.textSize`), which is a built-in VS Code command, not a Buttons command.
 - The **markdown icon** in the panel header copies the Buttons AI skill or writes `BUTTONS-SKILL.md` in the project root.
 

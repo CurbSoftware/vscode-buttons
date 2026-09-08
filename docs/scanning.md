@@ -97,7 +97,7 @@ Add your package roots as recursive scan directories:
 }
 ```
 
-Each script's `packageDir` is its file's directory, and running it opens a terminal with the working directory set there - so `pnpm dev` in `packages/web` runs in the right place.
+Each script's `packageDir` is its file's directory, and running it opens a terminal with the working directory set there - so `pnpm dev` in `packages/web` and `cargo run` in `crates/cli` run in the right place.
 
 ## Ignored directories
 

@@ -43,7 +43,7 @@ Yes, since 2.0. `.sh` files run as `bash <path>`, and Python entry files (`app.p
 
 ## Does Buttons scan Rust or Go projects?
 
-Yes. A `Cargo.toml` offers `cargo build`, `cargo test`, and `cargo run`. A `go.mod` offers `go build`, `go test`, and `go run .`. Both types are enabled by default. Extra cargo or go tasks are [custom commands](usage.md#adding-a-custom-command).
+Yes. A `Cargo.toml` offers `cargo build`, `cargo test`, and `cargo run`. A `go.mod` offers `go build`, `go test`, and `go run .` from the module directory. Both types are enabled by default. Extra cargo or go tasks are [custom commands](usage.md#adding-a-custom-command).
 
 ## How is the package manager detected?
 
