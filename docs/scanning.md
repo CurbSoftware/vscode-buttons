@@ -12,6 +12,8 @@ The **project root is always scanned** at its top level. To scan elsewhere, add 
 ```text
 project/
 ├── package.json        <- always found (root)
+├── Cargo.toml          <- always found (root)
+├── go.mod              <- always found (root)
 ├── deploy.sh           <- always found (root)
 ├── scripts/
 │   ├── migrate.sh      <- found when "scripts" is a scan directory

@@ -41,6 +41,10 @@ Yes - use **+ Add command** to add any literal command (e.g. `docker ps`). This 
 
 Yes, since 2.0. `.sh` files run as `bash <path>`, and Python entry files (`app.py`, `main.py`, `manage.py`, `run.py`, `server.py`) run as `python <path>`. Both types are enabled by default. See [What is discovered](scanning.md#what-is-discovered).
 
+## Does Buttons scan Rust or Go projects?
+
+Yes. A `Cargo.toml` offers `cargo build`, `cargo test`, and `cargo run`. A `go.mod` offers `go build`, `go test`, and `go run .`. Both types are enabled by default. Extra cargo or go tasks are [custom commands](usage.md#adding-a-custom-command).
+
 ## How is the package manager detected?
 
 From the root lockfiles, in order: `pnpm-lock.yaml` → `pnpm`, `yarn.lock` → `yarn`, `bun.lockb` → `bun`, `package-lock.json` → `npm`, defaulting to `npm`. See [Package-manager detection](scanning.md#package-manager-detection).

@@ -18,6 +18,8 @@ Both files use the same format: a `version` field and a `buttons` array. Command
     { "type": "script", "file": "Makefile", "script": "build", "packageDir": "", "packageManager": "make" },
     { "type": "script", "file": "composer.json", "script": "test", "packageDir": "", "packageManager": "composer" },
     { "type": "script", "file": "justfile", "script": "deploy", "packageDir": "", "packageManager": "just" },
+    { "type": "script", "file": "Cargo.toml", "script": "build", "packageDir": "", "packageManager": "cargo" },
+    { "type": "script", "file": "go.mod", "script": "test", "packageDir": "", "packageManager": "go" },
     { "type": "script", "file": "deploy.sh", "script": "deploy.sh", "packageDir": "", "packageManager": "shell" },
     { "type": "script", "file": "scripts/migrate.sh", "script": "scripts/migrate.sh", "packageDir": "scripts", "packageManager": "shell" },
     { "type": "script", "file": "app.py", "script": "app.py", "packageDir": "", "packageManager": "python" },

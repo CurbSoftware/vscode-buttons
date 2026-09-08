@@ -38,6 +38,7 @@ Click **Generate**. Buttons writes `<workspace root>/.buttons.json` containing e
 - In the **Project scripts** tab, uncheck scripts you don't want, or check newly-discovered ones.
 - If your scripts live in nested directories (e.g. a monorepo's `packages`), add them in the **Scan directories** card.
 - In the **Buttons** tab, add custom commands with **+ Add command**, or add notes to any row.
+- The markdown icon in the header copies the Buttons AI skill, or writes `BUTTONS-SKILL.md` so an agent can create `.buttons.json` for you.
 
 See [Using the panel](usage.md) for details.
 

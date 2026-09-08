@@ -221,6 +221,8 @@ The file has a flat `buttons` array. Each entry is either a **script reference**
   "buttons": [
     { "type": "script", "file": "package.json", "script": "dev", "packageDir": "", "packageManager": "pnpm", "note": "Vite dev server" },
     { "type": "script", "file": "packages/api/package.json", "script": "start", "packageDir": "packages/api", "packageManager": "pnpm" },
+    { "type": "script", "file": "Cargo.toml", "script": "build", "packageDir": "", "packageManager": "cargo" },
+    { "type": "script", "file": "go.mod", "script": "test", "packageDir": "", "packageManager": "go" },
     { "type": "script", "file": "deploy.sh", "script": "deploy.sh", "packageDir": "", "packageManager": "shell" },
     { "type": "script", "file": "app.py", "script": "app.py", "packageDir": "", "packageManager": "python" },
     { "type": "script", "file": "venv", "script": "Activate venv", "packageDir": "", "packageManager": "python" },
@@ -336,7 +338,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ### Requirements
 
-- Node.js `>= 22`
+- Node.js `>= 24`
 - VS Code `^1.97.0`
 
 ---
