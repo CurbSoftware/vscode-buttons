@@ -28,6 +28,21 @@ function sourcePathAttrs(source: ButtonsSource, path: number[]): string {
   return `data-source="${source}" data-path="${pathAttr(path)}"`;
 }
 
+function descendantCount(button: ResolvedButton): number {
+  return button.children.reduce((n, child) => n + 1 + descendantCount(child), 0);
+}
+
+/** Direct children, or `direct:deeper` when descendants nest further. */
+export function variantBadgeLabel(button: ResolvedButton): string {
+  const direct = button.children.length;
+  const deeper = descendantCount(button) - direct;
+  return deeper > 0 ? `${direct}:${deeper}` : String(direct);
+}
+
+function nestDepth(path: number[]): number {
+  return Math.max(0, path.length - 1) % 5;
+}
+
 type RenderVariant = "sidebar" | "editor";
 
 export function renderHtml(state: WebviewState, codiconUri: string, variant: RenderVariant = "sidebar"): string {
@@ -266,12 +281,14 @@ function renderDragHandle(): string {
   return `<span class="drag-handle" draggable="true" title="Drag to reorder" aria-label="Drag to reorder"><span class="codicon codicon-gripper" aria-hidden="true"></span></span>`;
 }
 
-function renderVariantToggle(source: ButtonsSource, path: number[], variantCount: number): string {
+function renderVariantToggle(source: ButtonsSource, button: ResolvedButton): string {
+  const direct = button.children.length;
+  const deeper = descendantCount(button) - direct;
   const count =
-    variantCount > 0
-      ? `<span class="badge variant-count" aria-label="${variantCount} variant${variantCount === 1 ? "" : "s"}">${variantCount}</span>`
+    direct > 0
+      ? `<span class="badge variant-count" aria-label="${direct} variant${direct === 1 ? "" : "s"}${deeper > 0 ? `, ${deeper} nested` : ""}">${variantBadgeLabel(button)}</span>`
       : "";
-  return `<button type="button" class="scan-group-toggle variant-toggle" data-action="toggle-variants" ${sourcePathAttrs(source, path)} aria-expanded="false" title="Show parameter options">
+  return `<button type="button" class="scan-group-toggle variant-toggle" data-action="toggle-variants" ${sourcePathAttrs(source, button.path)} aria-expanded="false" title="Show parameter options">
     <span class="codicon codicon-chevron-right scan-group-caret" aria-hidden="true"></span>
     ${count}
   </button>`;
@@ -291,14 +308,15 @@ function renderBadges(button: ResolvedButton): string {
 function renderRowActions(source: ButtonsSource, button: ResolvedButton): string {
   const ds = sourcePathAttrs(source, button.path);
   const editLabel = button.kind === "script" ? "Note" : "Edit";
-  const runActions = button.missing
-    ? ""
-    : `<button class="btn primary" data-action="run-current" ${ds} title="Run in the current integrated terminal">Run</button>
-       <button class="btn" data-action="run-new" ${ds} title="Run in a new integrated terminal">New Terminal</button>
-       <button class="btn" data-action="append" data-sep="space" ${ds} title="Add to the current terminal line (space). Does not run.">+</button>
-       <button class="btn" data-action="append" data-sep="newline" ${ds} title="Add on a new line. Does not run. Press Enter in the terminal to run.">↵</button>
-       <button class="btn" data-action="copy" ${ds} title="Copy command to clipboard">Copy</button>`;
-  return `${runActions}
+  const hidden = button.missing ? " action-hidden" : "";
+  const hiddenAttrs = button.missing ? ` tabindex="-1" aria-hidden="true"` : "";
+  const runDs = button.missing ? "" : ` ${ds}`;
+  return `<button class="btn primary${hidden}" data-action="run-current"${runDs}${hiddenAttrs} title="Run in the current integrated terminal">Run</button>
+    <button class="btn${hidden}" data-action="run-new"${runDs}${hiddenAttrs} title="Run in a new integrated terminal">New Terminal</button>
+    <button class="btn${hidden}" data-action="open-system"${runDs}${hiddenAttrs} title="Open in the system terminal with this command ready. Press Enter there to run.">System</button>
+    <button class="btn${hidden}" data-action="append" data-sep="space"${runDs}${hiddenAttrs} title="Add to the current terminal line (space). Does not run.">+</button>
+    <button class="btn${hidden}" data-action="append" data-sep="newline"${runDs}${hiddenAttrs} title="Add on a new line. Does not run. Press Enter in the terminal to run.">↵</button>
+    <button class="btn${hidden}" data-action="copy"${runDs}${hiddenAttrs} title="Copy command to clipboard">Copy</button>
     <button class="btn" data-action="duplicate" ${ds} title="Duplicate this button">Duplicate</button>
     <button class="btn" data-action="start-edit" ${ds}>${editLabel}</button>
     <button class="btn danger" data-action="remove" ${ds} title="Remove" aria-label="Remove">✕</button>`;
@@ -323,7 +341,7 @@ function renderCardBlock(state: WebviewState, source: ButtonsSource, button: Res
   const collapsed = forceOpen ? "" : " collapsed";
   const isChild = button.path.length > 1;
   const children = button.children.map((child) => renderCardBlock(state, source, child)).join("");
-  return `<div class="button-block${collapsed}" ${sourcePathAttrs(source, button.path)}>
+  return `<div class="button-block${collapsed}" data-nest="${nestDepth(button.path)}" ${sourcePathAttrs(source, button.path)}>
   ${renderCardRow(state, source, button, isChild)}
   <div class="button-variants">
     ${children}
@@ -341,7 +359,7 @@ function renderCardRow(state: WebviewState, source: ButtonsSource, button: Resol
 
 function renderCardDisplayRow(source: ButtonsSource, button: ResolvedButton, isChild: boolean): string {
   const note = button.note ? `<div class="note">${escapeHtml(button.note)}</div>` : "";
-  const toggle = renderVariantToggle(source, button.path, button.children.length);
+  const toggle = renderVariantToggle(source, button);
   return `<div class="button-card${isChild ? " child" : ""}" ${sourcePathAttrs(source, button.path)}>
   <div class="button-card-head">
     ${renderDragHandle()}
@@ -396,13 +414,14 @@ function renderEditorBlock(state: WebviewState, source: ButtonsSource, button: R
   const childIndent = nestIndentPx([...button.path, 0]);
   const inner = `${renderEditorRow(state, source, button)}
   <tr class="variants-row"><td colspan="3">
-    <table class="buttons-table nested" style="--nest-indent:${childIndent}px">${childRows}${add}</table>
+    <table class="buttons-table nested" style="--nest-indent:${childIndent}px"><tbody>${childRows}${add}</tbody></table>
   </td></tr>`;
   const attrs = sourcePathAttrs(source, button.path);
+  const nest = `data-nest="${nestDepth(button.path)}"`;
   if (wrap === "table") {
-    return `<table class="buttons-table nested button-block${collapsed}" style="--nest-indent:${nestIndentPx(button.path)}px" ${attrs}>${inner}</table>`;
+    return `<table class="buttons-table nested" style="--nest-indent:${nestIndentPx(button.path)}px"><tbody class="button-block${collapsed}" ${nest} ${attrs}>${inner}</tbody></table>`;
   }
-  return `<tbody class="button-block${collapsed}" ${attrs}>
+  return `<tbody class="button-block${collapsed}" ${nest} ${attrs}>
   ${inner}
 </tbody>`;
 }
@@ -416,7 +435,7 @@ function renderEditorRow(state: WebviewState, source: ButtonsSource, button: Res
 
 function renderDisplayRow(source: ButtonsSource, button: ResolvedButton): string {
   const note = button.note ? escapeHtml(button.note) : "";
-  const toggle = renderVariantToggle(source, button.path, button.children.length);
+  const toggle = renderVariantToggle(source, button);
   const ds = sourcePathAttrs(source, button.path);
   return `<tr ${ds}>
   <td class="cmd">
@@ -745,9 +764,28 @@ body {
 }
 .scan-group-toggle:hover { color: var(--vscode-focusBorder, var(--fg)); }
 .variant-toggle { flex: 0 0 auto; }
-.variant-count { margin-left: 0; }
+.variant-count {
+  margin-left: 0;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  border-color: var(--vscode-badge-background);
+}
+.button-block[data-nest="0"] { --nest-accent: var(--vscode-charts-blue, #3794ff); }
+.button-block[data-nest="1"] { --nest-accent: var(--vscode-charts-orange, #d18616); }
+.button-block[data-nest="2"] { --nest-accent: var(--vscode-charts-green, #89d185); }
+.button-block[data-nest="3"] { --nest-accent: var(--vscode-charts-purple, #b180d7); }
+.button-block[data-nest="4"] { --nest-accent: var(--vscode-charts-red, #f14c4c); }
+.button-block:not(.collapsed) { --group-accent: var(--nest-accent); }
+.button-block:not(.collapsed) > .button-card .scan-group-caret,
+.button-block:not(.collapsed) > tr:first-child .scan-group-caret { color: var(--nest-accent); }
 .button-block:not(.collapsed) > .button-card .variant-count,
-.button-block:not(.collapsed) > tr:first-child .variant-count { display: none; }
+.button-block:not(.collapsed) > tr:first-child .variant-count {
+  background: var(--nest-accent);
+  color: var(--vscode-editor-background, var(--bg));
+  border-color: var(--nest-accent);
+}
+.button-block:not(.collapsed) > tr:first-child > td { border-bottom-color: var(--nest-accent); }
+.button-block:not(.collapsed) > .button-card { border-color: var(--nest-accent); }
 .scan-group-caret { transition: transform 0.1s ease; flex-shrink: 0; }
 .scan-group:not(.collapsed) .scan-group-caret,
 .button-block:not(.collapsed) > .button-card .scan-group-caret,
@@ -767,8 +805,12 @@ body {
 .button-block.collapsed > tr.variants-row { display: none; }
 .button-variants { display: flex; flex-direction: column; gap: 6px; padding: 0 0 0 32px; }
 .button-variants .button-variants { padding-left: 24px; }
-.buttons-table { width: 100%; border-collapse: collapse; --nest-indent: 0px; }
+.table-section { overflow-x: auto; }
+.buttons-table { width: 100%; border-collapse: collapse; table-layout: fixed; --nest-indent: 0px; }
 .buttons-table.nested { margin: 0; width: 100%; }
+.buttons-table th:nth-child(1), .buttons-table td.cmd { width: 54%; min-width: 0; }
+.buttons-table th:nth-child(2), .buttons-table td.note { width: 16%; min-width: 0; }
+.buttons-table th.actions-col, .buttons-table td.actions { width: 30%; }
 .buttons-table th {
   text-align: left;
   font-size: 0.8em;
@@ -792,27 +834,33 @@ body {
 }
 .buttons-table > tbody:nth-of-type(odd) > tr:first-child { background: var(--row-odd); }
 .buttons-table > tbody:nth-of-type(even) > tr:first-child { background: var(--row-even); }
-.buttons-table.nested > tr:nth-child(odd) { background: var(--variant-row-odd); }
-.buttons-table.nested > tr:nth-child(even) { background: var(--variant-row-even); }
+.buttons-table.nested > tbody > tr.nested-block-row:nth-child(odd) > td > table > tbody > tr:first-child { background: var(--variant-row-odd); }
+.buttons-table.nested > tbody > tr.nested-block-row:nth-child(even) > td > table > tbody > tr:first-child { background: var(--variant-row-even); }
+.buttons-table.nested > tbody.button-block > tr:first-child > td {
+  border-bottom-color: var(--group-accent, var(--border));
+}
 .buttons-table tr[data-path]:hover > td {
   background: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.08));
 }
-.cmd-head { display: flex; align-items: flex-start; gap: 6px; }
+.cmd-head { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
 .cmd code, .button-card-main code {
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 1em;
   word-break: break-word;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
   color: var(--cmd-fg);
   background: var(--cmd-bg);
   border-radius: 3px;
   padding: var(--cmd-pad);
 }
+.cmd-head code { flex: 1; min-width: 0; }
 .button-card.child .button-card-main code,
 .buttons-table.nested .cmd code {
   color: var(--variant-cmd-fg);
   background: var(--variant-cmd-bg);
   padding: var(--variant-cmd-pad);
+  border: 1px solid var(--group-accent, transparent);
 }
 .badge {
   display: inline-block;
@@ -826,8 +874,16 @@ body {
 }
 .badge.missing { border-color: var(--danger); color: var(--danger); }
 .note { color: var(--muted); font-size: 0.9em; word-break: break-word; }
-.actions { display: flex; flex-wrap: wrap; gap: 4px; }
+.actions {
+  display: grid;
+  grid-template-columns: repeat(9, max-content);
+  gap: 4px;
+  align-items: start;
+  white-space: nowrap;
+}
 .actions .btn { padding: 2px 6px; font-size: 0.85em; }
+.actions .action-hidden { visibility: hidden; pointer-events: none; }
+.button-card-actions .action-hidden { display: none; }
 .muted { color: var(--muted); }
 .empty { text-align: center; padding: 12px; }
 .button-card-list { display: flex; flex-direction: column; gap: 6px; }
@@ -850,7 +906,7 @@ body {
 .button-card[data-path]:hover {
   background: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.08));
 }
-.button-card.child { border-style: dashed; }
+.button-card.child { border-style: dashed; border-color: var(--group-accent, var(--card-border)); }
 .button-card.editing, .button-card.add-row { border-color: var(--vscode-focusBorder, var(--fg)); }
 .button-card.empty { border-style: dashed; }
 .button-card-head { display: flex; align-items: flex-start; gap: 6px; }
@@ -1011,6 +1067,7 @@ document.addEventListener("click", (event) => {
     case "export-skill": post({ type: "export-skill" }); break;
     case "run-current": post({ type: "run-current", source, path }); break;
     case "run-new": post({ type: "run-new", source, path }); break;
+    case "open-system": post({ type: "open-system", source, path }); break;
     case "append": post({ type: "append", source, path, sep: el.dataset.sep === "newline" ? "newline" : "space" }); break;
     case "copy": post({ type: "copy", source, path }); break;
     case "duplicate": post({ type: "duplicate", source, path }); break;

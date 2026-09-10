@@ -187,6 +187,7 @@ export type PanelActionMessage =
   | { type: "toggle-all"; checked: boolean }
   | { type: "run-current"; source: ButtonsSource; path: number[] }
   | { type: "run-new"; source: ButtonsSource; path: number[] }
+  | { type: "open-system"; source: ButtonsSource; path: number[] }
   | { type: "copy"; source: ButtonsSource; path: number[] }
   | { type: "append"; source: ButtonsSource; path: number[]; sep: "space" | "newline" }
   | { type: "start-edit"; source: ButtonsSource; path: number[] }

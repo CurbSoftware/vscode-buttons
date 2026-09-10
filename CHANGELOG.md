@@ -4,6 +4,22 @@ All notable changes to the Buttons extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+
+- **System** opens the configured OS terminal at the project root with the command sitting on the prompt. Press Enter there to run it.
+- Variant count badges use the theme badge colors. When variants nest further, the parent shows `direct:deeper` (for example `2:5`). The badge stays visible while the group is open.
+
+### Changed
+
+- Opening a nested group tints that group's chevron, row borders, badge, and variant command chips with a depth color from the current theme.
+- Editor command text wraps in place so the Actions column stays aligned across rows, including nested variants.
+
+### Fixed
+
+- Nested variant chevrons in the editor panel now expand and collapse (the block class sits on `tbody`, so the toggle CSS matches).
+
 ## [2.2.2] - 2026-09-08
 
 ### Added

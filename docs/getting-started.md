@@ -48,6 +48,7 @@ On any button, click:
 
 - **Run** - execute in the current integrated terminal.
 - **New Terminal** - execute in a fresh terminal.
+- **System** - open the OS terminal at the project root with the command ready. Press Enter to run.
 - **Copy** - copy the command to the clipboard.
 
 The working directory is set to the script's folder, so a script in a monorepo package runs in the right place.

@@ -23,6 +23,7 @@ import { getGlobalButtonsFileUri, getProjectButtonsFileUri, getWorkspaceFolderUr
 import {
   appendToCurrentTerminal,
   copyToClipboard,
+  openInSystemTerminal,
   registerTerminalComposeHooks,
   runInCurrentTerminal,
   runInNewTerminal,
@@ -568,6 +569,21 @@ async function handlePanelMessage(panelId: PanelId, message: PanelActionMessage)
       } else {
         runInNewTerminal(button.command, cwd, buttonLabel(button));
       }
+      return;
+    }
+
+    case "open-system": {
+      const state = await refreshState();
+      const button = findButton(state, message.source, message.path);
+      if (!button || button.missing) {
+        return;
+      }
+      const root = getWorkspaceFolderUri();
+      if (!root) {
+        void vscode.window.showErrorMessage("No workspace folder is open.");
+        return;
+      }
+      openInSystemTerminal(button.command, root.fsPath);
       return;
     }
 

@@ -41,6 +41,7 @@ Every row (or card) offers the same actions:
 | --- | --- |
 | **Run** | Runs the command in the current integrated terminal. Reuses the active terminal if one is open; otherwise reuses a terminal named `Buttons`, or creates one. |
 | **New Terminal** | Runs the command in a fresh terminal named `Buttons: <label>`, where `<label>` is the script name (or the first word of the command). |
+| **System** | Opens the configured default system terminal at the project root with the command already on the prompt. Does not run. Press Enter in that terminal to run. |
 | **+** | Adds the command to the current terminal line with a space (`pnpm` then `dev` → `pnpm dev`). Does not run. |
 | **↵** | Adds the command on a new line. Does not run. Press Enter in the terminal when the line is ready. |
 | **Copy** | Copies the exact command to the clipboard and shows a confirmation. |
@@ -50,7 +51,7 @@ Every row (or card) offers the same actions:
 
 Drag the gripper on a row to reorder it among its siblings. Order is saved in `.buttons.json`.
 
-Parents with a chevron expand to show **parameter options** (children) and **+ Add variant**, which appends extra args to that row's live command. Variants can nest: a variant has its own chevron and **+ Add variant**. When the chevron is closed, a badge next to it shows how many variants the parent has. The parent's **Run** still runs the base command.
+Parents with a chevron expand to show **parameter options** (children) and **+ Add variant**, which appends extra args to that row's live command. Variants can nest: a variant has its own chevron and **+ Add variant**. A badge next to the chevron shows how many variants the parent has; if those variants have children of their own, the badge is `direct:deeper` (two children that themselves hold five more rows is `2:5`). The parent's **Run** still runs the base command.
 
 > Script buttons with a **missing** reference (the script no longer exists in the scan) are shown but cannot be run. See [Troubleshooting](troubleshooting.md#a-script-shows-not-found).
 

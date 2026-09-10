@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { renderHtml } from "../panel/ButtonsRenderer";
+import { renderHtml, variantBadgeLabel } from "../panel/ButtonsRenderer";
 import { emptyButtonColors, type ResolvedButton, type WebviewState } from "../models/types";
 
 function state(overrides: Partial<WebviewState> = {}): WebviewState {
@@ -53,9 +53,12 @@ describe("renderHtml", () => {
     assert.match(html, /padding: 0 0 0 32px/);
     assert.match(html, /data-action="open-main-panel"/);
     assert.match(html, /data-action="export-skill"/);
+    assert.match(html, /data-action="open-system"/);
     assert.match(html, /class="badge variant-count"/);
     assert.match(html, /aria-label="1 variant"/);
     assert.match(html, /variant-count"[^>]*>1</);
+    assert.doesNotMatch(html, /\.variant-count\{[^}]*display:\s*none/);
+    assert.doesNotMatch(html, /variant-count \{ display: none/);
     assert.match(html, /--btn-bg: var\(--vscode-button-background\)/);
     assert.match(html, /pnpm dev --include app1/);
     assert.match(html, /title="Remove"/);
@@ -184,5 +187,46 @@ describe("renderHtml", () => {
     assert.match(editor, /padding-left: calc\(6px \+ var\(--nest-indent\)\)/);
     assert.match(editor, /tr\[data-path\]:hover > td/);
     assert.match(editor, /class="add-variant-row"/);
+    assert.match(editor, /table-layout: fixed/);
+    assert.match(editor, /--nest-accent: var\(--vscode-charts-blue/);
+    assert.match(editor, /<tbody class="button-block collapsed" data-nest="1"/);
+  });
+
+  it("shows direct:deeper on the parent badge when variants nest further", () => {
+    const gA1: ResolvedButton = { index: 0, path: [0, 0, 0], id: "a1", kind: "args", command: "a --1", entry: { args: "--1" }, children: [] };
+    const gA2: ResolvedButton = { index: 1, path: [0, 0, 1], id: "a2", kind: "args", command: "a --2", entry: { args: "--2" }, children: [] };
+    const gA3: ResolvedButton = { index: 2, path: [0, 0, 2], id: "a3", kind: "args", command: "a --3", entry: { args: "--3" }, children: [] };
+    const gB1: ResolvedButton = { index: 0, path: [0, 1, 0], id: "b1", kind: "args", command: "b --1", entry: { args: "--1" }, children: [] };
+    const gB2: ResolvedButton = { index: 1, path: [0, 1, 1], id: "b2", kind: "args", command: "b --2", entry: { args: "--2" }, children: [] };
+    const first: ResolvedButton = {
+      index: 0,
+      path: [0, 0],
+      id: "c-a",
+      kind: "command",
+      command: "echo a",
+      entry: { type: "command", command: "echo a", children: [{ args: "--1" }, { args: "--2" }, { args: "--3" }] },
+      children: [gA1, gA2, gA3],
+    };
+    const second: ResolvedButton = {
+      index: 1,
+      path: [0, 1],
+      id: "c-b",
+      kind: "command",
+      command: "echo b",
+      entry: { type: "command", command: "echo b", children: [{ args: "--1" }, { args: "--2" }] },
+      children: [gB1, gB2],
+    };
+    const root: ResolvedButton = {
+      ...parent,
+      children: [first, second],
+      entry: { type: "command", command: "pnpm dev", children: [first.entry, second.entry] },
+    };
+    assert.equal(variantBadgeLabel(root), "2:5");
+    assert.equal(variantBadgeLabel(first), "3");
+    assert.equal(variantBadgeLabel(second), "2");
+    const html = renderHtml(state({ projectButtons: [root] }), "codicons.css", "editor");
+    assert.match(html, /variant-count"[^>]*>2:5</);
+    assert.match(html, /aria-label="2 variants, 5 nested"/);
+    assert.match(html, /<tbody class="button-block collapsed" data-nest="0"/);
   });
 });

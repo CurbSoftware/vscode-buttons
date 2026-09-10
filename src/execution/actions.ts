@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { composeChunk, withoutExecute, type AppendSep } from "./compose";
+import { launchSystemTerminal } from "./systemTerminal";
 
 const BUTTONS_TERMINAL_NAME = "Buttons";
 
@@ -92,4 +93,25 @@ export function appendToCurrentTerminal(command: string, sep: AppendSep): void {
   terminal.sendText(withoutExecute(composeChunk(composing, command, sep)), false);
   composing = true;
   composeTerminal = terminal;
+}
+
+/**
+ * Open the configured OS terminal at `cwd` with `command` sitting on the
+ * prompt. Does not run it. Press Enter in that terminal to run.
+ */
+export function openInSystemTerminal(command: string, cwd: string): void {
+  const cfg = vscode.workspace.getConfiguration("terminal.external");
+  launchSystemTerminal(
+    process.platform,
+    {
+      linuxExec: cfg.get<string>("linuxExec") ?? "",
+      osxExec: cfg.get<string>("osxExec") ?? "",
+      windowsExec: cfg.get<string>("windowsExec") ?? "",
+    },
+    cwd,
+    command,
+    (err) => {
+      void vscode.window.showErrorMessage(`Could not open the system terminal: ${err.message}`);
+    },
+  );
 }

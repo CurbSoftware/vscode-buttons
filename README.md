@@ -87,6 +87,7 @@ Every button gives you:
 
 - **Run** - run in the current integrated terminal (reusing it, or a dedicated `Buttons` terminal).
 - **New Terminal** - run in a fresh terminal named `Buttons: <label>`.
+- **System** - open the configured OS terminal at the project root with the command on the prompt. Press Enter there to run.
 - **+** - add the command to the current terminal line with a space (`pnpm` then `dev` → `pnpm dev`). Does not run.
 - **↵** - add the command on a new line. Does not run. Press Enter in the terminal when the line is ready.
 - **Copy** - copy the exact command to the clipboard.
@@ -94,7 +95,7 @@ Every button gives you:
 - **Note / Edit** - inline-edit the note (for script buttons) or the command/args and note (for custom commands and variants).
 - **✕** - first click shows Confirm; click again to remove.
 
-Parents expand to parameter options (extra args, or nested commands/scripts). Variants can nest further with their own chevron and **+ Add variant**. A closed chevron shows a badge with the variant count. Drag the gripper to reorder.
+Parents expand to parameter options (extra args, or nested commands/scripts). Variants can nest further with their own chevron and **+ Add variant**. The chevron badge shows the variant count, or `direct:deeper` when those variants have children of their own. Drag the gripper to reorder.
 
 ### Layouts that fit
 
@@ -122,7 +123,7 @@ A **Rescan** button plus automatic file watchers keep commands current when `pac
 2. Open a folder/project in VS Code.
 3. Click the **Buttons** icon in the Activity Bar (or the editor title-bar icon).
 4. Click **Generate** to scan the project and create `.buttons.json` with the root-level discovered scripts.
-5. Fine-tune in the **Project scripts** tab, then use **Run**, **New Terminal**, or **Copy** on any row - or **+ Add command** for a custom command.
+5. Fine-tune in the **Project scripts** tab, then use **Run**, **New Terminal**, **System**, or **Copy** on any row - or **+ Add command** for a custom command.
 
 ---
 
