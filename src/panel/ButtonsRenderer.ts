@@ -271,7 +271,12 @@ function renderTable(
   <div class="section-title">${escapeHtml(title)} ${titleActions}</div>
   ${subtitleHtml}
   <table class="buttons-table">
-    <thead><tr><th>Command</th><th>Note</th><th class="actions-col">Actions</th></tr></thead>
+    <colgroup><col class="col-cmd" /><col class="col-note" /><col class="col-actions" /></colgroup>
+    <thead><tr>
+      <th class="cmd-col">Command<span class="col-resize" data-col="0" role="separator" aria-orientation="vertical" aria-label="Resize Command column"></span></th>
+      <th class="note-col">Note<span class="col-resize" data-col="1" role="separator" aria-orientation="vertical" aria-label="Resize Note column"></span></th>
+      <th class="actions-col">Actions<span class="col-resize" data-col="2" role="separator" aria-orientation="vertical" aria-label="Resize Actions column"></span></th>
+    </tr></thead>
     ${bodies.join("")}
   </table>
 </section>`;
@@ -320,6 +325,10 @@ function renderRowActions(source: ButtonsSource, button: ResolvedButton): string
     <button class="btn" data-action="duplicate" ${ds} title="Duplicate this button">Duplicate</button>
     <button class="btn" data-action="start-edit" ${ds}>${editLabel}</button>
     <button class="btn danger" data-action="remove" ${ds} title="Remove" aria-label="Remove">✕</button>`;
+}
+
+function actionsCell(inner: string): string {
+  return `<td class="actions"><div class="action-group">${inner}</div></td>`;
 }
 
 function renderAddVariant(state: WebviewState, source: ButtonsSource, parent: ResolvedButton): string {
@@ -414,12 +423,12 @@ function renderEditorBlock(state: WebviewState, source: ButtonsSource, button: R
   const childIndent = nestIndentPx([...button.path, 0]);
   const inner = `${renderEditorRow(state, source, button)}
   <tr class="variants-row"><td colspan="3">
-    <table class="buttons-table nested" style="--nest-indent:${childIndent}px"><tbody>${childRows}${add}</tbody></table>
+    <table class="buttons-table nested" style="--nest-indent:${childIndent}px"><colgroup><col class="col-cmd" /><col class="col-note" /><col class="col-actions" /></colgroup><tbody>${childRows}${add}</tbody></table>
   </td></tr>`;
   const attrs = sourcePathAttrs(source, button.path);
   const nest = `data-nest="${nestDepth(button.path)}"`;
   if (wrap === "table") {
-    return `<table class="buttons-table nested" style="--nest-indent:${nestIndentPx(button.path)}px"><tbody class="button-block${collapsed}" ${nest} ${attrs}>${inner}</tbody></table>`;
+    return `<table class="buttons-table nested" style="--nest-indent:${nestIndentPx(button.path)}px"><colgroup><col class="col-cmd" /><col class="col-note" /><col class="col-actions" /></colgroup><tbody class="button-block${collapsed}" ${nest} ${attrs}>${inner}</tbody></table>`;
   }
   return `<tbody class="button-block${collapsed}" ${nest} ${attrs}>
   ${inner}
@@ -442,7 +451,7 @@ function renderDisplayRow(source: ButtonsSource, button: ResolvedButton): string
     <div class="cmd-head">${renderDragHandle()}${toggle}<code>${escapeHtml(button.command)}</code>${renderBadges(button)}</div>
   </td>
   <td class="note">${note}</td>
-  <td class="actions">${renderRowActions(source, button)}</td>
+  ${actionsCell(renderRowActions(source, button))}
 </tr>`;
 }
 
@@ -456,10 +465,8 @@ function renderEditRow(source: ButtonsSource, button: ResolvedButton): string {
   return `<tr class="editing" ${ds}>
   <td class="cmd">${commandCell}</td>
   <td class="note"><input id="edit-note" type="text" value="${escapeHtml(button.note ?? "")}" placeholder="note (optional)" /></td>
-  <td class="actions">
-    <button class="btn primary" data-action="save-edit" ${ds}>Save</button>
-    <button class="btn" data-action="cancel-edit">Cancel</button>
-  </td>
+  ${actionsCell(`<button class="btn primary" data-action="save-edit" ${ds}>Save</button>
+    <button class="btn" data-action="cancel-edit">Cancel</button>`)}
 </tr>`;
 }
 
@@ -467,10 +474,8 @@ function renderAddRow(source: ButtonsSource): string {
   return `<tr class="add-row" data-source="${source}">
   <td class="cmd"><textarea id="add-command" rows="2" placeholder="command (e.g. docker ps)"></textarea></td>
   <td class="note"><input id="add-note" type="text" placeholder="note (optional)" /></td>
-  <td class="actions">
-    <button class="btn primary" data-action="save-add" data-source="${source}">Save</button>
-    <button class="btn" data-action="cancel-add">Cancel</button>
-  </td>
+  ${actionsCell(`<button class="btn primary" data-action="save-add" data-source="${source}">Save</button>
+    <button class="btn" data-action="cancel-add">Cancel</button>`)}
 </tr>`;
 }
 
@@ -479,10 +484,8 @@ function renderEditorAddVariant(state: WebviewState, source: ButtonsSource, pare
     return `<tr class="add-row">
   <td class="cmd"><input id="add-args" type="text" placeholder="extra args (e.g. --include app1 app2)" /></td>
   <td class="note"><input id="add-child-note" type="text" placeholder="note (optional)" /></td>
-  <td class="actions">
-    <button class="btn primary" data-action="save-add-child" ${sourcePathAttrs(source, parent.path)}>Save</button>
-    <button class="btn" data-action="cancel-add">Cancel</button>
-  </td>
+  ${actionsCell(`<button class="btn primary" data-action="save-add-child" ${sourcePathAttrs(source, parent.path)}>Save</button>
+    <button class="btn" data-action="cancel-add">Cancel</button>`)}
 </tr>`;
   }
   return `<tr class="add-variant-row"><td colspan="3"><button class="btn" data-action="start-add-child" ${sourcePathAttrs(source, parent.path)}>+ Add variant</button></td></tr>`;
@@ -553,6 +556,9 @@ function css(variant: RenderVariant, textSizePx: number, colors: ButtonColors): 
   --row-even: ${rowEven};
   --variant-row-odd: ${variantRowOdd};
   --variant-row-even: ${variantRowEven};
+  --col-cmd: 56%;
+  --col-note: 16%;
+  --col-actions: 28%;
 }
 * { box-sizing: border-box; }
 body {
@@ -764,12 +770,7 @@ body {
 }
 .scan-group-toggle:hover { color: var(--vscode-focusBorder, var(--fg)); }
 .variant-toggle { flex: 0 0 auto; }
-.variant-count {
-  margin-left: 0;
-  background: var(--vscode-badge-background);
-  color: var(--vscode-badge-foreground);
-  border-color: var(--vscode-badge-background);
-}
+.variant-count { margin-left: 0; }
 .button-block[data-nest="0"] { --nest-accent: var(--vscode-charts-blue, #3794ff); }
 .button-block[data-nest="1"] { --nest-accent: var(--vscode-charts-orange, #d18616); }
 .button-block[data-nest="2"] { --nest-accent: var(--vscode-charts-green, #89d185); }
@@ -778,13 +779,7 @@ body {
 .button-block:not(.collapsed) { --group-accent: var(--nest-accent); }
 .button-block:not(.collapsed) > .button-card .scan-group-caret,
 .button-block:not(.collapsed) > tr:first-child .scan-group-caret { color: var(--nest-accent); }
-.button-block:not(.collapsed) > .button-card .variant-count,
-.button-block:not(.collapsed) > tr:first-child .variant-count {
-  background: var(--nest-accent);
-  color: var(--vscode-editor-background, var(--bg));
-  border-color: var(--nest-accent);
-}
-.button-block:not(.collapsed) > tr:first-child > td { border-bottom-color: var(--nest-accent); }
+.button-block:not(.collapsed) > tr:first-child { border-bottom-color: var(--nest-accent); }
 .button-block:not(.collapsed) > .button-card { border-color: var(--nest-accent); }
 .scan-group-caret { transition: transform 0.1s ease; flex-shrink: 0; }
 .scan-group:not(.collapsed) .scan-group-caret,
@@ -805,12 +800,12 @@ body {
 .button-block.collapsed > tr.variants-row { display: none; }
 .button-variants { display: flex; flex-direction: column; gap: 6px; padding: 0 0 0 32px; }
 .button-variants .button-variants { padding-left: 24px; }
-.table-section { overflow-x: auto; }
-.buttons-table { width: 100%; border-collapse: collapse; table-layout: fixed; --nest-indent: 0px; }
+.table-section { overflow-x: hidden; }
+.buttons-table { width: 100%; max-width: 100%; border-collapse: collapse; table-layout: fixed; --nest-indent: 0px; }
 .buttons-table.nested { margin: 0; width: 100%; }
-.buttons-table th:nth-child(1), .buttons-table td.cmd { width: 54%; min-width: 0; }
-.buttons-table th:nth-child(2), .buttons-table td.note { width: 16%; min-width: 0; }
-.buttons-table th.actions-col, .buttons-table td.actions { width: 30%; }
+.buttons-table col.col-cmd, .buttons-table th.cmd-col, .buttons-table td.cmd { width: var(--col-cmd); min-width: 0; }
+.buttons-table col.col-note, .buttons-table th.note-col, .buttons-table td.note { width: var(--col-note); min-width: 0; }
+.buttons-table col.col-actions, .buttons-table th.actions-col, .buttons-table td.actions { width: var(--col-actions); }
 .buttons-table th {
   text-align: left;
   font-size: 0.8em;
@@ -818,13 +813,37 @@ body {
   letter-spacing: 0.3px;
   color: var(--muted);
   font-weight: 600;
-  padding: 4px 6px;
+  padding: 4px 10px 4px 6px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  user-select: none;
+}
+.col-resize {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 7px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 2;
+  touch-action: none;
+}
+.col-resize:hover, .col-resize.dragging {
+  background: var(--vscode-focusBorder, var(--fg));
+}
+.buttons-table td { padding: 6px; vertical-align: top; border-bottom: none; }
+.buttons-table tr[data-path],
+.buttons-table tr.add-row,
+.buttons-table tr.editing,
+.buttons-table tr.add-variant-row {
   border-bottom: 1px solid var(--border);
 }
-.buttons-table td { padding: 6px; vertical-align: top; border-bottom: 1px solid var(--border); }
+.buttons-table tr.variants-row,
+.buttons-table tr.nested-block-row {
+  border-bottom: none;
+}
 .buttons-table tr.variants-row > td,
 .buttons-table tr.nested-block-row > td {
-  border-bottom: none;
   padding: 0;
 }
 .buttons-table tr[data-path] > td:first-child,
@@ -836,7 +855,7 @@ body {
 .buttons-table > tbody:nth-of-type(even) > tr:first-child { background: var(--row-even); }
 .buttons-table.nested > tbody > tr.nested-block-row:nth-child(odd) > td > table > tbody > tr:first-child { background: var(--variant-row-odd); }
 .buttons-table.nested > tbody > tr.nested-block-row:nth-child(even) > td > table > tbody > tr:first-child { background: var(--variant-row-even); }
-.buttons-table.nested > tbody.button-block > tr:first-child > td {
+.buttons-table.nested > tbody.button-block > tr:first-child {
   border-bottom-color: var(--group-accent, var(--border));
 }
 .buttons-table tr[data-path]:hover > td {
@@ -872,17 +891,27 @@ body {
   color: var(--muted);
   vertical-align: middle;
 }
+.badge.variant-count {
+  background: transparent;
+  color: var(--fg);
+  border-color: var(--nest-accent, var(--fg));
+  font-size: 1em;
+  font-weight: 600;
+  line-height: 1.25;
+  padding: 0 6px;
+}
 .badge.missing { border-color: var(--danger); color: var(--danger); }
-.note { color: var(--muted); font-size: 0.9em; word-break: break-word; }
-.actions {
-  display: grid;
-  grid-template-columns: repeat(9, max-content);
+.note { color: var(--muted); font-size: 0.9em; overflow-wrap: anywhere; word-break: break-word; white-space: normal; }
+.buttons-table td.cmd, .buttons-table td.note { overflow-wrap: anywhere; }
+.action-group {
+  display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   align-items: start;
-  white-space: nowrap;
+  min-width: 0;
 }
-.actions .btn { padding: 2px 6px; font-size: 0.85em; }
-.actions .action-hidden { visibility: hidden; pointer-events: none; }
+.action-group .btn { padding: 2px 6px; font-size: 0.85em; }
+.action-group .action-hidden { visibility: hidden; pointer-events: none; }
 .button-card-actions .action-hidden { display: none; }
 .muted { color: var(--muted); }
 .empty { text-align: center; padding: 12px; }
@@ -1150,6 +1179,63 @@ function persistExpandedButtons() {
   vscode.setState({ ...(vscode.getState() || {}), expandedButtons });
 }
 
+const COL_MIN = 12;
+const COL_DEFAULT = [56, 16, 28];
+
+function clampCols(w) {
+  const next = w.map((n) => Math.max(COL_MIN, n));
+  const sum = next[0] + next[1] + next[2];
+  return next.map((n) => (n / sum) * 100);
+}
+
+function applyColWidths(w) {
+  const root = document.documentElement;
+  root.style.setProperty("--col-cmd", w[0] + "%");
+  root.style.setProperty("--col-note", w[1] + "%");
+  root.style.setProperty("--col-actions", w[2] + "%");
+}
+
+function persistColWidths(w) {
+  vscode.setState({ ...(vscode.getState() || {}), colWidths: w });
+}
+
+(function initColResize() {
+  let drag = null;
+  document.addEventListener("pointerdown", (event) => {
+    const handle = event.target && event.target.closest ? event.target.closest(".col-resize") : null;
+    if (!handle) { return; }
+    event.preventDefault();
+    const table = handle.closest(".buttons-table");
+    if (!table) { return; }
+    const col = Number(handle.dataset.col);
+    const start = (vscode.getState() || {}).colWidths;
+    const widths = Array.isArray(start) && start.length === 3 ? start.slice() : COL_DEFAULT.slice();
+    drag = { col, startX: event.clientX, tableWidth: table.getBoundingClientRect().width, widths, handle };
+    handle.classList.add("dragging");
+    handle.setPointerCapture(event.pointerId);
+  });
+  document.addEventListener("pointermove", (event) => {
+    if (!drag) { return; }
+    const d = ((event.clientX - drag.startX) / drag.tableWidth) * 100;
+    const w = drag.widths.slice();
+    if (drag.col === 0) { w[0] += d; w[1] -= d; }
+    else if (drag.col === 1) { w[1] += d; w[2] -= d; }
+    else { w[2] += d; w[1] -= d; }
+    applyColWidths(clampCols(w));
+  });
+  function endColDrag() {
+    if (!drag) { return; }
+    drag.handle.classList.remove("dragging");
+    const cmd = parseFloat(document.documentElement.style.getPropertyValue("--col-cmd")) || COL_DEFAULT[0];
+    const note = parseFloat(document.documentElement.style.getPropertyValue("--col-note")) || COL_DEFAULT[1];
+    const actions = parseFloat(document.documentElement.style.getPropertyValue("--col-actions")) || COL_DEFAULT[2];
+    persistColWidths(clampCols([cmd, note, actions]));
+    drag = null;
+  }
+  document.addEventListener("pointerup", endColDrag);
+  document.addEventListener("pointercancel", endColDrag);
+})();
+
 document.addEventListener("dragstart", (event) => {
   const handle = event.target && event.target.closest ? event.target.closest(".drag-handle") : null;
   if (!handle) { return; }
@@ -1223,5 +1309,8 @@ document.querySelectorAll(".button-block").forEach((block) => {
 
 restoreFocus();
 restoreDrafts();
+if (Array.isArray(savedState.colWidths) && savedState.colWidths.length === 3) {
+  applyColWidths(clampCols(savedState.colWidths));
+}
 `;
 }

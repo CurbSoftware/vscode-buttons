@@ -63,6 +63,6 @@ Reload the window after `code --install-extension` and confirm the version in th
 
 ## A terminal named "Buttons" keeps getting reused
 
-**Run** reuses your active terminal if one is open, otherwise a terminal named `Buttons`, and only creates one if neither exists. To isolate a command, use **New Terminal** instead, which always opens a fresh terminal.
+**Run** reuses your active terminal if one is open, otherwise a terminal named `Buttons`, and only creates one if neither exists. To isolate a command, use **New Terminal** instead, which always opens a fresh terminal. **System** is a third option: it opens the OS terminal outside VS Code and leaves the command unrun.
 
 [Back to index](index.md)

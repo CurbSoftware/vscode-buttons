@@ -190,6 +190,15 @@ describe("renderHtml", () => {
     assert.match(editor, /table-layout: fixed/);
     assert.match(editor, /--nest-accent: var\(--vscode-charts-blue/);
     assert.match(editor, /<tbody class="button-block collapsed" data-nest="1"/);
+    assert.match(editor, /overflow-x: hidden/);
+    assert.doesNotMatch(editor, /overflow-x: auto/);
+    assert.match(editor, /class="action-group"/);
+    assert.match(editor, /\.badge\.variant-count \{[\s\S]*?background: transparent/);
+    assert.match(editor, /border-color: var\(--nest-accent/);
+    assert.match(editor, /class="col-resize"/);
+    assert.match(editor, /--col-cmd: 56%/);
+    assert.doesNotMatch(editor, /--vscode-badge-background/);
+    assert.match(editor, /tr\[data-path\],/);
   });
 
   it("shows direct:deeper on the parent badge when variants nest further", () => {

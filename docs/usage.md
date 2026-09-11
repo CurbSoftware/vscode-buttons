@@ -7,7 +7,7 @@ The Buttons panel has two tabs and renders differently depending on where you op
 - **Activity Bar** - click the Buttons icon in the left sidebar. Renders as a compact card layout. The window icon in the header (and on the sidebar title bar) opens the full editor panel.
 - **Editor title bar** - click the Buttons icon in the top-right. Renders as a full-width table. The editor tab uses the Buttons logo.
 
-Both panels show the same data and stay in sync; you can use both at once.
+Both panels show the same data and stay in sync; you can use both at once. In the editor table, drag the edges of the **Command**, **Note**, and **Actions** column headers to resize them. Widths persist while the panel is open.
 
 ## The two tabs
 
@@ -51,7 +51,7 @@ Every row (or card) offers the same actions:
 
 Drag the gripper on a row to reorder it among its siblings. Order is saved in `.buttons.json`.
 
-Parents with a chevron expand to show **parameter options** (children) and **+ Add variant**, which appends extra args to that row's live command. Variants can nest: a variant has its own chevron and **+ Add variant**. A badge next to the chevron shows how many variants the parent has; if those variants have children of their own, the badge is `direct:deeper` (two children that themselves hold five more rows is `2:5`). The parent's **Run** still runs the base command.
+Parents with a chevron expand to show **parameter options** (children) and **+ Add variant**, which appends extra args to that row's live command. Variants can nest: a variant has its own chevron and **+ Add variant**. A badge next to the chevron shows how many variants the parent has and stays visible while the group is open. If those variants have children of their own, the badge is `direct:deeper` (two children that themselves hold five more rows is `2:5`). Open groups pick up a depth color from the current theme on the chevron, row border, badge, and variant chips. The parent's **Run** still runs the base command.
 
 > Script buttons with a **missing** reference (the script no longer exists in the scan) are shown but cannot be run. See [Troubleshooting](troubleshooting.md#a-script-shows-not-found).
 

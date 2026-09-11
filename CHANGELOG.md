@@ -4,12 +4,24 @@ All notable changes to the Buttons extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [2.3.0] - 2026-09-11
+
+Marketplace drop of the nest-panel work from 2.2.3, plus the table polish below.
+
+### Added
+
+- Drag the edges of the **Command**, **Note**, and **Actions** column headers to resize them. Widths persist while the panel is open.
+
+### Changed
+
+- Variant count badges use a nest-colored border and editor-foreground numbers with no fill, and slightly larger type, so the count stays readable on any theme.
+
+## [2.2.3] - 2026-09-10
 
 ### Added
 
 - **System** opens the configured OS terminal at the project root with the command sitting on the prompt. Press Enter there to run it.
-- Variant count badges use the theme badge colors. When variants nest further, the parent shows `direct:deeper` (for example `2:5`). The badge stays visible while the group is open.
+- Variant count badges use the group's nest color so the numbers stay readable. When variants nest further, the parent shows `direct:deeper` (for example `2:5`). The badge stays visible while the group is open.
 
 ### Changed
 
@@ -19,6 +31,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ### Fixed
 
 - Nested variant chevrons in the editor panel now expand and collapse (the block class sits on `tbody`, so the toggle CSS matches).
+- The editor Buttons table no longer grows a horizontal scrollbar: commands and notes wrap, and action buttons wrap inside the cell.
+- Colored row borders sit on the `tr`, so they stay one full-width line when a wrapped command makes the row taller.
 
 ## [2.2.2] - 2026-09-08
 

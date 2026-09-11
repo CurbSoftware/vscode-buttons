@@ -57,6 +57,10 @@ For monorepo scripts, the terminal's working directory is set to the script's `p
 
 **Generate** writes every root-level script into `.buttons.json` (and later adds any that are missing). Custom commands, notes, variants, and extra opted-in scripts stay. **Rescan** updates the existing file in place, preserving your inclusions and notes, marking missing scripts, and leaving new scripts unchecked. See [Generate vs Rescan](scanning.md#generate-vs-rescan).
 
+## What's the difference between Run, New Terminal, and System?
+
+**Run** executes in the current integrated terminal (or a dedicated `Buttons` terminal). **New Terminal** always opens a fresh integrated terminal and runs immediately. **System** opens your configured OS terminal at the **project root**, with the command already on the prompt, and does not run it. Press Enter there when you are ready. **System** ignores the script's package directory on purpose: the outside terminal starts at the workspace root so you can edit the line first.
+
 ## How do I give an AI the `.buttons.json` schema?
 
 Click the markdown icon in the sidebar or editor header. Copy the skill, or add `BUTTONS-SKILL.md` to the project root. See [AI skill](usage.md#ai-skill).

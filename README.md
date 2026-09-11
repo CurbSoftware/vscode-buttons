@@ -95,12 +95,12 @@ Every button gives you:
 - **Note / Edit** - inline-edit the note (for script buttons) or the command/args and note (for custom commands and variants).
 - **✕** - first click shows Confirm; click again to remove.
 
-Parents expand to parameter options (extra args, or nested commands/scripts). Variants can nest further with their own chevron and **+ Add variant**. The chevron badge shows the variant count, or `direct:deeper` when those variants have children of their own. Drag the gripper to reorder.
+Parents expand to parameter options (extra args, or nested commands/scripts). Variants can nest further with their own chevron and **+ Add variant**. The chevron badge shows the variant count, or `direct:deeper` when those variants have children of their own, and stays visible while the group is open. Open groups tint with a depth color from the current theme. Drag the gripper to reorder.
 
 ### Layouts that fit
 
 - **Sidebar** renders each button as a compact card (command/note on one row, actions on the next). Use the window icon in the sidebar header to open the full editor panel.
-- **Editor panel** renders the full table (Command | Note | Actions). The editor tab shows the Buttons logo.
+- **Editor panel** renders the full table (Command | Note | Actions). Drag the column header edges to resize. The editor tab shows the Buttons logo.
 - **AI skill** - the markdown icon in either header copies the Buttons skill or writes `BUTTONS-SKILL.md` at the project root so coding agents can create `.buttons.json` files.
 
 ### Configurable text size and colors
