@@ -197,6 +197,9 @@ describe("renderHtml", () => {
     assert.match(editor, /border-color: var\(--nest-accent/);
     assert.match(editor, /class="col-resize"/);
     assert.match(editor, /--col-cmd: 56%/);
+    assert.match(editor, /--chip-accent: var\(--nest-accent\)/);
+    assert.match(editor, /border: 1px solid var\(--chip-accent/);
+    assert.match(editor, /\.add-variant-row \.btn\[data-action="start-add-child"\]/);
     assert.doesNotMatch(editor, /--vscode-badge-background/);
     assert.match(editor, /tr\[data-path\],/);
   });

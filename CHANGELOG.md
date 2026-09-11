@@ -15,6 +15,7 @@ Marketplace drop of the nest-panel work from 2.2.3, plus the table polish below.
 ### Changed
 
 - Variant count badges use a nest-colored border and editor-foreground numbers with no fill, and slightly larger type, so the count stays readable on any theme.
+- Nested variant chips and **+ Add variant** use the open group's nest color. Opening a nested variant keeps that row in the parent color; the new color is for the children it adds.
 
 ## [2.2.3] - 2026-09-10
 

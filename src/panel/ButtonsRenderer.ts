@@ -776,11 +776,12 @@ body {
 .button-block[data-nest="2"] { --nest-accent: var(--vscode-charts-green, #89d185); }
 .button-block[data-nest="3"] { --nest-accent: var(--vscode-charts-purple, #b180d7); }
 .button-block[data-nest="4"] { --nest-accent: var(--vscode-charts-red, #f14c4c); }
-.button-block:not(.collapsed) { --group-accent: var(--nest-accent); }
+.button-block:not(.collapsed) > tr.variants-row,
+.button-block:not(.collapsed) > .button-variants { --chip-accent: var(--nest-accent); }
 .button-block:not(.collapsed) > .button-card .scan-group-caret,
 .button-block:not(.collapsed) > tr:first-child .scan-group-caret { color: var(--nest-accent); }
 .button-block:not(.collapsed) > tr:first-child { border-bottom-color: var(--nest-accent); }
-.button-block:not(.collapsed) > .button-card { border-color: var(--nest-accent); }
+.button-block:not(.collapsed) > .button-card:not(.child) { border-color: var(--nest-accent); }
 .scan-group-caret { transition: transform 0.1s ease; flex-shrink: 0; }
 .scan-group:not(.collapsed) .scan-group-caret,
 .button-block:not(.collapsed) > .button-card .scan-group-caret,
@@ -856,7 +857,7 @@ body {
 .buttons-table.nested > tbody > tr.nested-block-row:nth-child(odd) > td > table > tbody > tr:first-child { background: var(--variant-row-odd); }
 .buttons-table.nested > tbody > tr.nested-block-row:nth-child(even) > td > table > tbody > tr:first-child { background: var(--variant-row-even); }
 .buttons-table.nested > tbody.button-block > tr:first-child {
-  border-bottom-color: var(--group-accent, var(--border));
+  border-bottom-color: var(--chip-accent, var(--border));
 }
 .buttons-table tr[data-path]:hover > td {
   background: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.08));
@@ -879,7 +880,7 @@ body {
   color: var(--variant-cmd-fg);
   background: var(--variant-cmd-bg);
   padding: var(--variant-cmd-pad);
-  border: 1px solid var(--group-accent, transparent);
+  border: 1px solid var(--chip-accent, transparent);
 }
 .badge {
   display: inline-block;
@@ -935,7 +936,14 @@ body {
 .button-card[data-path]:hover {
   background: var(--vscode-list-hoverBackground, rgba(128, 128, 128, 0.08));
 }
-.button-card.child { border-style: dashed; border-color: var(--group-accent, var(--card-border)); }
+.button-card.child { border-style: dashed; border-color: var(--chip-accent, var(--card-border)); }
+.add-variant-row .btn[data-action="start-add-child"],
+.button-variants > .btn[data-action="start-add-child"] {
+  border-color: var(--chip-accent, var(--nest-accent, var(--border)));
+}
+.button-block:not(.collapsed) .add-variant-row {
+  border-bottom-color: var(--chip-accent, var(--nest-accent, var(--border)));
+}
 .button-card.editing, .button-card.add-row { border-color: var(--vscode-focusBorder, var(--fg)); }
 .button-card.empty { border-style: dashed; }
 .button-card-head { display: flex; align-items: flex-start; gap: 6px; }
