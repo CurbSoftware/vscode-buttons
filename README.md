@@ -1,3 +1,7 @@
+# Do Not Use
+
+Project merged to https://github.com/CurbSoftware/desktop-xlets.
+
 # Buttons
 
 **Buttons** is a VS Code and VSCodium extension that scans your project for scripts - `package.json` scripts, Rust `Cargo.toml`, Go `go.mod`, `Makefile` targets, PHP `composer.json` scripts, `justfile` recipes, shell `.sh` files, and Python entry files - and turns them into a clickable command launcher. You choose the directories to scan (the project root is always included); virtual environments get activate / deactivate / install-requirements buttons.
