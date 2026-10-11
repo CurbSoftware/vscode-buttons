@@ -4,6 +4,7 @@
 .claude/**
 .cursor/**
 src/**
+scripts/**
 dist/test/**
 media/screenshots/**
 *.md
