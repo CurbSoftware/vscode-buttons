@@ -5,7 +5,8 @@ import * as fs from "fs";
 import * as path from "path";
 
 const repoRoot = path.resolve(__dirname, "../..");
-const vsixName = "buttons-vscode-2.3.0.vsix";
+const repoVersion = (JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf8")) as { version: string }).version;
+const vsixName = `buttons-vscode-${repoVersion}.vsix`;
 const vsixPath = path.join(repoRoot, "release", vsixName);
 
 interface ZipEntry {
@@ -34,11 +35,9 @@ function git(args: string[]): number {
   return spawnSync("git", args, { cwd: repoRoot, encoding: "utf8" }).status ?? 1;
 }
 
-describe("buttons-vscode-2.3.0.vsix", () => {
+describe(`buttons-vscode-${repoVersion}.vsix`, () => {
   it("matches the repo version and is not a git commit", () => {
     assert.equal(fs.existsSync(vsixPath), true);
-    const repoPackage = JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf8")) as { version: string };
-    assert.equal(repoPackage.version, "2.3.0");
     assert.notEqual(git(["ls-files", "--error-unmatch", `release/${vsixName}`]), 0);
     assert.equal(git(["check-ignore", "--no-index", "-q", `release/${vsixName}`]), 0);
   });
@@ -82,7 +81,7 @@ describe("buttons-vscode-2.3.0.vsix", () => {
       };
     };
     assert.equal(pkg.name, "buttons-vscode");
-    assert.equal(pkg.version, "2.3.0");
+    assert.equal(pkg.version, repoVersion);
     assert.equal(pkg.publisher, "CurbSoftware");
     assert.equal(pkg.main, "./dist/extension.js");
     assert.deepEqual(pkg.activationEvents, ["workspaceContains:.buttons.json", "onStartupFinished"]);
