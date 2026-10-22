@@ -4,6 +4,18 @@ All notable changes to the Buttons extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.3.1] - 2026-10-22
+
+Housekeeping release: correctness fixes to the docs and a support-floor bump. No feature changes.
+
+### Fixed
+
+- README: the **Scan directories** card adds directories through a typed path field (since 2.0.1), not the OS folder picker. The Node.js requirement now reads 22 to match the codebase.
+
+### Changed
+
+- Minimum VS Code version raised to 1.110.0, matching the extension API the code is built against.
+
 ## [2.3.0] - 2026-09-11
 
 Marketplace drop of the nest-panel work from 2.2.3, plus the table polish below.
