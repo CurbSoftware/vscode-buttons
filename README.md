@@ -53,7 +53,7 @@ Opening a project **never** writes a file. Click **Generate** to create `.button
 
 ### Scan directories
 
-The **project root is always scanned** at its top level. Add more directories in the **Project scripts** tab - each with its own **recursive** toggle - via the **Scan directories** card and your OS folder picker. The list lives in the `buttons.scanDirectories` workspace setting, so it is shared with the project (see [Script file types](#script-file-types) and [docs/scanning.md](docs/scanning.md)).
+The **project root is always scanned** at its top level. Add more directories in the **Project scripts** tab - each with its own **recursive** toggle - by typing or pasting a path into the **Scan directories** card's Add field. The list lives in the `buttons.scanDirectories` workspace setting, so it is shared with the project (see [Script file types](#script-file-types) and [docs/scanning.md](docs/scanning.md)).
 
 ### Script scanning
 
@@ -339,8 +339,8 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ### Requirements
 
-- Node.js `>= 24`
-- VS Code `^1.97.0`
+- Node.js `>= 22`
+- VS Code `^1.110.0`
 
 ---
 
